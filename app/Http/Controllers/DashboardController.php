@@ -1,0 +1,107 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+
+class DashboardController extends Controller
+{
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        
+        $tasks = DB::table('tasks')->where('user_id', $user->id)->get();
+        $habit = DB::table('habits')->where('user_id', $user->id)->first();
+        
+        // لم نقم بإنشاء جدول أهداف حتى الآن حسب تعليمات الـ MVP
+        // سنمرر هدفاً واحداً افتراضياً مبدئياً لحين توسيع الجداول في المرحلة القادمة
+        $goal = ['title' => 'تعلم مهارة جديدة لمدة 30 دقيقة', 'status' => 'pending'];
+
+        return Inertia::render('Dashboard', [
+            'tasks' => $tasks,
+            'habit' => $habit,
+            'goal' => $goal
+        ]);
+    }
+
+    public function generatePlan(Request $request)
+    {
+        $user = $request->user();
+        
+        $tasks = DB::table('tasks')->where('user_id', $user->id)->get()->pluck('title')->toArray();
+        $habit = DB::table('habits')->where('user_id', $user->id)->first();
+        
+        $tasksList = count($tasks) > 0 ? implode(', ', $tasks) : 'لا يوجد مهام حتى الآن';
+        $habitName = $habit ? $habit->name : 'لا يوجد عادات بعد';
+        
+        $prompt = "مرحباً! أنا مستخدم بنظام Personal Memory OS. مهامي اليوم هي: [$tasksList]. وعادتي التي أريد المواظبة عليها: [$habitName]. وهدفي: [تعلم مهارة جديدة]. حلل مهامي واقترح جدول اليوم ونصائح نفسية وصحية سريعة لتشجيعي.";
+
+        try {
+            // استخدام مكتبة ذكاء اصطناعي ذكية ومجانية بالكامل وتخطي فحص SSL لتعمل محلياً
+            $response = Http::withoutVerifying()->post('https://text.pollinations.ai/openai', [
+                'model' => 'openai',
+                'messages' => [
+                    ['role' => 'system', 'content' => 'أنت العقل المساعد والذكي للمستخدم، اسمك Personal Memory OS. كلامك مختصر وذكي وملهم ومكتوب بلغة عربية واضحة ومقسم لنقاط بسيطة.'],
+                    ['role' => 'user', 'content' => $prompt]
+                ],
+            ]);
+
+            return response()->json([
+                'plan' => $response->json('choices.0.message.content') ?? 'عذراً، لم أتمكن من إعداد الخطة اليوم (تأكد من إعدادات مفتاح API).'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'plan' => 'حدث خطأ في الاتصال بالذكاء الاصطناعي: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function storeTask(Request $request)
+    {
+        $request->validate(['title' => 'required|string|max:255']);
+        DB::table('tasks')->insert([
+            'user_id' => $request->user()->id,
+            'title' => $request->title,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        return back();
+    }
+
+    public function toggleTask(Request $request, $id)
+    {
+        $task = DB::table('tasks')->where('id', $id)->where('user_id', $request->user()->id)->first();
+        if ($task) {
+            $newStatus = $task->status === 'completed' ? 'pending' : 'completed';
+            DB::table('tasks')->where('id', $id)->update(['status' => $newStatus, 'updated_at' => now()]);
+        }
+        return back();
+    }
+
+    public function storeHabit(Request $request)
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        $existing = DB::table('habits')->where('user_id', $request->user()->id)->first();
+        if ($existing) {
+            DB::table('habits')->where('id', $existing->id)->update([
+                'name' => $request->name,
+                'updated_at' => now()
+            ]);
+        } else {
+            DB::table('habits')->insert([
+                'user_id' => $request->user()->id,
+                'name' => $request->name,
+                'frequency' => 'daily',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+        return back();
+    }
+}

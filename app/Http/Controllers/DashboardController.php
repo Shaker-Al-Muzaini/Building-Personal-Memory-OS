@@ -16,8 +16,7 @@ class DashboardController extends Controller
         $tasks = DB::table('tasks')->where('user_id', $user->id)->get();
         $habit = DB::table('habits')->where('user_id', $user->id)->first();
         
-        // لم نقم بإنشاء جدول أهداف حتى الآن حسب تعليمات الـ MVP
-        // سنمرر هدفاً واحداً افتراضياً مبدئياً لحين توسيع الجداول في المرحلة القادمة
+       
         $goal = ['title' => 'تعلم مهارة جديدة لمدة 30 دقيقة', 'status' => 'pending'];
 
         return Inertia::render('Dashboard', [
@@ -45,7 +44,6 @@ class DashboardController extends Controller
             : "Hello! I am a user of Personal Memory OS. My tasks today are: [$tasksList]. My habit: [$habitName]. My goal: [Learning a new skill]. Analyze my tasks and suggest a daily schedule with psychological and health tips.";
 
         try {
-            // استخدام مكتبة ذكاء اصطناعي ذكية ومجانية بالكامل وتخطي فحص SSL لتعمل محلياً
             $response = Http::withoutVerifying()->post('https://text.pollinations.ai/openai', [
                 'model' => 'openai',
                 'messages' => [

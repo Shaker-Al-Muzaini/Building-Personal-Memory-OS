@@ -68,7 +68,6 @@ class PeopleController extends Controller
             ]);
         }
 
-        // إنشاء سياق تحليلي للأشخاص
         $peopleContext = [];
         foreach ($people as $person) {
             $lastContacted = $person->last_contact ? "وآخر تواصل كان بتاريخ {$person->last_contact}" : "لم تتواصل معه مؤخراً";
@@ -80,7 +79,6 @@ class PeopleController extends Controller
         $prompt = "مرحباً، أنا أستخدم قسم 'ذاكرة الناس' بحياتي، وهؤلاء هم الأشخاص المسجلين لدي وتفاصيلهم وآخر تواصل بيننا:\n{$peopleListText}\n\nيُرجى عمل تحلیل ذكي لعلاقاتي وسلاسل تواصلي. اقرأ التواريخ واستنتج من طالت غيبتي عنهم وحثني على التواصل معهم. قدم لي بعض الاقتراحات الودية والسريعة لفتح حوارات مع الأشخاص ذوي الأهمية 'العالية'. كن لطيفاً ومنظماً في ردك ومكتوب بنقاط واضحة.";
 
         try {
-            // نستخدم مكتبة الذكاء الاصطناعي المجانية ونتجاوز فحص شهادات حاسوبك (لدواعي التطوير المحلي)
             $response = Http::withoutVerifying()->post('https://text.pollinations.ai/openai', [
                 'model' => 'openai',
                 'messages' => [

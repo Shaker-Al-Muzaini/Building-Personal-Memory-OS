@@ -66,7 +66,6 @@ class MoneyController extends Controller
         $totalExpense = $transactions->where('type', 'expense')->sum('amount');
         $balance = $totalIncome - $totalExpense;
 
-        // تجهيز ملخص للمصاريف للذكاء
         $expenses = $transactions->where('type', 'expense')->groupBy('category')->map(function ($row) {
             return collect($row)->sum('amount');
         });

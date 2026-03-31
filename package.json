@@ -21,8 +21,10 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
+        "apexcharts": "^5.10.4",
         "laravel-vue-i18n": "^2.8.0",
         "sweetalert2": "^11.26.24",
-        "three": "^0.183.2"
+        "three": "^0.183.2",
+        "vue3-apexcharts": "^1.11.1"
     }
 }

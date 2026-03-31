@@ -3,6 +3,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
+import { trans } from 'laravel-vue-i18n';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     transactions: Array,
@@ -38,8 +40,22 @@ const saveTransaction = () => {
     });
 };
 
-const deleteTransaction = (id) => {
-    if(confirm("هل أنت متأكد من حذف هذه المعاملة؟")) {
+const deleteTransaction = async (id) => {
+    const result = await Swal.fire({
+        title: trans('Are you sure?'),
+        text: trans("You won't be able to revert this!"),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#4b5563',
+        confirmButtonText: trans('Yes, delete it!'),
+        cancelButtonText: trans('Cancel'),
+        background: '#0d1304',
+        color: '#fff',
+        customClass: { popup: 'border border-gray-800 rounded-2xl shadow-2xl' }
+    });
+
+    if (result.isConfirmed) {
         router.delete(route('money.delete', id), { preserveScroll: true });
     }
 };
@@ -51,7 +67,7 @@ const deleteTransaction = (id) => {
     <AuthenticatedLayout>
         <template #header>
             <h2 class="font-semibold text-2xl text-accent leading-tight flex items-center gap-2">
-                <span>💰</span> ذاكرة المال
+                <span>💰</span> {{ $t('Money Memory') }}
             </h2>
         </template>
 
@@ -61,16 +77,16 @@ const deleteTransaction = (id) => {
                 <!-- Summary Board -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl text-center">
-                        <span class="text-gray-400 block mb-2 text-sm">مجموع الدخل 💵</span>
+                        <span class="text-gray-400 block mb-2 text-sm">{{ $t('Total Income') }}</span>
                         <h3 class="text-3xl font-bold text-green-500">{{ summary.income }} $</h3>
                     </div>
                     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl text-center">
-                        <span class="text-gray-400 block mb-2 text-sm">مجموع المصروفات 💸</span>
+                        <span class="text-gray-400 block mb-2 text-sm">{{ $t('Total Expenses') }}</span>
                         <h3 class="text-3xl font-bold text-red-500">{{ summary.expense }} $</h3>
                     </div>
                     <div class="bg-gray-900 border border-t-[4px] border-accent rounded-2xl p-6 shadow-xl text-center relative overflow-hidden">
                         <div class="absolute inset-0 bg-accent opacity-5"></div>
-                        <span class="text-gray-400 block mb-2 text-sm relative z-10">الرصيد المتبقي 💳</span>
+                        <span class="text-gray-400 block mb-2 text-sm relative z-10">{{ $t('Remaining Balance') }}</span>
                         <h3 :class="['text-4xl font-bold relative z-10', summary.balance >= 0 ? 'text-white' : 'text-red-500']">{{ summary.balance }} $</h3>
                     </div>
                 </div>
@@ -80,8 +96,8 @@ const deleteTransaction = (id) => {
                     <div class="absolute -bottom-16 -right-16 w-40 h-40 bg-green-600 opacity-20 rounded-full blur-[60px]"></div>
                     <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div>
-                            <h3 class="text-2xl font-bold text-white mb-2">تسرب الأموال والميزانية؟</h3>
-                            <p class="text-gray-400">دع مستشارك المالي الذكي يحلل أرقامك، دخلاتك، ومصاريفك ليعطيك خطة للتوفير.</p>
+                            <h3 class="text-2xl font-bold text-white mb-2">{{ $t('Budget Leaking?') }}</h3>
+                            <p class="text-gray-400">{{ $t('Let AI analyze your numbers...') }}</p>
                         </div>
                         <button 
                             @click="generatePlan" 
@@ -89,14 +105,14 @@ const deleteTransaction = (id) => {
                             class="rounded-full bg-accent px-8 py-3 text-white hover:bg-opacity-80 transition font-bold shadow-[0_0_20px_rgba(6,155,255,0.3)] disabled:opacity-50 flex items-center gap-2"
                         >
                             <span v-if="isGeneratingPlan" class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full block"></span>
-                            <span>{{ isGeneratingPlan ? 'جاري التحليل المالي...' : '📈 تحليل الميزانية (AI)' }}</span>
+                            <span>{{ isGeneratingPlan ? $t('Thinking...') : $t('Analyze Budget (AI)') }}</span>
                         </button>
                     </div>
 
                     <div v-if="aiPlanText" class="mt-8 p-6 bg-black bg-opacity-40 rounded-xl border border-gray-800 whitespace-pre-wrap leading-relaxed">
                        <div class="flex items-center gap-2 mb-4 text-accent">
                            <span class="text-xl">💰</span>
-                           <h4 class="font-bold text-xl">نصيحة المستشار المالي:</h4>
+                           <h4 class="font-bold text-xl">{{ $t('Financial Advisor Tip:') }}</h4>
                        </div>
                        {{ aiPlanText }}
                     </div>
@@ -105,43 +121,43 @@ const deleteTransaction = (id) => {
                 <!-- Add Transaction Form -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-20">
                     <div class="md:col-span-1 bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl text-white">
-                        <h3 class="text-xl font-bold mb-6">➕ حركة جديدة</h3>
+                        <h3 class="text-xl font-bold mb-6">➕ {{ $t('New Transaction') }}</h3>
                         <form @submit.prevent="saveTransaction" class="space-y-4">
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">نوع الحركة</label>
+                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Transaction Type') }}</label>
                                 <div class="flex gap-2">
-                                    <button type="button" @click="transactionForm.type = 'expense'" :class="['flex-1 py-2 rounded-lg font-bold transition', transactionForm.type === 'expense' ? 'bg-red-600' : 'bg-gray-800 text-gray-400']">مصروف 💸</button>
-                                    <button type="button" @click="transactionForm.type = 'income'" :class="['flex-1 py-2 rounded-lg font-bold transition', transactionForm.type === 'income' ? 'bg-green-600' : 'bg-gray-800 text-gray-400']">دخل 💵</button>
+                                    <button type="button" @click="transactionForm.type = 'expense'" :class="['flex-1 py-2 rounded-lg font-bold transition', transactionForm.type === 'expense' ? 'bg-red-600' : 'bg-gray-800 text-gray-400']">{{ $t('Expense') }}</button>
+                                    <button type="button" @click="transactionForm.type = 'income'" :class="['flex-1 py-2 rounded-lg font-bold transition', transactionForm.type === 'income' ? 'bg-green-600' : 'bg-gray-800 text-gray-400']">{{ $t('Income') }}</button>
                                 </div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">المبلغ ($)</label>
+                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Amount ($)') }}</label>
                                 <input v-model="transactionForm.amount" type="number" step="0.01" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" required />
                             </div>
 
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">التصنيف</label>
-                                <input v-model="transactionForm.category" type="text" placeholder="مثال: فاتورة، راتب، طعام..." class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" required />
+                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Category') }}</label>
+                                <input v-model="transactionForm.category" type="text" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" required />
                             </div>
 
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">وصف (اختياري)</label>
+                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Description (Optional)') }}</label>
                                 <input v-model="transactionForm.description" type="text" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" />
                             </div>
                             
                             <button type="submit" :disabled="transactionForm.processing" class="bg-accent text-white px-4 py-2 rounded-lg font-bold hover:bg-opacity-80 transition w-full mt-2">
-                                تسجيل الصرف
+                                {{ $t('Record Transaction') }}
                             </button>
                         </form>
                     </div>
 
                     <!-- Transactions History -->
                     <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl flex flex-col">
-                        <h3 class="text-xl font-bold text-white mb-6">سجل حركة الأموال</h3>
+                        <h3 class="text-xl font-bold text-white mb-6">{{ $t('Transactions History') }}</h3>
                         
                         <div v-if="transactions.length === 0" class="text-center py-12 text-gray-500 font-medium">
-                            لا يوجد سجلات مالية! قم بإضافة مصاريفك الأولى أو الراتب لتبدأ.
+                            {{ $t('No financial records!') }}
                         </div>
                         
                         <div v-else class="space-y-3 custom-scrollbar overflow-y-auto max-h-[400px] pr-2">

@@ -1,6 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
+import { trans } from 'laravel-vue-i18n';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     ideas: Array,
@@ -17,8 +19,22 @@ const saveIdea = () => {
     });
 };
 
-const deleteIdea = (id) => {
-    if(confirm("هل أنت متأكد من حذف هذه الفكرة؟")) {
+const deleteIdea = async (id) => {
+    const result = await Swal.fire({
+        title: trans('Are you sure?'),
+        text: trans("You won't be able to revert this!"),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444', // red-500
+        cancelButtonColor: '#4b5563', // gray-600
+        confirmButtonText: trans('Yes, delete it!'),
+        cancelButtonText: trans('Cancel'),
+        background: '#0d1304',
+        color: '#fff',
+        customClass: { popup: 'border border-gray-800 rounded-2xl shadow-2xl' }
+    });
+
+    if (result.isConfirmed) {
         router.delete(route('ideas.delete', id), { preserveScroll: true });
     }
 };
@@ -30,7 +46,7 @@ const deleteIdea = (id) => {
     <AuthenticatedLayout>
         <template #header>
             <h2 class="font-semibold text-2xl text-accent leading-tight flex items-center gap-2">
-                <span>💡</span> ذاكرة الأفكار
+                <span>💡</span> {{ $t('Ideas Memory') }}
             </h2>
         </template>
 
@@ -41,8 +57,8 @@ const deleteIdea = (id) => {
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-xl relative">
                     <div class="absolute -top-12 -left-12 w-40 h-40 bg-accent opacity-20 rounded-full blur-[60px]"></div>
                     <div class="relative z-10">
-                        <h3 class="text-2xl font-bold text-white mb-2">ما الذي يدور في ذهنك؟</h3>
-                        <p class="text-gray-400 mb-6">سجل الفكرة مهما كانت صغيرة، وسيتكفل المساعد الذكي بتحليلها واقتراح خطة لتطويرها.</p>
+                        <h3 class="text-2xl font-bold text-white mb-2">{{ $t("What's on your mind?") }}</h3>
+                        <p class="text-gray-400 mb-6">{{ $t('Record any idea...') }}</p>
                         
                         <form @submit.prevent="saveIdea" class="flex flex-col gap-4">
                             <textarea
@@ -58,7 +74,7 @@ const deleteIdea = (id) => {
                                 class="bg-accent text-white px-8 py-3 rounded-xl font-bold hover:bg-opacity-80 transition disabled:opacity-50 self-end flex items-center gap-2"
                             >
                                 <span v-if="ideaForm.processing" class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full block"></span>
-                                <span>{{ ideaForm.processing ? 'الذكاء يحلل الفكرة...' : 'حفظ وتحليل الفكرة 🧠' }}</span>
+                                <span>{{ ideaForm.processing ? $t('Thinking...') : $t('Save and Analyze Idea') }}</span>
                             </button>
                         </form>
                     </div>
@@ -77,7 +93,7 @@ const deleteIdea = (id) => {
                         <div class="p-4 bg-gray-900 border border-gray-800 rounded-lg mt-4" v-if="idea.ai_analysis">
                             <div class="flex items-center gap-2 mb-2 text-accent text-sm">
                                 <span>🤖</span>
-                                <span class="font-bold">تحليل تطويري:</span>
+                                <span class="font-bold">{{ $t('AI Analysis:') }}</span>
                             </div>
                             <p class="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{{ idea.ai_analysis }}</p>
                         </div>
@@ -85,7 +101,7 @@ const deleteIdea = (id) => {
 
                     <div v-if="ideas.length === 0" class="col-span-1 md:col-span-2 text-center py-12 text-gray-500">
                         <span class="block text-5xl mb-4">💭</span>
-                        لا يوجد أفكار مسجلة. ابدأ بكتابة فكرة واكتشف كيف يحللها الذكاء الاصطناعي!
+                        {{ $t('No ideas yet.') }}
                     </div>
                 </div>
 

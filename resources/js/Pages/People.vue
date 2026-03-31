@@ -3,6 +3,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
+import { trans } from 'laravel-vue-i18n';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     people: Array,
@@ -41,8 +43,22 @@ const touchPerson = (id) => {
     router.patch(route('people.touch', id), {}, { preserveScroll: true });
 };
 
-const deletePerson = (id) => {
-    if(confirm("هل أنت متأكد من حذف هذا الشخص من ذاكرتك؟")) {
+const deletePerson = async (id) => {
+    const result = await Swal.fire({
+        title: trans('Are you sure?'),
+        text: trans("You won't be able to revert this!"),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#4b5563',
+        confirmButtonText: trans('Yes, delete it!'),
+        cancelButtonText: trans('Cancel'),
+        background: '#0d1304',
+        color: '#fff',
+        customClass: { popup: 'border border-gray-800 rounded-2xl shadow-2xl' }
+    });
+
+    if (result.isConfirmed) {
         router.delete(route('people.delete', id), { preserveScroll: true });
     }
 };
@@ -54,7 +70,7 @@ const deletePerson = (id) => {
     <AuthenticatedLayout>
         <template #header>
             <h2 class="font-semibold text-2xl text-accent leading-tight flex items-center gap-2">
-                <span>👥</span> ذاكرة الناس
+                <span>👥</span> {{ $t('People Memory') }}
             </h2>
         </template>
 
@@ -67,8 +83,8 @@ const deletePerson = (id) => {
 
                     <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div>
-                            <h3 class="text-3xl font-bold text-white mb-2">كيف هي علاقاتك؟</h3>
-                            <p class="text-gray-400 text-lg">الذكاء الاصطناعي هنا ليحافظ على قوة صلتك بمن تحب، ولتذكيرك بمن ابتعدت عنهم.</p>
+                            <h3 class="text-3xl font-bold text-white mb-2">{{ $t('How are your relations?') }}</h3>
+                            <p class="text-gray-400 text-lg">{{ $t('AI Relations Support') }}</p>
                         </div>
                         <button 
                             @click="generatePlan" 
@@ -76,8 +92,8 @@ const deletePerson = (id) => {
                             class="rounded-full bg-accent px-8 py-3 text-white hover:bg-opacity-80 transition duration-300 font-bold shadow-[0_0_20px_rgba(6,155,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             <span v-if="isGeneratingPlan" class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full block"></span>
-                            <span v-if="!isGeneratingPlan">✨ تحليل علاقاتي (AI)</span>
-                            <span v-else>جاري التحليل...</span>
+                            <span v-if="!isGeneratingPlan">{{ $t('Analyze Relations (AI)') }}</span>
+                            <span v-else>{{ $t('Thinking...') }}</span>
                         </button>
                     </div>
 
@@ -85,7 +101,7 @@ const deletePerson = (id) => {
                     <div v-if="aiPlanText" class="mt-8 p-6 bg-black bg-opacity-40 rounded-xl border border-gray-800 whitespace-pre-wrap leading-relaxed transition-all">
                        <div class="flex items-center gap-2 mb-4 text-accent">
                            <span class="text-xl">🤖</span>
-                           <h4 class="font-bold text-xl">نصيحة المساعد الذكي حول علاقاتك:</h4>
+                           <h4 class="font-bold text-xl">{{ $t('AI Advice on Relations:') }}</h4>
                        </div>
                        {{ aiPlanText }}
                     </div>
@@ -96,20 +112,20 @@ const deletePerson = (id) => {
                     
                     <!-- Add Person Form -->
                     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl relative text-white">
-                        <h3 class="text-xl font-bold mb-6">➕ إضافة شخص مهم</h3>
+                        <h3 class="text-xl font-bold mb-6">➕ {{ $t('Add Important Person') }}</h3>
                         <form @submit.prevent="addPerson" class="space-y-4">
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">الاسم</label>
-                                <input v-model="personForm.name" type="text" placeholder="مثال: يوسف، الوالدة، مديري" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" required />
+                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Name') }}</label>
+                                <input v-model="personForm.name" type="text" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" required />
                             </div>
                             
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">العلاقة (الصفة)</label>
-                                <input v-model="personForm.relation" type="text" placeholder="مثال: صديق الجامعة، والدتي" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" />
+                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Relation') }}</label>
+                                <input v-model="personForm.relation" type="text" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" />
                             </div>
 
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">درجة الأهمية</label>
+                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Importance') }}</label>
                                 <select v-model="personForm.importance" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent">
                                     <option value="عالية">عالية جداً (كالعائلة والأصدقاء المقربين)</option>
                                     <option value="متوسطة">متوسطة</option>
@@ -118,23 +134,23 @@ const deletePerson = (id) => {
                             </div>
 
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">هدايا وملاحظات عنهم (اختياري)</label>
-                                <textarea v-model="personForm.gifts_notes" placeholder="يفضل القهوة السادة، أو تاريخ ميلاده..." class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent h-24"></textarea>
+                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Gifts & Notes (Optional)') }}</label>
+                                <textarea v-model="personForm.gifts_notes" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent h-24"></textarea>
                             </div>
                             
                             <button type="submit" :disabled="personForm.processing" class="bg-accent text-white px-4 py-2 rounded-lg font-bold hover:bg-opacity-80 transition w-full disabled:opacity-50 mt-2">
-                                حفظ في الذاكرة
+                                {{ $t('Save to Memory') }}
                             </button>
                         </form>
                     </div>
 
                     <!-- List of People -->
                     <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl relative flex flex-col">
-                        <h3 class="text-xl font-bold text-white mb-6">قائمة المعارف المسجلين</h3>
+                        <h3 class="text-xl font-bold text-white mb-6">{{ $t('Registered People List') }}</h3>
                         
                         <div v-if="people.length === 0" class="text-center py-12 text-gray-500 flex flex-col items-center">
                             <span class="text-5xl mb-4">📇</span>
-                            <p>لم تقم بإضافة أي شخص بعد.<br>ابدأ بإضافة أهم الأشخاص في حياتك لدعم الذكاء الاصطناعي بمعرفتهم.</p>
+                            <p>{{ $t('No people added yet.') }}</p>
                         </div>
                         
                         <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4 custom-scrollbar overflow-y-auto max-h-[500px] pr-2">

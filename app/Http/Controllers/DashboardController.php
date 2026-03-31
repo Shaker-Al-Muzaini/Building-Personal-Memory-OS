@@ -37,14 +37,19 @@ class DashboardController extends Controller
         $tasksList = count($tasks) > 0 ? implode(', ', $tasks) : 'لا يوجد مهام حتى الآن';
         $habitName = $habit ? $habit->name : 'لا يوجد عادات بعد';
         
-        $prompt = "مرحباً! أنا مستخدم بنظام Personal Memory OS. مهامي اليوم هي: [$tasksList]. وعادتي التي أريد المواظبة عليها: [$habitName]. وهدفي: [تعلم مهارة جديدة]. حلل مهامي واقترح جدول اليوم ونصائح نفسية وصحية سريعة لتشجيعي.";
+        $locale = $request->input('locale', 'ar');
+        $languageName = $locale === 'ar' ? 'العربية' : 'English';
+        
+        $prompt = $locale === 'ar' 
+            ? "مرحباً! أنا مستخدم بنظام Personal Memory OS. مهامي اليوم هي: [$tasksList]. وعادتي التي أريد المواظبة عليها: [$habitName]. وهدفي: [تعلم مهارة جديدة]. حلل مهامي واقترح جدول اليوم ونصائح نفسية وصحية سريعة لتشجيعي."
+            : "Hello! I am a user of Personal Memory OS. My tasks today are: [$tasksList]. My habit: [$habitName]. My goal: [Learning a new skill]. Analyze my tasks and suggest a daily schedule with psychological and health tips.";
 
         try {
             // استخدام مكتبة ذكاء اصطناعي ذكية ومجانية بالكامل وتخطي فحص SSL لتعمل محلياً
             $response = Http::withoutVerifying()->post('https://text.pollinations.ai/openai', [
                 'model' => 'openai',
                 'messages' => [
-                    ['role' => 'system', 'content' => 'أنت العقل المساعد والذكي للمستخدم، اسمك Personal Memory OS. كلامك مختصر وذكي وملهم ومكتوب بلغة عربية واضحة ومقسم لنقاط بسيطة.'],
+                    ['role' => 'system', 'content' => "You are Memory OS, a smart AI assistant. Speak in a concise, inspiring, and intelligent way. Use $languageName language only. Format your response in simple bullet points."],
                     ['role' => 'user', 'content' => $prompt]
                 ],
             ]);

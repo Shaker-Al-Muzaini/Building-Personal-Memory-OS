@@ -2,6 +2,8 @@
 import { Head, Link } from "@inertiajs/vue3";
 import { onMounted, onUnmounted, ref } from "vue";
 import * as THREE from "three";
+import LanguageSwitcher from "@/Components/LanguageSwitcher.vue";
+import { getActiveLanguage } from "laravel-vue-i18n";
 
 defineProps({
     canLogin: { type: Boolean },
@@ -55,76 +57,86 @@ const initThree = () => {
     window.addEventListener("resize", updateSize);
 };
 
-onMounted(() => { initThree(); });
-onUnmounted(() => { window.removeEventListener("resize", () => {}); });
+onMounted(() => { 
+    initThree(); 
+});
+
+onUnmounted(() => { 
+    window.removeEventListener("resize", () => {}); 
+});
 </script>
 
 <template>
-    <Head title="Personal Memory OS — عقل موازٍ للحياة" />
+    <Head :title="`${$t('Memory OS')} — ${$t('Second Brain')}`" />
 
-    <div class="os-premium min-h-screen text-white font-cairo selection:bg-accent/40 overflow-x-hidden" dir="rtl">
+    <div class="os-premium min-h-screen text-white font-cairo selection:bg-accent/40 overflow-x-hidden transition-all duration-500">
         
         <!-- Background FX -->
         <div ref="canvasContainer" class="fixed inset-0 z-0 pointer-events-none opacity-40"></div>
 
-        <!-- Navbar (From Screenshot Style) -->
+        <!-- Navbar (Bilingual Optimized) -->
         <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-12 py-6 bg-black">
             <div class="flex items-center gap-2">
-                <span class="font-black text-2xl tracking-tighter text-white">MEMORY OS</span>
+                <span class="font-black text-2xl tracking-tighter text-white">{{ $t('Memory OS') }}</span>
                 <span class="text-3xl">🧠</span>
             </div>
-            <div class="flex items-center gap-10" v-if="canLogin">
-                <Link v-if="!$page.props.auth.user" :href="route('login')" class="text-sm font-bold text-gray-300 hover:text-white transition">دخول</Link>
-                <Link v-if="!$page.props.auth.user" :href="route('register')" class="bg-white text-black px-8 py-3 rounded-full text-base font-black border-2 border-white hover:bg-black hover:text-white transition">انضم الآن</Link>
-                <Link v-else :href="route('dashboard')" class="bg-white text-black px-8 py-3 rounded-full text-base font-black shadow-lg">لوحة التحكم</Link>
+            
+            <div class="flex items-center gap-8">
+                <LanguageSwitcher />
+
+                <div class="flex items-center gap-6" v-if="canLogin">
+                    <Link v-if="!$page.props.auth.user" :href="route('login')" class="text-sm font-bold text-gray-300 hover:text-white transition">{{ $t('Sign In') }}</Link>
+                    <Link v-if="!$page.props.auth.user" :href="route('register')" class="bg-white text-black px-8 py-3 rounded-full text-base font-black border-2 border-white hover:bg-black hover:text-white transition">{{ $t('Join Now') }}</Link>
+                    <Link v-else :href="route('dashboard')" class="bg-white text-black px-8 py-3 rounded-full text-base font-black shadow-lg">{{ $t('Dashboard') }}</Link>
+                </div>
             </div>
         </nav>
 
         <main class="relative z-10 pt-48 pb-32 px-6 max-w-7xl mx-auto flex flex-col items-center">
             
-            <!-- Focused Hero Section -->
+            <!-- Hero Section -->
             <div class="text-center mb-24 max-w-5xl">
-                <h1 class="font-black mb-10 leading-[1.3] tracking-tighter">
-                    <span class="block text-4xl md:text-5xl text-gray-400 font-medium mb-6">حوّل حياتك إلى</span>
-                    <span class="block text-6xl md:text-9xl rakez-gradient drop-shadow-[0_15px_30px_rgba(6,155,255,0.4)]">تجربة رقمية ذكية</span>
+                <h1 class="font-black mb-10 leading-tight tracking-tighter">
+                    <span class="block text-4xl md:text-5xl text-gray-400 font-medium mb-4">{{ $t('Turn your life into') }}</span>
+                    <span class="block text-6xl md:text-9xl rakez-gradient glow-text">{{ $t('Smart Experience') }}</span>
                 </h1>
 
                 <p class="text-xl md:text-3xl text-gray-400 font-light max-w-4xl mx-auto leading-relaxed mb-20">
-                    نظّم أفكارك، أموالك، علاقاتك، وقراراتك في نظام واحد يتطور معك.<br/>
-                    <span class="text-white font-medium border-b-2 border-accent pb-1 inline-block mt-4">ليس مجرد موقع، بل هو عقلك الثاني.</span>
+                    {{ $t('Bento Description') }}<br/>
+                    <span class="text-white font-medium border-b-2 border-accent pb-1 inline-block mt-4">{{ $t('Not just a website') }}</span>
                 </p>
 
                 <div class="flex items-center justify-center">
                     <Link :href="route('register')" class="mega-cta-final">
-                        ابدأ رحلتك بالمجان
+                        {{ $t('Start your journey for free') }}
                     </Link>
                 </div>
             </div>
 
             <!-- Bento Tiles -->
             <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div class="p-card group">
-                    <div class="p-icon bg-blue-500/10 text-blue-400">💡</div>
-                    <h3 class="text-xl font-black mb-3">مختبر الأفكار</h3>
-                    <p class="text-sm text-gray-400">حلل أفكارك وطورها بذكاء.</p>
+                <div class="p-card group cursor-default">
+                    <div class="p-icon bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">💡</div>
+                    <h3 class="text-xl font-black mb-3">{{ $t('Idea Lab') }}</h3>
+                    <p class="text-sm text-gray-500 line-clamp-2">{{ $t('Idea Lab Desc') }}</p>
                 </div>
 
-                <div class="p-card group">
-                    <div class="p-icon bg-green-500/10 text-green-400">💰</div>
-                    <h3 class="text-xl font-black mb-3">المستشار المالي</h3>
-                    <p class="text-sm text-gray-400">ميزانية وتحليل مالي ذكي.</p>
+                <div class="p-card group cursor-default">
+                    <div class="p-icon bg-green-500/10 text-green-400 group-hover:bg-green-500 group-hover:text-white transition-all">💰</div>
+                    <h3 class="text-xl font-black mb-3">{{ $t('Smart Budget') }}</h3>
+                    <p class="text-sm text-gray-400 line-clamp-2">{{ $t('Smart Budget Desc') }}</p>
                 </div>
 
-                <div class="p-card group">
-                    <div class="p-icon bg-purple-500/10 text-purple-400">⚖️</div>
-                    <h3 class="text-xl font-black mb-3">مساعد القرارات</h3>
-                    <p class="text-sm text-gray-400">مستشارك الخاص عند الحيرة.</p>
+                <div class="p-card group cursor-default">
+                    <div class="p-icon bg-purple-500/10 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-all">⚖️</div>
+                    <h3 class="text-xl font-black mb-3">{{ $t('Decision Advisor') }}</h3>
+                    <p class="text-sm text-gray-400 line-clamp-2">{{ $t('Decision Advisor Desc') }}</p>
                 </div>
 
-                <div class="p-card group">
-                    <div class="p-icon bg-rose-500/10 text-rose-400">🤝</div>
-                    <h3 class="text-xl font-black mb-3">دليل العلاقات</h3>
-                    <p class="text-sm text-gray-400">تحسين جودة علاقاتك الاجتماعية.</p>
+                <div class="p-card group cursor-default">
+                    <div class="p-icon bg-rose-500/10 text-rose-400 group-hover:bg-rose-500 group-hover:text-white transition-all">🤝</div>
+                    <h3 class="text-xl font-black mb-3">{{ $t('Social Hub') }}</h3>
+                    <p class="text-sm text-gray-400 line-clamp-2">{{ $t('Social Hub Desc') }}</p>
                 </div>
             </div>
 
@@ -151,6 +163,10 @@ onUnmounted(() => { window.removeEventListener("resize", () => {}); });
     -webkit-text-fill-color: transparent;
 }
 
+.glow-text {
+    text-shadow: 0 0 30px rgba(66, 179, 255, 0.3);
+}
+
 .mega-cta-final {
     background: #069BFF;
     color: white;
@@ -174,10 +190,13 @@ onUnmounted(() => { window.removeEventListener("resize", () => {}); });
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 20px;
     padding: 2.5rem;
-    text-align: right;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
 }
+
+/* RTL / LTR alignment auto-switch */
+[dir="rtl"] .p-card { text-align: right; }
+[dir="ltr"] .p-card { text-align: left; }
 
 .p-card:hover {
     background: rgba(255, 255, 255, 0.02);

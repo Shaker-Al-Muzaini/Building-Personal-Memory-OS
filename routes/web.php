@@ -38,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ذاكرة الأفكار
     Route::get('/ideas', [IdeaController::class, 'index'])->name('ideas.index');
     Route::post('/ideas', [IdeaController::class, 'store'])->name('ideas.store');
+    Route::patch('/ideas/{id}/status', [IdeaController::class, 'updateStatus'])->name('ideas.status');
     Route::delete('/ideas/{id}', [IdeaController::class, 'destroy'])->name('ideas.delete');
 
     // ذاكرة القرارات

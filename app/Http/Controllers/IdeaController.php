@@ -21,29 +21,54 @@ class IdeaController extends Controller
     {
         $request->validate(['content' => 'required|string']);
 
-        $prompt = "لدي هذه الفكرة: {$request->content}\nحلل هذه الفكرة وأعطني خطوتين لتطويرها، وفي أي تصنيف تندرج بوضوح وإيجاز.";
+        $prompt = "لدي هذه الفكرة: {$request->content}\nحلل هذه الفكرة وأعطني خطوتين لتطويرها. استخرج تصنيفاً واحداً مختصراً جداً (كلمة واحدة) لهذه الفكرة. اجعل الرد يبدأ بالتصنيف ثم سطر جديد ثم التحليل.";
         $ai_analysis = null;
+        $category = 'عام';
 
         try {
             $response = Http::withoutVerifying()->post('https://text.pollinations.ai/openai', [
                 'model' => 'openai',
                 'messages' => [
-                    ['role' => 'system', 'content' => 'أنت العقل الثاني والمحلل الفكري للمستخدم، مبرمج لتوسيع أفكاره وتحليلها وإضافة قيمة إبداعية لها.'],
+                    ['role' => 'system', 'content' => 'أنت العقل الثاني والمحلل الفكري للمستخدم. ردك يجب أن يبدأ بالتصنيف في أول سطر ثم التحليل.'],
                     ['role' => 'user', 'content' => $prompt]
                 ],
             ]);
-            $ai_analysis = $response->json('choices.0.message.content');
+            $full_response = $response->json('choices.0.message.content');
+            
+            // محاولة استخراج التصنيف من أول سطر
+            $lines = explode("\n", $full_response);
+            $category = trim(str_replace(['التصنيف:', 'Category:', '#'], '', $lines[0]));
+            if (strlen($category) > 20) $category = 'فكرة';
+            
+            $ai_analysis = implode("\n", array_slice($lines, 1));
         } catch (\Exception $e) {
-            $ai_analysis = "لم يتمكن الذكاء الاصطناعي من تحليل الفكرة حالياً. يمكنك تحديثها لاحقاً.";
+            $ai_analysis = "لم يتمكن الذكاء الاصطناعي من تحليل الفكرة حالياً.";
         }
 
         DB::table('ideas')->insert([
             'user_id' => $request->user()->id,
             'content' => $request->content,
             'ai_analysis' => $ai_analysis,
+            'status' => 'draft',
+            'category' => $category,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        return back();
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate(['status' => 'required|string|in:draft,developing,ready']);
+        
+        DB::table('ideas')
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->update([
+                'status' => $request->status,
+                'updated_at' => now()
+            ]);
 
         return back();
     }

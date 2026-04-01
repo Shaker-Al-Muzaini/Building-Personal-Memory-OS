@@ -91,5 +91,9 @@
     "Wallet Balance": "رصيد المحفظة",
     "Last Idea": "آخر فكرة سجلتها",
     "Reconnect with": "تواصل مع",
-    "Add friends": "أضف أصدقاءك للذاكرة"
+    "Add friends": "أضف أصدقاءك للذاكرة",
+    "Search...": "ابحث في ذاكرتك...",
+    "Search your entire memory...": "ابحث في كل أركان عقلك الموازي...",
+    "No connections found in your memory.": "لم أجد أي روابط متعلقة بهذا البحث في ذاكرتك.",
+    "Searching everywhere...": "جاري البحث في كل الأقسام..."
 }

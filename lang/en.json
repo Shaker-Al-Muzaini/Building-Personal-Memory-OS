@@ -92,5 +92,9 @@
     "Wallet Balance": "Wallet Balance",
     "Last Idea": "Last Idea",
     "Reconnect with": "Reconnect with",
-    "Add friends": "Add some friends"
+    "Add friends": "Add some friends",
+    "Search...": "Search memory...",
+    "Search your entire memory...": "Search your entire memory...",
+    "No connections found in your memory.": "No connections found in your memory.",
+    "Searching everywhere...": "Searching across all memories..."
 }

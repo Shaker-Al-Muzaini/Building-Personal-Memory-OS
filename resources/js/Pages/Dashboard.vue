@@ -117,7 +117,7 @@ const saveHabit = () => {
             <!-- Overview Section (Quick Access) -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Money Glance -->
-                <div @click="router.visit(route('money'))" class="bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/10 p-6 rounded-3xl cursor-pointer hover:border-green-500/30 transition-all group">
+                <div @click="router.visit(route('money.index'))" class="bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/10 p-6 rounded-3xl cursor-pointer hover:border-green-500/30 transition-all group">
                     <div class="flex justify-between items-start mb-4">
                         <span class="text-3xl">💰</span>
                         <span class="text-green-500 font-bold group-hover:scale-110 transition-transform">→</span>
@@ -127,7 +127,7 @@ const saveHabit = () => {
                 </div>
 
                 <!-- Idea Reminder -->
-                <div @click="router.visit(route('ideas'))" class="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/10 p-6 rounded-3xl cursor-pointer hover:border-purple-500/30 transition-all group">
+                <div @click="router.visit(route('ideas.index'))" class="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/10 p-6 rounded-3xl cursor-pointer hover:border-purple-500/30 transition-all group">
                     <div class="flex justify-between items-start mb-4">
                         <span class="text-3xl">💡</span>
                         <span class="text-purple-500 font-bold group-hover:scale-110 transition-transform">→</span>
@@ -137,7 +137,7 @@ const saveHabit = () => {
                 </div>
 
                 <!-- Social Reminder -->
-                <div @click="router.visit(route('people'))" class="bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/10 p-6 rounded-3xl cursor-pointer hover:border-orange-500/30 transition-all group">
+                <div @click="router.visit(route('people.index'))" class="bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/10 p-6 rounded-3xl cursor-pointer hover:border-orange-500/30 transition-all group">
                     <div class="flex justify-between items-start mb-4">
                         <span class="text-3xl">🤝</span>
                         <span class="text-orange-500 font-bold group-hover:scale-110 transition-transform">→</span>

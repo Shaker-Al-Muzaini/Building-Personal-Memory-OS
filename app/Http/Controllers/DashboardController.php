@@ -17,12 +17,12 @@ class DashboardController extends Controller
         $habit = DB::table('habits')->where('user_id', $user->id)->first();
         
         // --- Added for Dashboard Overview ---
-        $transactions = DB::table('money_transactions')->where('user_id', $user->id)->get();
+        $transactions = DB::table('transactions')->where('user_id', $user->id)->get();
         $balance = $transactions->sum(fn($t) => $t->type === 'income' ? $t->amount : -$t->amount);
         
-        $lastIdea = DB::table('ideas_memory')->where('user_id', $user->id)->latest()->first();
+        $lastIdea = DB::table('ideas')->where('user_id', $user->id)->latest()->first();
         
-        $personToContact = DB::table('people_memory')
+        $personToContact = DB::table('people')
             ->where('user_id', $user->id)
             ->inRandomOrder()
             ->first();

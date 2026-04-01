@@ -16,13 +16,28 @@ class DashboardController extends Controller
         $tasks = DB::table('tasks')->where('user_id', $user->id)->get();
         $habit = DB::table('habits')->where('user_id', $user->id)->first();
         
-       
+        // --- Added for Dashboard Overview ---
+        $transactions = DB::table('money_transactions')->where('user_id', $user->id)->get();
+        $balance = $transactions->sum(fn($t) => $t->type === 'income' ? $t->amount : -$t->amount);
+        
+        $lastIdea = DB::table('ideas_memory')->where('user_id', $user->id)->latest()->first();
+        
+        $personToContact = DB::table('people_memory')
+            ->where('user_id', $user->id)
+            ->inRandomOrder()
+            ->first();
+
         $goal = ['title' => 'تعلم مهارة جديدة لمدة 30 دقيقة', 'status' => 'pending'];
 
         return Inertia::render('Dashboard', [
             'tasks' => $tasks,
             'habit' => $habit,
-            'goal' => $goal
+            'goal' => $goal,
+            'overview' => [
+                'balance' => $balance,
+                'last_idea' => $lastIdea ? $lastIdea->content : null,
+                'person_to_contact' => $personToContact ? $personToContact->name : null,
+            ]
         ]);
     }
 

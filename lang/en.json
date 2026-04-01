@@ -86,5 +86,11 @@
     "Cancel": "Cancel",
     "You won't be able to revert this!": "You won't be able to revert this!",
     "Great!": "✅ Great!",
-    "Your decision has been sealed.": "Your decision has been sealed and saved to memory!"
+    "Your decision has been sealed.": "Your decision has been sealed and saved to memory!",
+    "Income vs Expenses": "Income vs Expenses",
+    "Expenses by Category": "Expenses by Category",
+    "Wallet Balance": "Wallet Balance",
+    "Last Idea": "Last Idea",
+    "Reconnect with": "Reconnect with",
+    "Add friends": "Add some friends"
 }

@@ -85,5 +85,11 @@
     "Cancel": "إلغاء",
     "You won't be able to revert this!": "لن تتمكن من استعادة هذا السجل!",
     "Great!": "✅ رائع!",
-    "Your decision has been sealed.": "تم حسم قرارك بنجاح وحفظه في الذاكرة لفترة طويلة!"
+    "Your decision has been sealed.": "تم حسم قرارك بنجاح وحفظه في الذاكرة لفترة طويلة!",
+    "Income vs Expenses": "الدخل مقابل المصروفات",
+    "Expenses by Category": "المصروفات حسب التصنيف",
+    "Wallet Balance": "رصيد المحفظة",
+    "Last Idea": "آخر فكرة سجلتها",
+    "Reconnect with": "تواصل مع",
+    "Add friends": "أضف أصدقاءك للذاكرة"
 }

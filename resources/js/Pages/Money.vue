@@ -5,6 +5,8 @@ import { ref } from 'vue';
 import axios from 'axios';
 import { trans } from 'laravel-vue-i18n';
 import Swal from 'sweetalert2';
+import VueApexCharts from 'vue3-apexcharts';
+import { computed } from 'vue';
 
 const props = defineProps({
     transactions: Array,
@@ -59,6 +61,59 @@ const deleteTransaction = async (id) => {
         router.delete(route('money.delete', id), { preserveScroll: true });
     }
 };
+
+// --- Chart Logic ---
+
+const incomeVsExpenseSeries = computed(() => [
+    Number(props.summary.income),
+    Number(props.summary.expense)
+]);
+
+const incomeVsExpenseOptions = computed(() => ({
+    chart: { type: 'donut', background: 'transparent' },
+    labels: [trans('Income'), trans('Expense')],
+    colors: ['#22c55e', '#ef4444'],
+    theme: { mode: 'dark' },
+    stroke: { show: false },
+    legend: { position: 'bottom' },
+    dataLabels: { enabled: false },
+    tooltip: { theme: 'dark' }
+}));
+
+const categoryData = computed(() => {
+    const expenses = props.transactions.filter(t => t.type === 'expense');
+    const categories = {};
+    expenses.forEach(t => {
+        categories[t.category] = (categories[t.category] || 0) + Number(t.amount);
+    });
+    return categories;
+});
+
+const categorySeries = computed(() => Object.values(categoryData.value));
+
+const categoryOptions = computed(() => ({
+    chart: { type: 'donut', background: 'transparent' },
+    labels: Object.keys(categoryData.value),
+    theme: { mode: 'dark' },
+    stroke: { show: false },
+    legend: { position: 'bottom' },
+    plotOptions: {
+        pie: {
+            donut: {
+                size: '70%',
+                labels: {
+                    show: true,
+                    total: {
+                        show: true,
+                        label: trans('Total'),
+                        formatter: (w) => `${w.globals.seriesTotals.reduce((a, b) => a + b, 0)} $`
+                    }
+                }
+            }
+        }
+    },
+    tooltip: { theme: 'dark' }
+}));
 </script>
 
 <template>
@@ -115,6 +170,29 @@ const deleteTransaction = async (id) => {
                            <h4 class="font-bold text-xl">{{ $t('Financial Advisor Tip:') }}</h4>
                        </div>
                        {{ aiPlanText }}
+                    </div>
+                </div>
+
+                <!-- Financial Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
+                        <h4 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                             <span class="w-2 h-2 bg-accent rounded-full"></span>
+                             {{ $t('Income vs Expenses') }}
+                        </h4>
+                        <div class="flex justify-center">
+                            <VueApexCharts width="380" :options="incomeVsExpenseOptions" :series="incomeVsExpenseSeries" />
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
+                        <h4 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                             <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                             {{ $t('Expenses by Category') }}
+                        </h4>
+                        <div class="flex justify-center">
+                            <VueApexCharts width="380" :options="categoryOptions" :series="categorySeries" />
+                        </div>
                     </div>
                 </div>
 

@@ -115,15 +115,28 @@ const saveHabit = () => {
             </div>
 
             <!-- Overview Section (Quick Access) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <!-- Money Glance -->
                 <div @click="router.visit(route('money.index'))" class="bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/10 p-6 rounded-3xl cursor-pointer hover:border-green-500/30 transition-all group">
                     <div class="flex justify-between items-start mb-4">
                         <span class="text-3xl">💰</span>
                         <span class="text-green-500 font-bold group-hover:scale-110 transition-transform">→</span>
                     </div>
-                    <h4 class="text-gray-400 text-sm mb-1">{{ $t('Wallet Balance') }}</h4>
-                    <p class="text-2xl font-black text-white">{{ overview.balance }} $</p>
+                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Wallet Balance') }}</h4>
+                    <p class="text-2xl font-black text-white bidi-plaintext">{{ overview.balance }}</p>
+                </div>
+
+                <!-- Neural Logic Score -->
+                <div @click="router.visit(route('decisions.index'))" class="bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 p-6 rounded-3xl cursor-pointer hover:border-blue-500/30 transition-all group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-3xl">⚖️</span>
+                        <span class="text-blue-500 font-bold group-hover:scale-110 transition-transform">→</span>
+                    </div>
+                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Logic Avg') }}</h4>
+                    <div class="flex items-baseline gap-2">
+                        <p class="text-2xl font-black text-white">{{ overview.decision_logic_avg }}%</p>
+                        <span class="text-[10px] text-gray-600 font-mono">({{ overview.sealed_decisions_count }} {{ $t('Sealed') }})</span>
+                    </div>
                 </div>
 
                 <!-- Idea Reminder -->
@@ -132,8 +145,8 @@ const saveHabit = () => {
                         <span class="text-3xl">💡</span>
                         <span class="text-purple-500 font-bold group-hover:scale-110 transition-transform">→</span>
                     </div>
-                    <h4 class="text-gray-400 text-sm mb-1">{{ $t('Last Idea') }}</h4>
-                    <p class="text-white font-bold truncate">{{ overview.last_idea || $t('No ideas yet') }}</p>
+                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Last Idea') }}</h4>
+                    <p class="text-white font-bold truncate bidi-plaintext">{{ overview.last_idea || $t('No ideas yet') }}</p>
                 </div>
 
                 <!-- Social Reminder -->
@@ -142,8 +155,8 @@ const saveHabit = () => {
                         <span class="text-3xl">🤝</span>
                         <span class="text-orange-500 font-bold group-hover:scale-110 transition-transform">→</span>
                     </div>
-                    <h4 class="text-gray-400 text-sm mb-1">{{ $t('Reconnect with') }}</h4>
-                    <p class="text-white font-bold">{{ overview.person_to_contact || $t('Add friends') }}</p>
+                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Reconnect with') }}</h4>
+                    <p class="text-white font-bold bidi-plaintext">{{ overview.person_to_contact || $t('Add friends') }}</p>
                 </div>
             </div>
 
@@ -164,15 +177,16 @@ const saveHabit = () => {
                             v-model="taskForm.title" 
                             type="text"
                             :placeholder="$t('Add a new task')"
-                            class="dashboard-input w-full rtl:pr-14 ltr:pl-14"
+                            class="dashboard-input w-full bidi-plaintext ltr:pl-14 rtl:pr-14"
                             required
+                            dir="auto"
                         />
-                        <button type="submit" class="absolute rtl:left-2 ltr:right-2 px-4 py-2 bg-accent text-white rounded-xl font-black hover:bg-accent/80 active:scale-95 transition-all">
+                        <button type="submit" class="absolute ltr:right-2 rtl:left-2 px-4 py-2 bg-accent text-white rounded-xl font-black hover:bg-accent/80 active:scale-95 transition-all">
                             +
                         </button>
                     </form>
 
-                    <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scroll">
+                    <div class="space-y-4 max-h-[400px] overflow-y-auto ltr:pr-2 rtl:pl-2 custom-scroll">
                         <div v-for="task in tasks" :key="task.id" 
                             @click="toggleTask(task.id)"
                             :class="['task-pill group', task.status === 'completed' ? 'opacity-50' : '']"
@@ -180,7 +194,7 @@ const saveHabit = () => {
                             <div :class="['w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all', task.status === 'completed' ? 'bg-accent border-accent text-white' : 'border-white/10 group-hover:border-accent']">
                                 <span v-if="task.status === 'completed'">✓</span>
                             </div>
-                            <span :class="['flex-1 transition-all', task.status === 'completed' ? 'line-through text-gray-600' : 'text-gray-200']">
+                            <span :class="['flex-1 transition-all bidi-plaintext', task.status === 'completed' ? 'line-through text-gray-600' : 'text-gray-200']">
                                 {{ task.title }}
                             </span>
                         </div>

@@ -16,18 +16,29 @@ class DashboardController extends Controller
         $tasks = DB::table('tasks')->where('user_id', $user->id)->get();
         $habit = DB::table('habits')->where('user_id', $user->id)->first();
         
-        // --- Added for Dashboard Overview ---
+        // --- Added for Neural Logic & Dashboard Overview ---
         $transactions = DB::table('transactions')->where('user_id', $user->id)->get();
-        $balance = $transactions->sum(fn($t) => $t->type === 'income' ? $t->amount : -$t->amount);
+        $totalIncome = $transactions->where('type', 'income')->sum('amount');
+        $totalExpense = $transactions->where('type', 'expense')->sum('amount');
+        $balance = $totalIncome - $totalExpense;
         
-        $lastIdea = DB::table('ideas')->where('user_id', $user->id)->latest()->first();
-        
-        $personToContact = DB::table('people')
-            ->where('user_id', $user->id)
-            ->inRandomOrder()
-            ->first();
+        $pendingTasksCount = $tasks->where('status', 'pending')->count();
+        $completedTasksCount = $tasks->where('status', 'completed')->count();
+        $taskFactor = ($pendingTasksCount + $completedTasksCount) > 0 
+            ? ($completedTasksCount / ($pendingTasksCount + $completedTasksCount)) * 100 
+            : 100;
 
-        $goal = ['title' => 'تعلم مهارة جديدة لمدة 30 دقيقة', 'status' => 'pending'];
+        $avgDecisionScore = (int)DB::table('decisions')->where('user_id', $user->id)->avg(DB::raw("CAST(JSON_EXTRACT(ai_advice, '$.score') AS UNSIGNED)")) ?: 0;
+        
+        // --- Calculate Stability Index (Weighted 1-100) ---
+        // Finance (40%), Tasks (30%), Decisions (30%)
+        $financeScore = $totalIncome > 0 ? max(0, min(100, ($balance / $totalIncome) * 100)) : 50;
+        $stabilityIndex = (int)(($financeScore * 0.4) + ($taskFactor * 0.3) + ($avgDecisionScore * 0.3));
+
+        $lastIdea = DB::table('ideas')->where('user_id', $user->id)->latest()->first();
+        $personToContact = DB::table('people')->where('user_id', $user->id)->inRandomOrder()->first();
+
+        $goal = ['title' => 'تحسين كفاءة الذاكرة الشخصية', 'status' => 'pending'];
 
         return Inertia::render('Dashboard', [
             'tasks' => $tasks,
@@ -37,6 +48,10 @@ class DashboardController extends Controller
                 'balance' => $balance,
                 'last_idea' => $lastIdea ? $lastIdea->content : null,
                 'person_to_contact' => $personToContact ? $personToContact->name : null,
+                'stability_index' => $stabilityIndex,
+                'decision_logic_avg' => $avgDecisionScore,
+                'sealed_decisions_count' => DB::table('decisions')->where('user_id', $user->id)->whereNotNull('final_decision')->count(),
+                'income_expense_ratio' => $totalIncome > 0 ? (int)(($totalExpense / $totalIncome) * 100) : 0,
             ]
         ]);
     }
@@ -59,22 +74,26 @@ class DashboardController extends Controller
             : "Hello! I am a user of Personal Memory OS. My tasks today are: [$tasksList]. My habit: [$habitName]. My goal: [Learning a new skill]. Analyze my tasks and suggest a daily schedule with psychological and health tips.";
 
         try {
-            $response = Http::withoutVerifying()->post('https://text.pollinations.ai/openai', [
-                'model' => 'openai',
-                'messages' => [
-                    ['role' => 'system', 'content' => "You are Memory OS, a smart AI assistant. Speak in a concise, inspiring, and intelligent way. Use $languageName language only. Format your response in simple bullet points."],
-                    ['role' => 'user', 'content' => $prompt]
-                ],
-            ]);
+            
+            $response = Http::timeout(20)->withoutVerifying()->get("https://text.pollinations.ai/" . rawurlencode($prompt) . "?model=openai&cache=false");
 
-            return response()->json([
-                'plan' => $response->json('choices.0.message.content') ?? 'عذراً، لم أتمكن من إعداد الخطة اليوم (تأكد من إعدادات مفتاح API).'
-            ]);
+            if ($response->successful()) {
+                $plan = $response->body();
+                return response()->json(['plan' => $plan]);
+            }
+
+            $fallbackPlan = $locale === 'ar' 
+                ? "💡 نصيحة سريعة: ركز على المهام الأكثر إلحاحاً اليوم، وحاول تقليل المصاريف الجانبية لزيادة توازنك المالي."
+                : "💡 Strategic Tip: Focus on urgent tasks and reduce side expenses to bolster your financial stability.";
+            
+            return response()->json(['plan' => $fallbackPlan]);
             
         } catch (\Exception $e) {
             return response()->json([
-                'plan' => 'حدث خطأ في الاتصال بالذكاء الاصطناعي: ' . $e->getMessage()
-            ], 500);
+                'plan' => $locale === 'ar' 
+                    ? "⚠️ تنبيه: تعذر الوصول للسيرفر. استمر في إنتاجك اليومي." 
+                    : "⚠️ Connection Issue. Keep up your productivity."
+            ]);
         }
     }
 

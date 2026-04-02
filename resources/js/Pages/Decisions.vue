@@ -111,10 +111,10 @@ const parseAdvice = (advice) => {
                                 <div class="relative">
                                     <textarea
                                         v-model="decisionForm.problem"
-                                        class="w-full bg-black/40 border border-white/10 rounded-[30px] px-8 py-6 text-white focus:ring-accent focus:border-accent text-xl font-light placeholder:text-gray-800 min-h-[180px] transition-all resize-none shadow-inner"
+                                        class="w-full bg-black/40 border border-white/10 rounded-[30px] px-8 py-6 text-white focus:ring-accent focus:border-accent text-xl font-light placeholder:text-gray-800 min-h-[180px] transition-all resize-none shadow-inner bidi-plaintext"
                                         :placeholder="$t('Example: Should I leave my current job to start my own tech project?')"
                                         required
-                                        :dir="$page.props.locale === 'ar' ? 'rtl' : 'ltr'"
+                                        dir="auto"
                                     ></textarea>
                                 </div>
                                 
@@ -162,11 +162,11 @@ const parseAdvice = (advice) => {
                         <!-- Problem Header -->
                         <div class="mb-10 text-center max-w-4xl mx-auto">
                             <span class="text-[10px] uppercase tracking-[0.4em] font-black text-accent/60 mb-3 block">Neural Input #{{ decision.id }}</span>
-                            <h4 class="text-3xl font-black text-white mb-4 leading-tight">{{ decision.problem }}</h4>
+                            <h4 class="text-3xl font-black text-white mb-4 leading-tight bidi-plaintext">{{ decision.problem }}</h4>
                             <div class="flex justify-center items-center gap-4 text-xs text-gray-600 font-mono">
                                 <span>{{ new Date(decision.created_at).toLocaleDateString() }}</span>
                                 <span class="w-1 h-1 rounded-full bg-white/10"></span>
-                                <span class="uppercase">{{ decision.final_decision ? trans('Sealed') : trans('Pending') }}</span>
+                                <span class="uppercase">{{ decision.final_decision ? $t('Sealed') : $t('Pending') }}</span>
                             </div>
                         </div>
                         
@@ -186,7 +186,7 @@ const parseAdvice = (advice) => {
                                         {{ $t('Potential Rewards') }}
                                     </h5>
                                     <ul class="space-y-4 text-right">
-                                        <li v-for="pro in parseAdvice(decision.ai_advice).pros" :key="pro" class="flex items-start justify-end gap-3 text-gray-300 font-light leading-relaxed">
+                                        <li v-for="pro in parseAdvice(decision.ai_advice).pros" :key="pro" class="flex items-start justify-end gap-3 text-gray-300 font-light leading-relaxed bidi-plaintext">
                                             <span>{{ pro }}</span>
                                             <span class="text-green-500/60 mt-1">✓</span>
                                         </li>
@@ -200,7 +200,7 @@ const parseAdvice = (advice) => {
                                         {{ $t('Identified Risks') }}
                                     </h5>
                                     <ul class="space-y-4 text-right">
-                                        <li v-for="con in parseAdvice(decision.ai_advice).cons" :key="con" class="flex items-start justify-end gap-3 text-gray-300 font-light leading-relaxed">
+                                        <li v-for="con in parseAdvice(decision.ai_advice).cons" :key="con" class="flex items-start justify-end gap-3 text-gray-300 font-light leading-relaxed bidi-plaintext">
                                             <span>{{ con }}</span>
                                             <span class="text-red-500/60 mt-1">⚠</span>
                                         </li>
@@ -235,10 +235,10 @@ const parseAdvice = (advice) => {
                                         <h5 class="text-accent font-black text-xs uppercase tracking-widest">{{ $t('Strategic Insight') }}</h5>
                                         <span class="text-2xl">🔮</span>
                                     </div>
-                                    <p class="text-white/80 font-light italic leading-relaxed mb-6">{{ parseAdvice(decision.ai_advice).analysis }}</p>
+                                    <p class="text-white/80 font-light italic leading-relaxed mb-6 bidi-plaintext">{{ parseAdvice(decision.ai_advice).analysis }}</p>
                                     <div class="p-5 bg-accent/10 border border-accent/20 rounded-2xl text-center">
                                         <span class="text-[10px] text-accent font-black block mb-1 uppercase tracking-widest opacity-60">{{ $t('Suggested Action') }}</span>
-                                        <p class="text-accent font-black text-xl italic">"{{ parseAdvice(decision.ai_advice).suggestion }}"</p>
+                                        <p class="text-accent font-black text-xl italic bidi-plaintext">"{{ parseAdvice(decision.ai_advice).suggestion }}"</p>
                                     </div>
                                 </div>
                             </div>
@@ -247,19 +247,19 @@ const parseAdvice = (advice) => {
                         <!-- Decision Finalization Box -->
                         <div class="mt-12 pt-10 border-t border-white/5">
                             <div v-if="!decision.final_decision" class="max-w-2xl mx-auto space-y-6">
-                                <label class="block text-center text-gray-500 font-black uppercase tracking-[0.2em] text-xs">حسم الصراع في ذاكرتك</label>
+                                <label class="block text-center text-gray-500 font-black uppercase tracking-[0.2em] text-xs bidi-plaintext">{{ $t('Seal conflict in your memory') }}</label>
                                 <div class="flex gap-4 p-2 bg-black/40 border border-white/5 rounded-[30px] shadow-inner">
                                     <button @click="finalizeDecision(decision.id, choices[decision.id])" class="bg-accent hover:bg-accent/80 text-white px-8 py-4 rounded-[22px] font-black shadow-xl transition-all active:scale-95 group/btn">
                                         {{ $t('Seal It') }}
-                                        <span class="inline-block group-hover/btn:translate-x-1 transition-transform mr-1">⚡</span>
+                                        <span class="inline-block group-hover/btn:translate-x-1 transition-transform mr-1 text-xs">⚡</span>
                                     </button>
                                     <input 
                                         type="text" 
                                         v-model="choices[decision.id]" 
                                         :placeholder="$t('My Final Choice is...')" 
-                                        class="flex-1 bg-transparent border-none rounded-full px-6 py-4 text-white focus:ring-0 text-lg font-light transition-all" 
-                                        :dir="$page.props.locale === 'ar' ? 'rtl' : 'ltr'"
+                                        class="flex-1 bg-transparent border-none rounded-full px-6 py-4 text-white focus:ring-0 text-lg font-light transition-all bidi-plaintext" 
                                         @keyup.enter="finalizeDecision(decision.id, choices[decision.id])" 
+                                        dir="auto"
                                     />
                                 </div>
                             </div>
@@ -270,7 +270,7 @@ const parseAdvice = (advice) => {
                                     <div class="absolute inset-x-0 bottom-0 h-[2px] bg-accent"></div>
                                     <div class="relative z-10 flex flex-col items-center gap-1 text-center">
                                         <span class="text-[10px] font-black text-accent uppercase tracking-[0.5em] mb-2">{{ $t('Neural Decision Sealed') }}</span>
-                                        <p class="text-white text-2xl font-black">{{ decision.final_decision }}</p>
+                                        <p class="text-white text-2xl font-black bidi-plaintext">{{ decision.final_decision }}</p>
                                     </div>
                                     <!-- Seal Icon Bg -->
                                     <span class="absolute -right-8 -bottom-8 text-8xl opacity-10 blur-sm transform rotate-12 group-hover:rotate-0 transition-transform duration-1000">🖋️</span>
@@ -285,11 +285,11 @@ const parseAdvice = (advice) => {
                         <div class="w-32 h-32 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8 text-6xl shadow-2xl border border-white/5 text-center">
                             {{ activeFilter === 'pending' ? '⚖️' : '📚' }}
                         </div>
-                        <h4 class="text-2xl font-black text-white mb-2 text-center">
+                        <h4 class="text-2xl font-black text-white mb-2 text-center bidi-plaintext">
                             {{ activeFilter === 'pending' ? $t('No decisions are waiting in the lab.') : $t('Your archives are currently empty.') }}
                         </h4>
-                        <p class="text-gray-600 font-light text-center">
-                            {{ activeFilter === 'pending' ? 'استخدم المحلل في الأعلى لبدء رحلة الحسم.' : 'عندما تحسم قرارك، سيُحفظ هنا للأبد ليكون مرجعاً لحكمتك.' }}
+                        <p class="text-gray-600 font-light text-center bidi-plaintext">
+                            {{ activeFilter === 'pending' ? $t('Use advisor to start analysis.') : $t('Archives empty desc') }}
                         </p>
                     </div>
                 </TransitionGroup>
@@ -303,6 +303,11 @@ const parseAdvice = (advice) => {
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #062F69; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+.bidi-plaintext {
+    unicode-bidi: plaintext;
+    text-align: start;
+}
 
 .list-enter-active,
 .list-leave-active {

@@ -32,41 +32,53 @@ class DecisionController extends Controller
 
         $context = "السياق الحالي للمستخدم: \n- الرصيد المالي: {$balance} $ \n- عدد المهام المعلقة: {$pendingTasksCount} مهام \n- أفكار حديثة: " . implode(', ', $recentIdeas);
 
-        $prompt = "لدي هذه المشكلة/القرار: {$request->problem}\n" .
-                  "{$context}\n" .
-                  "حللها برمجياً وأعطني الرد بتنسيق JSON حصرياً كالتالي:\n" .
+        $prompt = "Analyze this decision/problem: \"{$request->problem}\"\n" .
+                  "User Context: Balance: {$balance}, Pending Tasks: {$pendingTasksCount}.\n" .
+                  "RESPONSE MUST BE ONLY A VALID JSON IN ARABIC. NOTHING ELSE.\n" .
+                  "Example format:\n" .
                   "{\n" .
-                  "  \"pros\": [\"إيجابية 1\", \"إيجابية 2\"],\n" .
-                  "  \"cons\": [\"سلبية 1\", \"سلبية 2\"],\n" .
-                  "  \"analysis\": \"تحليل موجز يربط القرار بوضعي المالي ومهامي الحالية\",\n" .
+                  "  \"pros\": [\"نص عربي 1\", \"نص عربي 2\"],\n" .
+                  "  \"cons\": [\"خطر عربي 1\"],\n" .
+                  "  \"analysis\": \"تحليل يربط بين المال والوقت والقرار\",\n" .
                   "  \"suggestion\": \"القرار المقترح\",\n" .
-                  "  \"score\": 85\n" . // درجة منطقية القرار من 100 بناء على المعطيات
-                  "}\n" .
-                  "لا تكتب أي نص قبل أو بعد الـ JSON.";
+                  "  \"score\": 80\n" .
+                  "}";
 
         try {
             $response = Http::withoutVerifying()->post('https://text.pollinations.ai/openai', [
                 'model' => 'openai',
                 'messages' => [
-                    ['role' => 'system', 'content' => 'أنت محلل قرارات استراتيجي عالي الدقة، تأخذ بعين الاعتبار الموارد المالية والوقتية للمستخدم.'],
+                    ['role' => 'system', 'content' => "أنت محلل قرارات استراتيجي عالي الدقة. تكلم باللغة العربية بأسلوب فخم وذكي. اخرج النتائج بصيغة JSON فقط. استخدم dir=auto للمحتوى المختلط."],
                     ['role' => 'user', 'content' => $prompt]
                 ],
             ]);
-            $ai_json = $response->json('choices.0.message.content');
+            $ai_raw = $response->json('choices.0.message.content');
             
-            // تنظيف الـ JSON
-            $ai_json = trim($ai_json);
-            if (strpos($ai_json, '```json') !== false) {
-                $ai_json = str_replace(['```json', '```'], '', $ai_json);
+            // --- تنظيف واستخراج الـ JSON بدقة عالية ---
+            $firstBrace = strpos($ai_raw, '{');
+            $lastBrace = strrpos($ai_raw, '}');
+            
+            if ($firstBrace !== false && $lastBrace !== false) {
+                $ai_json = substr($ai_raw, $firstBrace, $lastBrace - $firstBrace + 1);
+                // مراجعة إضافية للتأكد أنه JSON صحيح
+                $test = json_decode($ai_json);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $ai_advice = $ai_json;
+                } else {
+                    throw new \Exception("Invalid JSON Structure");
+                }
+            } else {
+                throw new \Exception("No JSON found in response");
             }
             
-            $ai_advice = trim($ai_json);
         } catch (\Exception $e) {
             $ai_advice = json_encode([
-                'pros' => ['تعذر التحليل'], 'cons' => ['تحقق من الاتصال'],
-                'analysis' => 'فشل الربط العصبي مع البيانات الحالية.',
-                'suggestion' => 'حاول لاحقاً', 'score' => 0
-            ]);
+                'pros' => ['تعذر تحليل البيانات حالياً'], 
+                'cons' => ['هناك ضغط على الذاكرة العصبية'],
+                'analysis' => 'فشل النظام في استخراج تحليل دقيق لهذا القرار. جرب إعادة صياغة السؤال بشكل أوضح.',
+                'suggestion' => 'أعد المحاولة لاحقاً', 
+                'score' => 0
+            ], JSON_UNESCAPED_UNICODE);
         }
 
         DB::table('decisions')->insert([

@@ -22,11 +22,14 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/dashboard/generate-plan', [DashboardController::class, 'generatePlan'])->name('dashboard.generate-plan');
+    Route::get('/dashboard/search', [DashboardController::class, 'search'])->name('dashboard.search');
+    Route::post('/dashboard/command', [DashboardController::class, 'handleCommand'])->name('dashboard.command');
     
     // مسارات المهام والعادات
     Route::post('/dashboard/tasks', [DashboardController::class, 'storeTask'])->name('tasks.store');
     Route::patch('/dashboard/tasks/{id}', [DashboardController::class, 'toggleTask'])->name('tasks.toggle');
     Route::post('/dashboard/habits', [DashboardController::class, 'storeHabit'])->name('habits.store');
+    Route::post('/dashboard/goals', [DashboardController::class, 'storeGoal'])->name('goals.store');
 
     // ذاكرة الناس (People Memory)
     Route::get('/people', [PeopleController::class, 'index'])->name('people.index');
@@ -34,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/people/{id}/touch', [PeopleController::class, 'touch'])->name('people.touch');
     Route::delete('/people/{id}', [PeopleController::class, 'deleteAction'])->name('people.delete');
     Route::post('/people/generate-plan', [PeopleController::class, 'generatePeoplePlan'])->name('people.generate-plan');
+    Route::get('/people/{id}/advice', [PeopleController::class, 'quickAdvice'])->name('people.advice');
 
     // ذاكرة الأفكار
     Route::get('/ideas', [IdeaController::class, 'index'])->name('ideas.index');
@@ -52,6 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/money', [MoneyController::class, 'store'])->name('money.store');
     Route::delete('/money/{id}', [MoneyController::class, 'destroy'])->name('money.delete');
     Route::post('/money/analyze', [MoneyController::class, 'analyze'])->name('money.analyze');
+    Route::get('/money/forecast', [MoneyController::class, 'forecast'])->name('money.forecast');
 });
 
 Route::middleware('auth')->group(function () {

@@ -1,15 +1,86 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
-import { getActiveLanguage } from 'laravel-vue-i18n';
+import { getActiveLanguage, trans } from 'laravel-vue-i18n';
+import Swal from 'sweetalert2';
+import VueApexCharts from 'vue3-apexcharts';
+
+const isRecordingTask = ref(false);
+let taskRecognition = null;
+
+onMounted(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        taskRecognition = new SpeechRecognition();
+        taskRecognition.continuous = false;
+        taskRecognition.interimResults = false;
+        taskRecognition.lang = getActiveLanguage() === 'ar' ? 'ar-SA' : 'en-US';
+
+        taskRecognition.onstart = () => { isRecordingTask.value = true; };
+        taskRecognition.onend = () => { isRecordingTask.value = false; };
+        taskRecognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            taskForm.title += (taskForm.title ? ' ' : '') + transcript;
+        };
+    }
+});
+
+const startTaskVoice = () => {
+    if (!taskRecognition) {
+        Swal.fire({
+            title: trans('Not Supported'),
+            text: trans('Your browser does not support voice recognition.'),
+            icon: 'error',
+            background: '#0d1304',
+            color: '#fff'
+        });
+        return;
+    }
+    if (isRecordingTask.value) {
+        taskRecognition.stop();
+    } else {
+        taskRecognition.start();
+    }
+};
+
+const stabilityChartOptions = computed(() => ({
+    chart: { type: 'radialBar', sparkline: { enabled: true } },
+    plotOptions: {
+        radialBar: {
+            startAngle: -90,
+            endAngle: 90,
+            track: { background: "rgba(255,255,255,0.05)", strokeWidth: '97%' },
+            dataLabels: {
+                name: { show: false },
+                value: { offsetY: -2, fontSize: '22px', fontWeight: '900', color: '#fff' }
+            }
+        }
+    },
+    fill: {
+        type: 'gradient',
+        gradient: {
+            shade: 'dark',
+            type: 'horizontal',
+            gradientToColors: ['#069BFF'],
+            stops: [0, 100]
+        }
+    },
+    colors: ['#22c55e'],
+    labels: [trans('Stability Index')],
+}));
+
+const stabilitySeries = computed(() => [props.overview.stability_index]);
 
 const props = defineProps({
     tasks: Array,
     habit: Object,
     goal: Object,
     overview: Object,
+    shadow_prediction: String, // التنبؤ المستقبلي من الـ AI
+    daily_briefing: String,    // الإيجاز الصباحي المكتوب
+    harmony_score: Number      // مؤشر تناغم الحياة
 });
 
 const isGeneratingPlan = ref(false);
@@ -41,6 +112,18 @@ const toggleTask = (id) => {
     router.patch(route('tasks.toggle', id), {}, { preserveScroll: true });
 };
 
+const isEditingGoal = ref(!props.goal);
+const goalForm = useForm({
+    title: props.goal ? props.goal.title : ''
+});
+
+const saveGoal = () => {
+    goalForm.post(route('goals.store'), {
+        preserveScroll: true,
+        onSuccess: () => { isEditingGoal.value = false; }
+    });
+};
+
 const habitForm = useForm({
     name: props.habit ? props.habit.name : ''
 });
@@ -51,6 +134,18 @@ const saveHabit = () => {
         preserveScroll: true,
         onSuccess: () => { isEditingHabit.value = false; }
     });
+};
+const speakBriefing = () => {
+    // إيقاف أي صوت شغال حالياً فوراً لمنع التكرار
+    window.speechSynthesis.cancel();
+    
+    const msg = new SpeechSynthesisUtterance(props.daily_briefing);
+    msg.lang = 'ar-SA';
+    msg.rate = 0.9;
+    msg.pitch = 1.0;
+    
+    // تأمين التشغيل مرة واحدة فقط
+    window.speechSynthesis.speak(msg);
 };
 </script>
 
@@ -71,29 +166,66 @@ const saveHabit = () => {
             <div class="relative overflow-hidden group">
                 <div class="absolute inset-0 bg-gradient-to-r from-accent/20 to-purple-500/20 blur-[100px] -z-10 opacity-50 group-hover:opacity-100 transition-opacity duration-1000"></div>
                 
-                <div class="bg-black/40 backdrop-blur-2xl border border-white/5 p-10 rounded-[40px] shadow-2xl">
-                    <div class="flex flex-col lg:flex-row justify-between items-center gap-10">
+                <div class="bg-black/40 backdrop-blur-2xl border border-white/5 p-10 rounded-[40px] shadow-2xl relative overflow-hidden">
+                    <!-- Neural Pulse Decoration -->
+                    <div class="absolute -top-20 -left-20 w-64 h-64 bg-accent/10 rounded-full blur-[80px] animate-pulse"></div>
+                    
+                    <div class="flex flex-col lg:flex-row justify-between items-center gap-10 relative z-10">
                         <div class="text-center lg:text-start flex-1">
+                            <div class="flex items-center gap-4 mb-4 justify-center lg:justify-start">
+                                <span class="bg-accent/20 text-accent px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest animate-bounce">{{ $t('Live Neural Feed') }}</span>
+                                <div class="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                                    <span :class="['w-2 h-2 rounded-full', overview.stability_index > 70 ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]']"></span>
+                                    <span class="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                                        {{ overview.stability_index > 70 ? $t('Peak Performance') : $t('System Conflict') }}
+                                    </span>
+                                </div>
+                            </div>
                             <h3 class="text-4xl font-black text-white mb-4 leading-tight">
                                 {{ $t('Smart Experience') }}
                             </h3>
-                            <p class="text-gray-400 text-xl font-light">
-                                {{ $t('Not just a website') }}
-                            </p>
+                            <!-- Shadow Prediction Card (The Prophet) -->
+                            <div class="mt-8 relative group/prophet">
+                                <div class="absolute -inset-1 bg-gradient-to-r from-accent to-purple-500 rounded-3xl blur opacity-20 group-hover/prophet:opacity-40 transition-opacity"></div>
+                                <div class="relative p-6 bg-black/60 rounded-3xl border border-white/5 backdrop-blur-xl flex items-start gap-4">
+                                     <div class="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-2xl animate-pulse">🔮</div>
+                                     <div class="flex-1">
+                                        <h5 class="text-[10px] text-accent font-black uppercase tracking-[0.4em] mb-2 opacity-70">{{ $t('Neural_Prophecy.v1') }}</h5>
+                                        <p class="text-white text-lg font-light leading-relaxed bidi-plaintext italic">
+                                            "{{ shadow_prediction }}"
+                                        </p>
+                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Daily Briefing Section (Brain Briefing) -->
+                            <div class="mt-8 p-6 bg-accent/5 border border-accent/10 rounded-[35px] relative overflow-hidden group/brief">
+                                <div class="absolute top-0 right-0 p-4 opacity-10 group-hover/brief:opacity-30 transition-opacity">📻</div>
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="text-xs font-black text-accent uppercase tracking-widest flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 bg-accent rounded-full animate-pulse"></span>
+                                        {{ $t('Morning Neural Briefing') }}
+                                    </h4>
+                                    <button @click="speakBriefing" class="p-2 bg-accent/20 rounded-full hover:bg-accent/40 transition-all text-xs">🔊</button>
+                                </div>
+                                <p class="text-white text-sm leading-relaxed bidi-plaintext font-medium">
+                                    {{ daily_briefing }}
+                                </p>
+                            </div>
                         </div>
                         
                         <div class="flex-shrink-0">
                             <button 
                                 @click="generatePlan" 
                                 :disabled="isGeneratingPlan"
-                                class="dashboard-ai-btn"
+                                class="dashboard-ai-btn group/btn"
                             >
-                                <span v-if="isGeneratingPlan" class="animate-spin w-6 h-6 border-4 border-white border-t-transparent rounded-full block"></span>
-                                <span v-if="!isGeneratingPlan" class="flex items-center gap-3">
-                                    <span class="text-2xl">✨</span>
-                                    {{ $t('Analyze Day') }}
+                                <span v-if="isGeneratingPlan" class="animate-spin w-8 h-8 border-4 border-white border-t-transparent rounded-full block"></span>
+                                <span v-if="!isGeneratingPlan" class="flex flex-col items-center">
+                                    <span class="text-3xl mb-1 group-hover/btn:scale-125 transition-transform duration-500">✨</span>
+                                    <span class="text-sm font-black uppercase tracking-widest">{{ $t('Analyze Day') }}</span>
                                 </span>
-                                <span v-else>{{ $t('Thinking...') }}</span>
+                                <span v-else class="text-sm font-black uppercase tracking-widest">{{ $t('Thinking...') }}</span>
                             </button>
                         </div>
                     </div>
@@ -124,6 +256,19 @@ const saveHabit = () => {
                     </div>
                     <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Wallet Balance') }}</h4>
                     <p class="text-2xl font-black text-white bidi-plaintext">{{ overview.balance }}</p>
+                </div>
+
+                <!-- Stability Index Gauge -->
+                <div class="bg-gradient-to-br from-accent/10 to-transparent border border-accent/10 p-6 rounded-3xl relative overflow-hidden group">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-3xl">🧬</span>
+                        <span class="text-accent font-bold group-hover:rotate-45 transition-transform">⚙️</span>
+                    </div>
+                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Stability Index') }}</h4>
+                    <div class="flex flex-col items-center">
+                        <VueApexCharts type="radialBar" height="140" :options="stabilityChartOptions" :series="stabilitySeries" />
+                    </div>
+                    <p class="text-[10px] text-center text-gray-500 mt-[-20px] font-mono">{{ $t('Neural Balance') }}</p>
                 </div>
 
                 <!-- Neural Logic Score -->
@@ -161,100 +306,163 @@ const saveHabit = () => {
             </div>
 
             <!-- Dashboard Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 
                 <!-- Tasks List -->
                 <div class="dashboard-card group">
-                    <div class="flex items-center justify-between mb-8">
-                        <h3 class="text-2xl font-black text-white flex items-center gap-3">
-                            <span class="p-2 bg-blue-500/10 rounded-lg text-blue-400">📋</span>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-black text-white flex items-center gap-2">
+                            <span class="p-1.5 bg-blue-500/10 rounded-lg text-blue-400 text-sm">📋</span>
                             {{ $t('Tasks of the Day') }}
                         </h3>
                     </div>
 
-                    <form @submit.prevent="addTask" class="mb-8 relative flex items-center">
+                    <form @submit.prevent="addTask" class="mb-6 relative flex items-center group/task">
                         <input 
                             v-model="taskForm.title" 
                             type="text"
-                            :placeholder="$t('Add a new task')"
-                            class="dashboard-input w-full bidi-plaintext ltr:pl-14 rtl:pr-14"
+                            :placeholder="$t('Add task')"
+                            class="dashboard-input w-full bidi-plaintext ltr:pl-10 rtl:pr-10 ltr:pr-20 rtl:pl-20 py-3 text-sm transition-all"
                             required
                             dir="auto"
                         />
-                        <button type="submit" class="absolute ltr:right-2 rtl:left-2 px-4 py-2 bg-accent text-white rounded-xl font-black hover:bg-accent/80 active:scale-95 transition-all">
-                            +
-                        </button>
+                        <div class="absolute ltr:right-2 rtl:left-2 flex items-center gap-1">
+                             <button 
+                                type="button"
+                                @click="startTaskVoice"
+                                :class="['w-8 h-8 rounded-lg flex items-center justify-center transition-all text-xs', isRecordingTask ? 'bg-red-500 animate-pulse text-white' : 'bg-white/5 text-gray-500 hover:text-accent']"
+                            >
+                                🎤
+                            </button>
+                            <button type="submit" class="px-3 py-1.5 bg-accent text-white rounded-lg font-black hover:bg-accent/80 transition-all text-sm">
+                                +
+                            </button>
+                        </div>
                     </form>
 
-                    <div class="space-y-4 max-h-[400px] overflow-y-auto ltr:pr-2 rtl:pl-2 custom-scroll">
+                    <div class="space-y-2 max-h-[250px] overflow-y-auto ltr:pr-1 rtl:pl-1 custom-scroll">
                         <div v-for="task in tasks" :key="task.id" 
                             @click="toggleTask(task.id)"
-                            :class="['task-pill group', task.status === 'completed' ? 'opacity-50' : '']"
+                            :class="['flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl cursor-pointer hover:border-accent/40 transition-all', task.status === 'completed' ? 'opacity-50' : '']"
                         >
-                            <div :class="['w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all', task.status === 'completed' ? 'bg-accent border-accent text-white' : 'border-white/10 group-hover:border-accent']">
+                            <div :class="['w-4 h-4 rounded-full border flex items-center justify-center text-[8px]', task.status === 'completed' ? 'bg-accent border-accent text-white' : 'border-white/10']">
                                 <span v-if="task.status === 'completed'">✓</span>
                             </div>
-                            <span :class="['flex-1 transition-all bidi-plaintext', task.status === 'completed' ? 'line-through text-gray-600' : 'text-gray-200']">
+                            <span :class="['flex-1 truncate text-xs bidi-plaintext', task.status === 'completed' ? 'line-through text-gray-600' : 'text-gray-200']">
                                 {{ task.title }}
                             </span>
                         </div>
-                        <div v-if="tasks.length === 0" class="text-center py-10 text-gray-600 italic">
-                            {{ $t('No tasks yet') }}
-                        </div>
+                    </div>
+                </div>
+
+                <!-- Harmony Gauge (Unique to this Brain) -->
+                <div class="dashboard-card group relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black text-white flex items-center gap-2">
+                            <span class="p-1.5 bg-purple-500/10 rounded-lg text-purple-400 text-sm">⚖️</span>
+                            {{ $t('Life Harmony') }}
+                        </h3>
+                    </div>
+                    
+                    <div class="flex flex-col items-center">
+                        <VueApexCharts 
+                            type="radialBar" 
+                            height="240"
+                            :options="{
+                                chart: { type: 'radialBar', sparkline: { enabled: true } },
+                                plotOptions: {
+                                    radialBar: {
+                                        startAngle: -90, endAngle: 90,
+                                        track: { background: '#1d1d1f', strokeWidth: '97%' },
+                                        dataLabels: {
+                                            name: { show: false },
+                                            value: { offsetY: -2, fontSize: '20px', fontWeight: '900', color: '#fff' }
+                                        }
+                                    }
+                                },
+                                fill: { gradient: { enabled: true, shade: 'dark', type: 'horizontal', gradientToColors: ['#8B5CF6'], stops: [0, 100] } },
+                                stroke: { lineCap: 'round' },
+                                labels: [trans('Harmony')],
+                            }" 
+                            :series="[harmony_score || 0]" 
+                        />
+                        <p class="text-[8px] text-gray-500 uppercase tracking-[0.3em] font-mono -mt-6">{{ $t('Neural_Balance.v2') }}</p>
+                        <p class="mt-4 text-[10px] text-purple-400 text-center font-bold px-2 leading-relaxed bidi-plaintext italic">
+                            {{ harmony_score > 70 ? $t('عقلك في حالة تناغم مذهلة!') : $t('هناك اختلال بسيط في التوازن، الـ AI يراقب.') }}
+                        </p>
                     </div>
                 </div>
 
                 <!-- Daily Goal -->
-                <div class="dashboard-card">
-                    <h3 class="text-2xl font-black text-white flex items-center gap-3 mb-8">
-                        <span class="p-2 bg-red-500/10 rounded-lg text-red-400">🎯</span>
-                        {{ $t('Goal of the Day') }}
-                    </h3>
-                    <div class="h-[300px] flex flex-col items-center justify-center bg-gradient-to-tr from-black/60 to-accent/5 rounded-[30px] border border-white/5 relative overflow-hidden group">
-                        <div class="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <span class="text-6xl mb-6 drop-shadow-2xl">🚀</span>
-                        <h4 class="text-2xl font-black text-white text-center px-4">{{ goal?.title }}</h4>
-                        <p class="text-gray-500 mt-4 text-sm uppercase tracking-widest">Focus Level: High</p>
-                    </div>
-                </div>
-
-                <!-- Daily Habit -->
-                <div class="dashboard-card px-0 overflow-hidden">
-                    <div class="px-8 flex justify-between items-center mb-8">
-                        <h3 class="text-2xl font-black text-white flex items-center gap-3">
-                            <span class="p-2 bg-green-500/10 rounded-lg text-green-400">🔄</span>
-                            {{ $t('Habit of the Day') }}
+                <div class="dashboard-card group">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black text-white flex items-center gap-2">
+                            <span class="p-1.5 bg-red-500/10 rounded-lg text-red-400 text-sm">🎯</span>
+                            {{ $t('Goal of the Day') }}
                         </h3>
-                        <button v-if="!isEditingHabit && habit" @click="isEditingHabit = true" class="text-xs font-bold text-accent hover:underline uppercase tracking-widest">
+                        <button v-if="!isEditingGoal && goal" @click="isEditingGoal = true" class="text-[10px] font-bold text-accent hover:underline uppercase tracking-widest">
                             {{ $t('Edit') }}
                         </button>
                     </div>
 
-                    <div class="px-8 flex-1 flex flex-col items-center justify-center">
-                        <div v-if="habit && !isEditingHabit" class="w-full h-full min-h-[200px] flex flex-col items-center justify-center bg-black/40 rounded-[30px] border border-white/5 hover:border-accent/40 transition-colors p-6">
-                            <div class="w-20 h-20 rounded-full bg-accent/20 flex items-center justify-center text-4xl text-accent shadow-[0_0_30px_rgba(6,155,255,0.1)] mb-4 font-black border border-accent/30">
-                                {{ habit.name.substring(0, 1) }}
-                            </div>
-                            <h4 class="text-xl font-black text-white text-center">{{ habit.name }}</h4>
-                            <p class="text-sm text-gray-500 mt-3 text-center leading-relaxed">
-                                {{ $t('Habit Subtitle') }}
-                            </p>
-                        </div>
+                    <div v-if="goal && !isEditingGoal" class="h-[200px] flex flex-col items-center justify-center bg-gradient-to-tr from-black/60 to-red-500/5 rounded-[30px] border border-white/5 relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <span class="text-4xl mb-4 drop-shadow-2xl group-hover:scale-110 transition-transform duration-500">🚀</span>
+                        <h4 class="text-lg font-black text-white text-center px-4 bidi-plaintext">{{ goal.title }}</h4>
+                        <p class="text-[8px] text-gray-600 mt-2 uppercase tracking-[0.3em] font-mono">{{ $t('Mission critical') }}</p>
+                    </div>
 
-                        <div v-else class="h-full flex flex-col items-center justify-center">
-                            <form @submit.prevent="saveHabit" class="w-full space-y-4">
-                                <input 
-                                    v-model="habitForm.name" 
-                                    type="text"
-                                    placeholder="e.g. 20 mins reading"
-                                    class="dashboard-input w-full text-center py-4"
-                                    required
-                                />
-                                <button type="submit" class="w-full bg-accent text-white py-4 rounded-2xl font-black shadow-lg hover:brightness-110 active:scale-95 transition-all">
-                                    {{ habit ? 'Update Habit' : 'Save Habit' }}
-                                </button>
-                            </form>
+                    <div v-else class="h-[200px] flex flex-col items-center justify-center">
+                         <form @submit.prevent="saveGoal" class="w-full space-y-3">
+                            <input 
+                                v-model="goalForm.title" 
+                                type="text"
+                                :placeholder="$t('Set your main mission...')"
+                                class="dashboard-input w-full text-center py-3 text-sm border-red-500/20 focus:border-red-500"
+                                required
+                            />
+                            <button type="submit" class="w-full bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-2xl text-xs font-black shadow-lg hover:bg-red-500/30 active:scale-95 transition-all">
+                                {{ goal ? $t('Update Mission') : $t('Launch Mission') }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Daily Habit -->
+                <div class="dashboard-card group">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black text-white flex items-center gap-2">
+                            <span class="p-1.5 bg-green-500/10 rounded-lg text-green-400 text-sm">🔄</span>
+                            {{ $t('Habit of the Day') }}
+                        </h3>
+                        <button v-if="!isEditingHabit && habit" @click="isEditingHabit = true" class="text-[10px] font-bold text-accent hover:underline uppercase tracking-widest">
+                            {{ $t('Edit') }}
+                        </button>
+                    </div>
+
+                    <div v-if="habit && !isEditingHabit" class="h-[200px] flex flex-col items-center justify-center bg-gradient-to-tr from-black/60 to-green-500/5 rounded-[30px] border border-white/5 relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center text-2xl font-black text-green-400 mb-4 border border-green-500/30 group-hover:scale-110 transition-transform">
+                            {{ habit.name.substring(0, 1) }}
                         </div>
+                        <h4 class="text-lg font-black text-white text-center px-4 bidi-plaintext">{{ habit.name }}</h4>
+                        <p class="text-[8px] text-gray-500 mt-2 uppercase tracking-[0.2em]">{{ $t('Habit Subtitle') }}</p>
+                    </div>
+
+                    <div v-else class="h-[200px] flex flex-col items-center justify-center">
+                         <form @submit.prevent="saveHabit" class="w-full space-y-3">
+                            <input 
+                                v-model="habitForm.name" 
+                                type="text"
+                                :placeholder="$t('One habit...')"
+                                class="dashboard-input w-full text-center py-3 text-sm border-green-500/20 focus:border-green-500"
+                                required
+                            />
+                            <button type="submit" class="w-full bg-green-500/20 text-green-400 border border-green-500/30 py-3 rounded-2xl text-xs font-black shadow-lg hover:bg-green-500/30 active:scale-95 transition-all">
+                                {{ habit ? $t('Update Habit') : $t('Start Habit') }}
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -265,17 +473,17 @@ const saveHabit = () => {
 
 <style scoped>
 .dashboard-card {
-    background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.05); /* زيادة الشفافية */
+    backdrop-filter: blur(40px); /* زيادة الضبابية للخلفية */
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 40px;
-    padding: 2.5rem;
+    padding: 1.5rem; /* تقليل الـ padding ليناسب 4 أعمدة */
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .dashboard-card:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(6, 155, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(6, 155, 255, 0.4);
     transform: translateY(-8px);
 }
 

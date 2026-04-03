@@ -45,32 +45,46 @@ class DecisionController extends Controller
                   "}";
 
         try {
-            $response = Http::withoutVerifying()->post('https://text.pollinations.ai/openai', [
-                'model' => 'openai',
-                'messages' => [
-                    ['role' => 'system', 'content' => "أنت محلل قرارات استراتيجي عالي الدقة. تكلم باللغة العربية بأسلوب فخم وذكي. اخرج النتائج بصيغة JSON فقط. استخدم dir=auto للمحتوى المختلط."],
-                    ['role' => 'user', 'content' => $prompt]
-                ],
-            ]);
-            $ai_raw = $response->json('choices.0.message.content');
-            
-            // --- تنظيف واستخراج الـ JSON بدقة عالية ---
-            $firstBrace = strpos($ai_raw, '{');
-            $lastBrace = strrpos($ai_raw, '}');
-            
-            if ($firstBrace !== false && $lastBrace !== false) {
-                $ai_json = substr($ai_raw, $firstBrace, $lastBrace - $firstBrace + 1);
-                // مراجعة إضافية للتأكد أنه JSON صحيح
-                $test = json_decode($ai_json);
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    $ai_advice = $ai_json;
+            $response = Http::timeout(45)
+                ->withoutVerifying()
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . config('services.groq.key'),
+                    'Content-Type' => 'application/json',
+                ])
+                ->post('https://api.groq.com/openai/v1/chat/completions', [
+                    'model' => 'llama-3.3-70b-versatile',
+                    'messages' => [
+                        ['role' => 'system', 'content' => "أنت محلل قرارات استراتيجي عالي الدقة. تكلم باللغة العربية بأسلوب فخم وذكي. اخرج النتائج بصيغة JSON فقط. استخدم dir=auto للمحتوى المختلط."],
+                        ['role' => 'user', 'content' => $prompt]
+                    ],
+                    'response_format' => ['type' => 'json_object'],
+                    'max_tokens' => 2048,
+                    'temperature' => 0.5,
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $ai_raw = $data['choices'][0]['message']['content'] ?? '';
+                
+                // --- تنظيف واستخراج الـ JSON بدقة عالية ---
+                $firstBrace = strpos($ai_raw, '{');
+                $lastBrace = strrpos($ai_raw, '}');
+                
+                if ($firstBrace !== false && $lastBrace !== false) {
+                    $ai_json = substr($ai_raw, $firstBrace, $lastBrace - $firstBrace + 1);
+                    // مراجعة إضافية للتأكد أنه JSON صحيح
+                    $test = json_decode($ai_json);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $ai_advice = $ai_json;
+                    } else {
+                        throw new \Exception("Invalid JSON Structure");
+                    }
                 } else {
-                    throw new \Exception("Invalid JSON Structure");
+                    throw new \Exception("No JSON found in response");
                 }
             } else {
-                throw new \Exception("No JSON found in response");
+                 throw new \Exception("Groq API Error: " . $response->status() . " - " . $response->body());
             }
-            
         } catch (\Exception $e) {
             $ai_advice = json_encode([
                 'pros' => ['تعذر تحليل البيانات حالياً'], 

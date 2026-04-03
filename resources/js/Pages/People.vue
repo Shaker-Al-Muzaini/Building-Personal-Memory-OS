@@ -62,6 +62,21 @@ const deletePerson = async (id) => {
         router.delete(route('people.delete', id), { preserveScroll: true });
     }
 };
+
+const individualAdvice = ref({});
+const isLoadingAdvice = ref({});
+
+const getPersonAdvice = async (id) => {
+    isLoadingAdvice.value[id] = true;
+    try {
+        const response = await axios.get(route('people.advice', id));
+        individualAdvice.value[id] = response.data.advice;
+    } catch (e) {
+        individualAdvice.value[id] = " Neural logic error. Just say Hi!";
+    } finally {
+        isLoadingAdvice.value[id] = false;
+    }
+};
 </script>
 
 <template>
@@ -153,29 +168,64 @@ const deletePerson = async (id) => {
                             <p>{{ $t('No people added yet.') }}</p>
                         </div>
                         
-                        <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4 custom-scrollbar overflow-y-auto max-h-[500px] pr-2">
-                            <div v-for="person in people" :key="person.id" class="bg-black bg-opacity-30 border border-gray-700 rounded-xl p-5 hover:border-accent transition group relative">
+                        <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-6 custom-scrollbar overflow-y-auto max-h-[600px] pr-2">
+                            <div v-for="person in people" :key="person.id" 
+                                :class="['bg-black border rounded-[30px] p-6 transition-all group relative overflow-hidden', 
+                                person.bond_strength > 70 ? 'border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]' : 
+                                (person.bond_strength > 30 ? 'border-orange-500/20' : 'border-gray-800 opacity-80')]"
+                            >
+                                <!-- Thermal Pulse Background -->
+                                <div :class="['absolute -inset-1 opacity-5 mix-blend-screen transition-opacity', person.bond_strength > 70 ? 'bg-green-500' : (person.bond_strength > 30 ? 'bg-orange-500' : 'bg-blue-500')]"></div>
+
                                 <!-- Delete Button -->
-                                <button @click="deletePerson(person.id)" class="absolute top-3 left-3 text-gray-600 hover:text-red-500 transition opacity-0 group-hover:opacity-100">✖</button>
+                                <button @click="deletePerson(person.id)" class="absolute top-4 left-4 text-gray-700 hover:text-red-500 transition opacity-0 group-hover:opacity-100 z-10">✖</button>
                                 
-                                <div class="flex items-start justify-between mb-2">
-                                    <div>
-                                        <h4 class="font-bold text-lg text-white">{{ person.name }}</h4>
-                                        <span class="text-xs text-accent bg-accent/10 px-2 py-1 rounded">{{ person.relation }}</span>
+                                <div class="flex items-start justify-between mb-4 relative z-10">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-xl font-black text-gray-500">
+                                            {{ person.name.charAt(0) }}
+                                        </div>
+                                        <div>
+                                            <h4 class="font-black text-lg text-white leading-none mb-1">{{ person.name }}</h4>
+                                            <span class="text-[10px] text-accent uppercase tracking-widest">{{ person.relation }}</span>
+                                        </div>
                                     </div>
-                                    <span class="text-2xl" v-if="person.importance == 'عالية'">❤️</span>
-                                    <span class="text-2xl opacity-50" v-else-if="person.importance == 'متوسطة'">👍</span>
-                                    <span class="text-2xl opacity-20" v-else>☕</span>
+                                    <div class="text-right">
+                                        <div class="text-[10px] font-mono text-gray-500 mb-1">BOND_STRENGTH</div>
+                                        <div :class="['text-sm font-black', person.bond_strength > 70 ? 'text-green-500' : (person.bond_strength > 30 ? 'text-orange-500' : 'text-gray-600')]">
+                                            {{ Math.round(person.bond_strength) }}%
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bond Bar -->
+                                <div class="w-full h-1 bg-white/5 rounded-full mb-6 overflow-hidden relative">
+                                    <div 
+                                        :style="{ width: person.bond_strength + '%' }" 
+                                        :class="['h-full transition-all duration-1000', person.bond_strength > 70 ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : (person.bond_strength > 30 ? 'bg-orange-500' : 'bg-gray-700')]"
+                                    ></div>
                                 </div>
                                 
-                                <p v-if="person.gifts_notes" class="text-sm text-gray-400 mt-3 line-clamp-2" :title="person.gifts_notes">
-                                    📝 {{ person.gifts_notes }}
+                                <p v-if="person.gifts_notes" class="text-sm text-gray-500 mb-6 line-clamp-2 italic bidi-plaintext">
+                                    "{{ person.gifts_notes }}"
                                 </p>
+
+                                <!-- AI Quick Advice Panel -->
+                                <div v-if="individualAdvice[person.id]" class="mb-6 p-4 bg-accent/5 border border-accent/20 rounded-2xl animate-in slide-in-from-bottom-2 duration-500">
+                                    <p class="text-xs text-accent font-bold bidi-plaintext leading-relaxed">🤖 {{ individualAdvice[person.id] }}</p>
+                                </div>
                                 
-                                <div class="mt-4 pt-4 border-t border-gray-800 flex items-center justify-between text-sm">
-                                    <span class="text-gray-500 text-xs">آخر تواصل: <b class="text-gray-300">{{ person.last_contact || 'غير مسجل' }}</b></span>
-                                    <button @click="touchPerson(person.id)" class="text-accent text-xs font-bold hover:underline hover:text-white transition">
-                                        تواصلت معه اليوم؟
+                                <div class="pt-4 border-t border-white/5 flex items-center justify-between relative z-10">
+                                    <button 
+                                        @click="getPersonAdvice(person.id)" 
+                                        :disabled="isLoadingAdvice[person.id]"
+                                        class="text-[10px] font-black uppercase tracking-widest text-accent hover:text-white disabled:opacity-50 transition-colors"
+                                    >
+                                        {{ isLoadingAdvice[person.id] ? $t('Thinking...') : 'Neural Advice' }}
+                                    </button>
+                                    
+                                    <button @click="touchPerson(person.id)" class="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-[10px] uppercase font-black tracking-widest transition-all">
+                                        {{ $t('Updated Contact') }}
                                     </button>
                                 </div>
                             </div>

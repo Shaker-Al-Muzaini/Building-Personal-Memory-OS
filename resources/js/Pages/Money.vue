@@ -114,6 +114,34 @@ const categoryOptions = computed(() => ({
     },
     tooltip: { theme: 'dark' }
 }));
+
+const forecastData = ref([]);
+const isForecasting = ref(false);
+
+const getForecast = async () => {
+    isForecasting.value = true;
+    try {
+        const response = await axios.get(route('money.forecast'));
+        forecastData.value = response.data.forecast;
+    } catch (e) {
+        console.error("Forecast failed");
+    } finally {
+        isForecasting.value = false;
+    }
+};
+
+const forecastOptions = computed(() => ({
+    chart: { type: 'line', toolbar: { show: false }, background: 'transparent' },
+    stroke: { curve: 'smooth', dashArray: [0, 8] },
+    colors: ['#22c55e', '#069BFF'],
+    xaxis: { categories: [trans('Month 1'), trans('Month 2'), trans('Month 3')] },
+    theme: { mode: 'dark' },
+    markers: { size: 4 },
+}));
+
+const forecastSeries = computed(() => [
+    { name: trans('Balance Projection'), data: forecastData.value }
+]);
 </script>
 
 <template>
@@ -174,14 +202,16 @@ const categoryOptions = computed(() => ({
                 </div>
 
                 <!-- Financial Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
-                        <h4 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                             <span class="w-2 h-2 bg-accent rounded-full"></span>
-                             {{ $t('Income vs Expenses') }}
+                        <h4 class="text-lg font-bold text-white mb-6 flex items-center justify-between">
+                             <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-accent rounded-full"></span>
+                                {{ $t('Income vs Expenses') }}
+                             </div>
                         </h4>
                         <div class="flex justify-center">
-                            <VueApexCharts width="380" :options="incomeVsExpenseOptions" :series="incomeVsExpenseSeries" />
+                            <VueApexCharts width="300" :options="incomeVsExpenseOptions" :series="incomeVsExpenseSeries" />
                         </div>
                     </div>
 
@@ -191,7 +221,28 @@ const categoryOptions = computed(() => ({
                              {{ $t('Expenses by Category') }}
                         </h4>
                         <div class="flex justify-center">
-                            <VueApexCharts width="380" :options="categoryOptions" :series="categorySeries" />
+                            <VueApexCharts width="300" :options="categoryOptions" :series="categorySeries" />
+                        </div>
+                    </div>
+
+                    <!-- AI PROPHET FORECAST CARD -->
+                    <div class="bg-gray-900 border border-white/5 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                        <div class="absolute -top-10 -left-10 w-32 h-32 bg-accent/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <h4 class="text-lg font-black text-white mb-6 flex items-center justify-between relative z-10">
+                            <div class="flex items-center gap-2 font-black">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                {{ $t('Money Forecast (AI)') }}
+                             </div>
+                             <button @click="getForecast" :disabled="isForecasting" class="text-xs text-accent hover:underline uppercase tracking-widest font-black">
+                                {{ isForecasting ? '...' : 'REFRESH' }}
+                             </button>
+                        </h4>
+                        <div v-if="forecastData.length > 0" class="relative z-10 h-40">
+                             <VueApexCharts height="160" :options="forecastOptions" :series="forecastSeries" />
+                        </div>
+                        <div v-else class="h-40 flex flex-col items-center justify-center text-gray-700 text-xs text-center px-4 relative z-10 border border-dashed border-white/5 rounded-xl">
+                            <span class="text-2xl mb-2">🔮</span>
+                            {{ $t('Activate AI Projection to see your future balance.') }}
                         </div>
                     </div>
                 </div>

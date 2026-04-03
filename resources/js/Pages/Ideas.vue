@@ -1,9 +1,47 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { trans } from 'laravel-vue-i18n';
 import Swal from 'sweetalert2';
+
+const isRecording = ref(false);
+let recognition = null;
+
+onMounted(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = document.documentElement.lang === 'ar' ? 'ar-SA' : 'en-US';
+
+        recognition.onstart = () => { isRecording.value = true; };
+        recognition.onend = () => { isRecording.value = false; };
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            ideaForm.content += (ideaForm.content ? ' ' : '') + transcript;
+        };
+    }
+});
+
+const startVoice = () => {
+    if (!recognition) {
+        Swal.fire({
+            title: trans('Not Supported'),
+            text: trans('Your browser does not support voice recognition.'),
+            icon: 'error',
+            background: '#0d1304',
+            color: '#fff'
+        });
+        return;
+    }
+    if (isRecording.value) {
+        recognition.stop();
+    } else {
+        recognition.start();
+    }
+};
 
 const props = defineProps({
     ideas: Array,
@@ -78,12 +116,24 @@ const getIdeasByStatus = (status) => {
                         <p class="text-gray-400 mb-8 font-light text-lg">{{ $t('Record any idea...') }}</p>
                         
                         <form @submit.prevent="saveIdea" class="space-y-4">
-                            <textarea
-                                v-model="ideaForm.content"
-                                class="w-full bg-black/60 border border-white/5 rounded-[30px] px-8 py-6 text-white focus:ring-accent focus:border-accent text-xl font-light placeholder:text-gray-700 min-h-[150px] transition-all resize-none"
-                                :placeholder="trans('Record any idea...')"
-                                required
-                            ></textarea>
+                            <div class="relative group/input">
+                                <textarea
+                                    v-model="ideaForm.content"
+                                    class="w-full bg-black/60 border border-white/5 rounded-[30px] px-8 py-6 ltr:pr-20 rtl:pl-20 text-white focus:ring-accent focus:border-accent text-xl font-light placeholder:text-gray-700 min-h-[150px] transition-all resize-none"
+                                    :placeholder="trans('Record any idea...')"
+                                    required
+                                ></textarea>
+                                
+                                <button 
+                                    type="button"
+                                    @click="startVoice"
+                                    :class="['absolute bottom-6 ltr:right-6 rtl:left-6 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300', isRecording ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)] animate-pulse' : 'bg-white/10 hover:bg-accent/20 text-gray-400 hover:text-accent']"
+                                    :title="isRecording ? 'إيقاف التسجيل' : 'إملاء صوتي'"
+                                >
+                                    <span v-if="!isRecording" class="text-xl">🎤</span>
+                                    <span v-else class="text-xl text-white">⏹</span>
+                                </button>
+                            </div>
                             
                             <div class="flex justify-end">
                                 <button

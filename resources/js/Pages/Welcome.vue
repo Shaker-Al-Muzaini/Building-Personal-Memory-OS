@@ -3,6 +3,7 @@ import { Head, Link } from "@inertiajs/vue3";
 import { onMounted, onUnmounted, ref } from "vue";
 import * as THREE from "three";
 import LanguageSwitcher from "@/Components/LanguageSwitcher.vue";
+import MotionIntro from "@/Components/MotionIntro.vue";
 import { getActiveLanguage } from "laravel-vue-i18n";
 
 defineProps({
@@ -11,6 +12,7 @@ defineProps({
 });
 
 const canvasContainer = ref(null);
+const showIntro = ref(false);
 let scene, camera, renderer, particles;
 
 const initThree = () => {
@@ -106,12 +108,20 @@ onUnmounted(() => {
                     <span class="text-white font-medium border-b-2 border-accent pb-1 inline-block mt-4">{{ $t('Not just a website') }}</span>
                 </p>
 
-                <div class="flex items-center justify-center">
+                <div class="flex flex-col items-center justify-center gap-6">
                     <Link :href="route('register')" class="mega-cta-final">
                         {{ $t('Start your journey for free') }}
                     </Link>
+                    
+                    <button @click="showIntro = true" class="flex items-center gap-3 text-white/60 hover:text-white transition-all font-bold tracking-widest text-sm uppercase group">
+                        <span class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all">▶</span>
+                        {{ $t('Watch the Story') }}
+                    </button>
                 </div>
             </div>
+
+            <!-- Interactive Motion Intro -->
+            <MotionIntro :show="showIntro" @close="showIntro = false" />
 
             <!-- Bento Tiles -->
             <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

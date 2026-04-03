@@ -28,7 +28,7 @@ class IdeaController extends Controller
         try {
             // سحب سياق من الناس والقرارات المسجلة لربطها بالفكرة
             $people = DB::table('people')->where('user_id', $request->user()->id)->limit(5)->pluck('name')->toArray();
-            $decisions = DB::table('decisions')->where('user_id', $request->user()->id)->limit(5)->pluck('title')->toArray();
+            $decisions = DB::table('decisions')->where('user_id', $request->user()->id)->limit(5)->pluck('problem')->toArray();
             
             $context = "Context - People: " . implode(', ', $people) . ". Decisions: " . implode(', ', $decisions);
             
@@ -66,10 +66,10 @@ class IdeaController extends Controller
                 
                 $ai_analysis = implode("\n", array_slice($lines, 1));
             } else {
-                $ai_analysis = "لم يتمكن الذكاء الاصطناعي من تحليل الفكرة حالياً.";
+                $ai_analysis = "⚠️ فشل في التواصل مع الذكاء الاصطناعي: " . $response->status() . " - " . ($response->json()['error']['message'] ?? 'خطأ غير معروف');
             }
         } catch (\Exception $e) {
-            $ai_analysis = "خطأ في تحليل الفكرة.";
+            $ai_analysis = "❌ خطأ تقني: " . $e->getMessage();
         }
 
 

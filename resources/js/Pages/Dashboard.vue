@@ -135,6 +135,8 @@ const saveHabit = () => {
         onSuccess: () => { isEditingHabit.value = false; }
     });
 };
+const isFocusMode = ref(false);
+
 const speakBriefing = () => {
     // إيقاف أي صوت شغال حالياً فوراً لمنع التكرار
     window.speechSynthesis.cancel();
@@ -180,6 +182,13 @@ const speakBriefing = () => {
                                         {{ overview.stability_index > 70 ? $t('Peak Performance') : $t('System Conflict') }}
                                     </span>
                                 </div>
+                                <button 
+                                    @click="isFocusMode = !isFocusMode" 
+                                    :class="['flex items-center gap-2 px-3 py-1 rounded-full border transition-all', isFocusMode ? 'bg-accent/40 border-accent/60' : 'bg-white/5 border-white/10 hover:bg-white/10']"
+                                >
+                                    <span class="text-[12px]">{{ isFocusMode ? '👁️' : '🕶️' }}</span>
+                                    <span class="text-[10px] text-white font-black uppercase tracking-widest">{{ $t('Focus') }}</span>
+                                </button>
                             </div>
                             <h3 class="text-4xl font-black text-white mb-4 leading-tight">
                                 {{ $t('Smart Experience') }}
@@ -247,66 +256,60 @@ const speakBriefing = () => {
             </div>
 
             <!-- Overview Section (Quick Access) -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <!-- Money Glance -->
-                <div @click="router.visit(route('money.index'))" class="bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/10 p-6 rounded-3xl cursor-pointer hover:border-green-500/30 transition-all group">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-3xl">💰</span>
-                        <span class="text-green-500 font-bold group-hover:scale-110 transition-transform">→</span>
+            <transition name="fade">
+                <div v-if="!isFocusMode" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <!-- Money Glance -->
+                    <div @click="router.visit(route('money.index'))" class="bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/10 p-6 rounded-3xl cursor-pointer hover:border-green-500/30 transition-all group">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-3xl">💰</span>
+                            <span class="text-green-500 font-bold group-hover:scale-110 transition-transform">→</span>
+                        </div>
+                        <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Wallet Balance') }}</h4>
+                        <p class="text-2xl font-black text-white bidi-plaintext">{{ overview.balance }}</p>
                     </div>
-                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Wallet Balance') }}</h4>
-                    <p class="text-2xl font-black text-white bidi-plaintext">{{ overview.balance }}</p>
-                </div>
 
-                <!-- Stability Index Gauge -->
-                <div class="bg-gradient-to-br from-accent/10 to-transparent border border-accent/10 p-6 rounded-3xl relative overflow-hidden group">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-3xl">🧬</span>
-                        <span class="text-accent font-bold group-hover:rotate-45 transition-transform">⚙️</span>
+                    <!-- Stability Index Gauge -->
+                    <div class="bg-gradient-to-br from-accent/10 to-transparent border border-accent/10 p-6 rounded-3xl relative overflow-hidden group">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-3xl">🧬</span>
+                            <span class="text-accent font-bold group-hover:rotate-45 transition-transform">⚙️</span>
+                        </div>
+                        <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Stability Index') }}</h4>
+                        <div class="flex flex-col items-center">
+                            <VueApexCharts type="radialBar" height="140" :options="stabilityChartOptions" :series="stabilitySeries" />
+                        </div>
+                        <p class="text-[10px] text-center text-gray-500 mt-[-20px] font-mono">{{ $t('Neural Balance') }}</p>
                     </div>
-                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Stability Index') }}</h4>
-                    <div class="flex flex-col items-center">
-                        <VueApexCharts type="radialBar" height="140" :options="stabilityChartOptions" :series="stabilitySeries" />
-                    </div>
-                    <p class="text-[10px] text-center text-gray-500 mt-[-20px] font-mono">{{ $t('Neural Balance') }}</p>
-                </div>
 
-                <!-- Neural Logic Score -->
-                <div @click="router.visit(route('decisions.index'))" class="bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 p-6 rounded-3xl cursor-pointer hover:border-blue-500/30 transition-all group">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-3xl">⚖️</span>
-                        <span class="text-blue-500 font-bold group-hover:scale-110 transition-transform">→</span>
+                    <!-- Neural Logic Score -->
+                    <div @click="router.visit(route('decisions.index'))" class="bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 p-6 rounded-3xl cursor-pointer hover:border-blue-500/30 transition-all group">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-3xl">⚖️</span>
+                            <span class="text-blue-500 font-bold group-hover:scale-110 transition-transform">→</span>
+                        </div>
+                        <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Logic Avg') }}</h4>
+                        <div class="flex items-baseline gap-2">
+                            <p class="text-2xl font-black text-white">{{ overview.decision_logic_avg }}%</p>
+                            <span class="text-[10px] text-gray-600 font-mono">({{ overview.sealed_decisions_count }} {{ $t('Sealed') }})</span>
+                        </div>
                     </div>
-                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Logic Avg') }}</h4>
-                    <div class="flex items-baseline gap-2">
-                        <p class="text-2xl font-black text-white">{{ overview.decision_logic_avg }}%</p>
-                        <span class="text-[10px] text-gray-600 font-mono">({{ overview.sealed_decisions_count }} {{ $t('Sealed') }})</span>
-                    </div>
-                </div>
 
-                <!-- Idea Reminder -->
-                <div @click="router.visit(route('ideas.index'))" class="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/10 p-6 rounded-3xl cursor-pointer hover:border-purple-500/30 transition-all group">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-3xl">💡</span>
-                        <span class="text-purple-500 font-bold group-hover:scale-110 transition-transform">→</span>
+                    <!-- Idea Reminder -->
+                    <div @click="router.visit(route('ideas.index'))" class="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/10 p-6 rounded-3xl cursor-pointer hover:border-purple-500/30 transition-all group">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-3xl">💡</span>
+                            <span class="text-purple-500 font-bold group-hover:scale-110 transition-transform">→</span>
+                        </div>
+                        <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Last Idea') }}</h4>
+                        <p class="text-white font-bold truncate bidi-plaintext">{{ overview.last_idea || $t('No ideas yet') }}</p>
                     </div>
-                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Last Idea') }}</h4>
-                    <p class="text-white font-bold truncate bidi-plaintext">{{ overview.last_idea || $t('No ideas yet') }}</p>
                 </div>
+            </transition>
 
-                <!-- Social Reminder -->
-                <div @click="router.visit(route('people.index'))" class="bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/10 p-6 rounded-3xl cursor-pointer hover:border-orange-500/30 transition-all group">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-3xl">🤝</span>
-                        <span class="text-orange-500 font-bold group-hover:scale-110 transition-transform">→</span>
-                    </div>
-                    <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Reconnect with') }}</h4>
-                    <p class="text-white font-bold bidi-plaintext">{{ overview.person_to_contact || $t('Add friends') }}</p>
-                </div>
-            </div>
+            <div v-if="!isFocusMode" class="h-12"></div>
 
             <!-- Dashboard Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div :class="['grid grid-cols-1 gap-6 transition-all duration-700', isFocusMode ? 'lg:grid-cols-2 max-w-4xl mx-auto' : 'md:grid-cols-2 lg:grid-cols-4']">
                 
                 <!-- Tasks List -->
                 <div class="dashboard-card group">
@@ -356,43 +359,45 @@ const speakBriefing = () => {
                 </div>
 
                 <!-- Harmony Gauge (Unique to this Brain) -->
-                <div class="dashboard-card group relative overflow-hidden">
-                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-black text-white flex items-center gap-2">
-                            <span class="p-1.5 bg-purple-500/10 rounded-lg text-purple-400 text-sm">⚖️</span>
-                            {{ $t('Life Harmony') }}
-                        </h3>
-                    </div>
-                    
-                    <div class="flex flex-col items-center">
-                        <VueApexCharts 
-                            type="radialBar" 
-                            height="240"
-                            :options="{
-                                chart: { type: 'radialBar', sparkline: { enabled: true } },
-                                plotOptions: {
-                                    radialBar: {
-                                        startAngle: -90, endAngle: 90,
-                                        track: { background: '#1d1d1f', strokeWidth: '97%' },
-                                        dataLabels: {
-                                            name: { show: false },
-                                            value: { offsetY: -2, fontSize: '20px', fontWeight: '900', color: '#fff' }
+                <transition name="fade">
+                    <div v-if="!isFocusMode" class="dashboard-card group relative overflow-hidden">
+                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-black text-white flex items-center gap-2">
+                                <span class="p-1.5 bg-purple-500/10 rounded-lg text-purple-400 text-sm">⚖️</span>
+                                {{ $t('Life Harmony') }}
+                            </h3>
+                        </div>
+                        
+                        <div class="flex flex-col items-center">
+                            <VueApexCharts 
+                                type="radialBar" 
+                                height="240"
+                                :options="{
+                                    chart: { type: 'radialBar', sparkline: { enabled: true } },
+                                    plotOptions: {
+                                        radialBar: {
+                                            startAngle: -90, endAngle: 90,
+                                            track: { background: '#1d1d1f', strokeWidth: '97%' },
+                                            dataLabels: {
+                                                name: { show: false },
+                                                value: { offsetY: -2, fontSize: '20px', fontWeight: '900', color: '#fff' }
+                                            }
                                         }
-                                    }
-                                },
-                                fill: { gradient: { enabled: true, shade: 'dark', type: 'horizontal', gradientToColors: ['#8B5CF6'], stops: [0, 100] } },
-                                stroke: { lineCap: 'round' },
-                                labels: [trans('Harmony')],
-                            }" 
-                            :series="[harmony_score || 0]" 
-                        />
-                        <p class="text-[8px] text-gray-500 uppercase tracking-[0.3em] font-mono -mt-6">{{ $t('Neural_Balance.v2') }}</p>
-                        <p class="mt-4 text-[10px] text-purple-400 text-center font-bold px-2 leading-relaxed bidi-plaintext italic">
-                            {{ harmony_score > 70 ? $t('عقلك في حالة تناغم مذهلة!') : $t('هناك اختلال بسيط في التوازن، الـ AI يراقب.') }}
-                        </p>
+                                    },
+                                    fill: { gradient: { enabled: true, shade: 'dark', type: 'horizontal', gradientToColors: ['#8B5CF6'], stops: [0, 100] } },
+                                    stroke: { lineCap: 'round' },
+                                    labels: [trans('Harmony')],
+                                }" 
+                                :series="[harmony_score || 0]" 
+                            />
+                            <p class="text-[8px] text-gray-500 uppercase tracking-[0.3em] font-mono -mt-6">{{ $t('Neural_Balance.v2') }}</p>
+                            <p class="mt-4 text-[10px] text-purple-400 text-center font-bold px-2 leading-relaxed bidi-plaintext italic">
+                                {{ harmony_score > 70 ? $t('عقلك في حالة تناغم مذهلة!') : $t('هناك اختلال بسيط في التوازن، الـ AI يراقب.') }}
+                            </p>
+                        </div>
                     </div>
-                </div>
+                </transition>
 
                 <!-- Daily Goal -->
                 <div class="dashboard-card group">
@@ -430,41 +435,43 @@ const speakBriefing = () => {
                 </div>
 
                 <!-- Daily Habit -->
-                <div class="dashboard-card group">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-black text-white flex items-center gap-2">
-                            <span class="p-1.5 bg-green-500/10 rounded-lg text-green-400 text-sm">🔄</span>
-                            {{ $t('Habit of the Day') }}
-                        </h3>
-                        <button v-if="!isEditingHabit && habit" @click="isEditingHabit = true" class="text-[10px] font-bold text-accent hover:underline uppercase tracking-widest">
-                            {{ $t('Edit') }}
-                        </button>
-                    </div>
-
-                    <div v-if="habit && !isEditingHabit" class="h-[200px] flex flex-col items-center justify-center bg-gradient-to-tr from-black/60 to-green-500/5 rounded-[30px] border border-white/5 relative overflow-hidden group">
-                        <div class="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center text-2xl font-black text-green-400 mb-4 border border-green-500/30 group-hover:scale-110 transition-transform">
-                            {{ habit.name.substring(0, 1) }}
-                        </div>
-                        <h4 class="text-lg font-black text-white text-center px-4 bidi-plaintext">{{ habit.name }}</h4>
-                        <p class="text-[8px] text-gray-500 mt-2 uppercase tracking-[0.2em]">{{ $t('Habit Subtitle') }}</p>
-                    </div>
-
-                    <div v-else class="h-[200px] flex flex-col items-center justify-center">
-                         <form @submit.prevent="saveHabit" class="w-full space-y-3">
-                            <input 
-                                v-model="habitForm.name" 
-                                type="text"
-                                :placeholder="$t('One habit...')"
-                                class="dashboard-input w-full text-center py-3 text-sm border-green-500/20 focus:border-green-500"
-                                required
-                            />
-                            <button type="submit" class="w-full bg-green-500/20 text-green-400 border border-green-500/30 py-3 rounded-2xl text-xs font-black shadow-lg hover:bg-green-500/30 active:scale-95 transition-all">
-                                {{ habit ? $t('Update Habit') : $t('Start Habit') }}
+                <transition name="fade">
+                    <div v-if="!isFocusMode" class="dashboard-card group">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-black text-white flex items-center gap-2">
+                                <span class="p-1.5 bg-green-500/10 rounded-lg text-green-400 text-sm">🔄</span>
+                                {{ $t('Habit of the Day') }}
+                            </h3>
+                            <button v-if="!isEditingHabit && habit" @click="isEditingHabit = true" class="text-[10px] font-bold text-accent hover:underline uppercase tracking-widest">
+                                {{ $t('Edit') }}
                             </button>
-                        </form>
+                        </div>
+
+                        <div v-if="habit && !isEditingHabit" class="h-[200px] flex flex-col items-center justify-center bg-gradient-to-tr from-black/60 to-green-500/5 rounded-[30px] border border-white/5 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center text-2xl font-black text-green-400 mb-4 border border-green-500/30 group-hover:scale-110 transition-transform">
+                                {{ habit.name.substring(0, 1) }}
+                            </div>
+                            <h4 class="text-lg font-black text-white text-center px-4 bidi-plaintext">{{ habit.name }}</h4>
+                            <p class="text-[8px] text-gray-500 mt-2 uppercase tracking-[0.2em]">{{ $t('Habit Subtitle') }}</p>
+                        </div>
+
+                        <div v-else class="h-[200px] flex flex-col items-center justify-center">
+                             <form @submit.prevent="saveHabit" class="w-full space-y-3">
+                                <input 
+                                    v-model="habitForm.name" 
+                                    type="text"
+                                    :placeholder="$t('One habit...')"
+                                    class="dashboard-input w-full text-center py-3 text-sm border-green-500/20 focus:border-green-500"
+                                    required
+                                />
+                                <button type="submit" class="w-full bg-green-500/20 text-green-400 border border-green-500/30 py-3 rounded-2xl text-xs font-black shadow-lg hover:bg-green-500/30 active:scale-95 transition-all">
+                                    {{ habit ? $t('Update Habit') : $t('Start Habit') }}
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                </div>
+                </transition>
 
             </div>
         </div>

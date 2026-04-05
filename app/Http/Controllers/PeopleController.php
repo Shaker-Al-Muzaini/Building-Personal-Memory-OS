@@ -111,17 +111,17 @@ class PeopleController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
-                $plan = $data['choices'][0]['message']['content'] ?? 'عذراً، لم أتمكن من إعداد تحليل العلاقات حالياً.';
+                $plan = $data['choices'][0]['message']['content'] ?? 'عذراً، الذاكرة العصبية تواجه صعوبة في صياغة التحليل الآن.';
                 return response()->json(['plan' => $plan]);
             }
 
             return response()->json([
-                'plan' => 'عذراً، لم أتمكن من إعداد تحليل العلاقات حالياً. خطأ: ' . $response->status()
+                'plan' => 'المستشار الذكي للعلاقات في استراحة قصيرة، يرجى المحاولة بعد قليل.'
             ]);
             
         } catch (\Exception $e) {
             return response()->json([
-                'plan' => 'حدث خطأ في الاتصال بالذكاء الاصطناعي: ' . $e->getMessage()
+                'plan' => 'انقطع الاتصال بالذكاء الاصطناعي، تأكد من استقرار الشبكة.'
             ], 500);
         }
     }
@@ -142,7 +142,12 @@ class PeopleController extends Controller
                     'model' => 'llama-3.3-70b-versatile',
                     'messages' => [['role' => 'user', 'content' => $prompt]],
                 ]);
-            return response()->json(['advice' => $response->json()['choices'][0]['message']['content']]);
+            if ($response->successful()) {
+                $data = $response->json();
+                $advice = $data['choices'][0]['message']['content'] ?? 'جرب أن تسأل عن أحوالهم ببساطة!';
+                return response()->json(['advice' => $advice]);
+            }
+            return response()->json(['advice' => 'أرسل لهم تحية دافئة!']);
         } catch (\Exception $e) {
             return response()->json(['advice' => 'جرب أن تسأل عن أحوالهم ببساطة!']);
         }

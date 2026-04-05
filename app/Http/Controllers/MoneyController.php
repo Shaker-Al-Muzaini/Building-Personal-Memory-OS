@@ -96,12 +96,12 @@ class MoneyController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
-                $plan = $data['choices'][0]['message']['content'] ?? 'لن نتمكن من تحليل المالية الآن.';
+                $plan = $data['choices'][0]['message']['content'] ?? 'لم أتمكن من إعداد خطة واضحة الآن، حاول لاحقاً.';
                 return response()->json(['plan' => $plan]);
             }
-            return response()->json(['plan' => 'فشل الاتصال بالمستشار المالي الذكي. خطأ: ' . $response->status()]);
+            return response()->json(['plan' => 'المستشار المالي الذكي منشغل حالياً بتحليل الأسواق، يرجى المحاولة بعد قليل.']);
         } catch (\Exception $e) {
-            return response()->json(['plan' => 'حدث خطأ في الاتصال بالمستشار المالي الذكي.']);
+            return response()->json(['plan' => 'انقطع الاتصال بالمستشار المالي الذكي، يرجى التحقق من الشبكة والمحاولة مجدداً.']);
         }
     }
 
@@ -138,10 +138,15 @@ class MoneyController extends Controller
                     'model' => 'llama-3.3-70b-versatile',
                     'messages' => [['role' => 'user', 'content' => $prompt]],
                 ]);
-            $json = $response->json()['choices'][0]['message']['content'];
-            // تنظيف النص في حال الـ AI أضاف كلاماً
-            $json = preg_replace('/[^0-9,\[\]\.-]/', '', $json);
-            return response()->json(['forecast' => json_decode($json)]);
+                
+            if ($response->successful()) {
+                $data = $response->json();
+                $json = $data['choices'][0]['message']['content'] ?? '[0,0,0]';
+                // تنظيف النص في حال الـ AI أضاف كلاماً
+                $json = preg_replace('/[^0-9,\[\]\.-]/', '', $json);
+                return response()->json(['forecast' => json_decode($json) ?: [0, 0, 0]]);
+            }
+            return response()->json(['forecast' => [0, 0, 0]]);
         } catch (\Exception $e) {
             return response()->json(['forecast' => [0, 0, 0]]);
         }

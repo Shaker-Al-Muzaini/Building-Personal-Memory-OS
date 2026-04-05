@@ -51,10 +51,10 @@ const stabilityChartOptions = computed(() => ({
         radialBar: {
             startAngle: -90,
             endAngle: 90,
-            track: { background: "rgba(255,255,255,0.05)", strokeWidth: '97%' },
+            track: { background: "var(--c-border-subtle)", strokeWidth: '97%' },
             dataLabels: {
                 name: { show: false },
-                value: { offsetY: -2, fontSize: '22px', fontWeight: '900', color: '#fff' }
+                value: { offsetY: -2, fontSize: '22px', fontWeight: '900', color: 'var(--c-text)' }
             }
         }
     },
@@ -78,6 +78,7 @@ const props = defineProps({
     habit: Object,
     goal: Object,
     overview: Object,
+    gamification: Object,
     shadow_prediction: String, // التنبؤ المستقبلي من الـ AI
     daily_briefing: String,    // الإيجاز الصباحي المكتوب
     harmony_score: Number      // مؤشر تناغم الحياة
@@ -156,7 +157,7 @@ const speakBriefing = () => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-black text-3xl text-white tracking-tight flex items-center gap-3">
+            <h2 class="font-black text-3xl text-text-main tracking-tight flex items-center gap-3">
                 <span class="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-2xl">🧠</span>
                 {{ $t('Your Personal  Brain') }}
             </h2>
@@ -168,7 +169,7 @@ const speakBriefing = () => {
             <div class="relative overflow-hidden group">
                 <div class="absolute inset-0 bg-gradient-to-r from-accent/20 to-purple-500/20 blur-[100px] -z-10 opacity-50 group-hover:opacity-100 transition-opacity duration-1000"></div>
                 
-                <div class="bg-black/40 backdrop-blur-2xl border border-white/5 p-10 rounded-[40px] shadow-2xl relative overflow-hidden">
+                <div class="bg-glass-bg backdrop-blur-2xl border border-glass-border p-10 rounded-[40px] shadow-2xl relative overflow-hidden">
                     <!-- Neural Pulse Decoration -->
                     <div class="absolute -top-20 -left-20 w-64 h-64 bg-accent/10 rounded-full blur-[80px] animate-pulse"></div>
                     
@@ -176,6 +177,15 @@ const speakBriefing = () => {
                         <div class="text-center lg:text-start flex-1">
                             <div class="flex items-center gap-4 mb-4 justify-center lg:justify-start">
                                 <span class="bg-accent/20 text-accent px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest animate-bounce">{{ $t('Live Neural Feed') }}</span>
+                                <div class="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 group cursor-pointer" :title="`XP: ${gamification.xp}/${gamification.next_xp}`">
+                                    <span class="text-xs">🏆</span>
+                                    <span class="text-[10px] text-yellow-500 font-black uppercase tracking-widest">
+                                        {{ $t('Level') }} {{ gamification.level }}
+                                    </span>
+                                    <div class="h-1.5 w-12 bg-white/10 rounded-full overflow-hidden ml-1">
+                                        <div class="h-full bg-yellow-500 rounded-full" :style="`width: ${gamification.progress}%`"></div>
+                                    </div>
+                                </div>
                                 <div class="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
                                     <span :class="['w-2 h-2 rounded-full', overview.stability_index > 70 ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]']"></span>
                                     <span class="text-[10px] text-gray-400 font-black uppercase tracking-widest">
@@ -184,25 +194,26 @@ const speakBriefing = () => {
                                 </div>
                                 <button 
                                     @click="isFocusMode = !isFocusMode" 
-                                    :class="['flex items-center gap-2 px-3 py-1 rounded-full border transition-all', isFocusMode ? 'bg-accent/40 border-accent/60' : 'bg-white/5 border-white/10 hover:bg-white/10']"
+                                    :class="['flex items-center gap-2 px-3 py-1 rounded-full border transition-all', isFocusMode ? 'bg-accent/40 border-accent/60' : 'bg-input-bg border-border-subtle hover:bg-card-hover']"
                                 >
                                     <span class="text-[12px]">{{ isFocusMode ? '👁️' : '🕶️' }}</span>
-                                    <span class="text-[10px] text-white font-black uppercase tracking-widest">{{ $t('Focus') }}</span>
+                                    <span class="text-[10px] text-text-main font-black uppercase tracking-widest">{{ $t('Focus') }}</span>
                                 </button>
                             </div>
-                            <h3 class="text-4xl font-black text-white mb-4 leading-tight">
-                                {{ $t('Smart Experience') }}
-                            </h3>
-                            <!-- Shadow Prediction Card (The Prophet) -->
-                            <div class="mt-8 relative group/prophet">
+                            <h3 class="text-4xl font-black text-text-main mb-4 leading-tight">
+                                {{ $                             <div class="mt-8 relative group/prophet">
                                 <div class="absolute -inset-1 bg-gradient-to-r from-accent to-purple-500 rounded-3xl blur opacity-20 group-hover/prophet:opacity-40 transition-opacity"></div>
-                                <div class="relative p-6 bg-black/60 rounded-3xl border border-white/5 backdrop-blur-xl flex items-start gap-4">
+                                <div class="relative p-6 bg-glass-bg rounded-3xl border border-glass-border backdrop-blur-xl flex items-start gap-4">
                                      <div class="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-2xl animate-pulse">🔮</div>
                                      <div class="flex-1">
                                         <h5 class="text-[10px] text-accent font-black uppercase tracking-[0.4em] mb-2 opacity-70">{{ $t('Neural_Prophecy.v1') }}</h5>
-                                        <p class="text-white text-lg font-light leading-relaxed bidi-plaintext italic">
+                                        <p class="text-text-main text-lg font-light leading-relaxed bidi-plaintext italic">
                                             "{{ shadow_prediction }}"
                                         </p>
+                                     </div>
+                                </div>
+                            </div>
+             </p>
                                      </div>
                                 </div>
                             </div>
@@ -217,7 +228,7 @@ const speakBriefing = () => {
                                     </h4>
                                     <button @click="speakBriefing" class="p-2 bg-accent/20 rounded-full hover:bg-accent/40 transition-all text-xs">🔊</button>
                                 </div>
-                                <p class="text-white text-sm leading-relaxed bidi-plaintext font-medium">
+                                <p class="text-text-main text-sm leading-relaxed bidi-plaintext font-medium">
                                     {{ daily_briefing }}
                                 </p>
                             </div>
@@ -241,13 +252,13 @@ const speakBriefing = () => {
 
                     <!-- AI Result Box -->
                     <transition name="fade">
-                        <div v-if="aiPlanText" class="mt-12 p-8 bg-black/60 rounded-3xl border border-accent/20 relative shadow-inner">
+                        <div v-if="aiPlanText" class="mt-12 p-8 bg-glass-bg rounded-3xl border border-accent/20 relative shadow-inner">
                             <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl">🤖</div>
                             <h4 class="text-accent font-black text-xl mb-6 flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
                                 AI Advisor:
                             </h4>
-                            <div class="text-gray-300 leading-[1.8] text-lg whitespace-pre-wrap font-light">
+                            <div class="text-text-main leading-[1.8] text-lg whitespace-pre-wrap font-light">
                                 {{ aiPlanText }}
                             </div>
                         </div>
@@ -264,8 +275,8 @@ const speakBriefing = () => {
                             <span class="text-3xl">💰</span>
                             <span class="text-green-500 font-bold group-hover:scale-110 transition-transform">→</span>
                         </div>
-                        <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Wallet Balance') }}</h4>
-                        <p class="text-2xl font-black text-white bidi-plaintext">{{ overview.balance }}</p>
+                        <h4 class="text-text-muted text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Wallet Balance') }}</h4>
+                        <p class="text-2xl font-black text-text-main bidi-plaintext">{{ overview.balance }}</p>
                     </div>
 
                     <!-- Stability Index Gauge -->
@@ -287,10 +298,10 @@ const speakBriefing = () => {
                             <span class="text-3xl">⚖️</span>
                             <span class="text-blue-500 font-bold group-hover:scale-110 transition-transform">→</span>
                         </div>
-                        <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Logic Avg') }}</h4>
+                        <h4 class="text-text-muted text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Logic Avg') }}</h4>
                         <div class="flex items-baseline gap-2">
-                            <p class="text-2xl font-black text-white">{{ overview.decision_logic_avg }}%</p>
-                            <span class="text-[10px] text-gray-600 font-mono">({{ overview.sealed_decisions_count }} {{ $t('Sealed') }})</span>
+                            <p class="text-2xl font-black text-text-main">{{ overview.decision_logic_avg }}%</p>
+                            <span class="text-[10px] text-text-muted font-mono">({{ overview.sealed_decisions_count }} {{ $t('Sealed') }})</span>
                         </div>
                     </div>
 
@@ -300,8 +311,8 @@ const speakBriefing = () => {
                             <span class="text-3xl">💡</span>
                             <span class="text-purple-500 font-bold group-hover:scale-110 transition-transform">→</span>
                         </div>
-                        <h4 class="text-gray-400 text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Last Idea') }}</h4>
-                        <p class="text-white font-bold truncate bidi-plaintext">{{ overview.last_idea || $t('No ideas yet') }}</p>
+                        <h4 class="text-text-muted text-sm mb-1 uppercase tracking-widest font-black">{{ $t('Last Idea') }}</h4>
+                        <p class="text-text-main font-bold truncate bidi-plaintext">{{ overview.last_idea || $t('No ideas yet') }}</p>
                     </div>
                 </div>
             </transition>
@@ -314,7 +325,7 @@ const speakBriefing = () => {
                 <!-- Tasks List -->
                 <div class="dashboard-card group">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-xl font-black text-white flex items-center gap-2">
+                        <h3 class="text-xl font-black text-text-main flex items-center gap-2">
                             <span class="p-1.5 bg-blue-500/10 rounded-lg text-blue-400 text-sm">📋</span>
                             {{ $t('Tasks of the Day') }}
                         </h3>
@@ -348,10 +359,10 @@ const speakBriefing = () => {
                             @click="toggleTask(task.id)"
                             :class="['flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl cursor-pointer hover:border-accent/40 transition-all', task.status === 'completed' ? 'opacity-50' : '']"
                         >
-                            <div :class="['w-4 h-4 rounded-full border flex items-center justify-center text-[8px]', task.status === 'completed' ? 'bg-accent border-accent text-white' : 'border-white/10']">
+                            <div :class="['w-4 h-4 rounded-full border flex items-center justify-center text-[8px]', task.status === 'completed' ? 'bg-accent border-accent text-white' : 'border-border-subtle']">
                                 <span v-if="task.status === 'completed'">✓</span>
                             </div>
-                            <span :class="['flex-1 truncate text-xs bidi-plaintext', task.status === 'completed' ? 'line-through text-gray-600' : 'text-gray-200']">
+                            <span :class="['flex-1 truncate text-xs bidi-plaintext', task.status === 'completed' ? 'line-through text-text-muted' : 'text-text-main']">
                                 {{ task.title }}
                             </span>
                         </div>
@@ -378,10 +389,10 @@ const speakBriefing = () => {
                                     plotOptions: {
                                         radialBar: {
                                             startAngle: -90, endAngle: 90,
-                                            track: { background: '#1d1d1f', strokeWidth: '97%' },
+                                            track: { background: 'var(--c-surface2)', strokeWidth: '97%' },
                                             dataLabels: {
                                                 name: { show: false },
-                                                value: { offsetY: -2, fontSize: '20px', fontWeight: '900', color: '#fff' }
+                                                value: { offsetY: -2, fontSize: '20px', fontWeight: '900', color: 'var(--c-text)' }
                                             }
                                         }
                                     },
@@ -411,11 +422,11 @@ const speakBriefing = () => {
                         </button>
                     </div>
 
-                    <div v-if="goal && !isEditingGoal" class="h-[200px] flex flex-col items-center justify-center bg-gradient-to-tr from-black/60 to-red-500/5 rounded-[30px] border border-white/5 relative overflow-hidden group">
+                    <div v-if="goal && !isEditingGoal" class="h-[200px] flex flex-col items-center justify-center bg-glass-bg rounded-[30px] border border-glass-border relative overflow-hidden group">
                         <div class="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <span class="text-4xl mb-4 drop-shadow-2xl group-hover:scale-110 transition-transform duration-500">🚀</span>
-                        <h4 class="text-lg font-black text-white text-center px-4 bidi-plaintext">{{ goal.title }}</h4>
-                        <p class="text-[8px] text-gray-600 mt-2 uppercase tracking-[0.3em] font-mono">{{ $t('Mission critical') }}</p>
+                        <h4 class="text-lg font-black text-text-main text-center px-4 bidi-plaintext">{{ goal.title }}</h4>
+                        <p class="text-[8px] text-text-muted mt-2 uppercase tracking-[0.3em] font-mono">{{ $t('Mission critical') }}</p>
                     </div>
 
                     <div v-else class="h-[200px] flex flex-col items-center justify-center">
@@ -447,13 +458,13 @@ const speakBriefing = () => {
                             </button>
                         </div>
 
-                        <div v-if="habit && !isEditingHabit" class="h-[200px] flex flex-col items-center justify-center bg-gradient-to-tr from-black/60 to-green-500/5 rounded-[30px] border border-white/5 relative overflow-hidden group">
+                        <div v-if="habit && !isEditingHabit" class="h-[200px] flex flex-col items-center justify-center bg-glass-bg rounded-[30px] border border-glass-border relative overflow-hidden group">
                             <div class="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center text-2xl font-black text-green-400 mb-4 border border-green-500/30 group-hover:scale-110 transition-transform">
                                 {{ habit.name.substring(0, 1) }}
                             </div>
-                            <h4 class="text-lg font-black text-white text-center px-4 bidi-plaintext">{{ habit.name }}</h4>
-                            <p class="text-[8px] text-gray-500 mt-2 uppercase tracking-[0.2em]">{{ $t('Habit Subtitle') }}</p>
+                            <h4 class="text-lg font-black text-text-main text-center px-4 bidi-plaintext">{{ habit.name }}</h4>
+                            <p class="text-[8px] text-text-muted mt-2 uppercase tracking-[0.2em]">{{ $t('Habit Subtitle') }}</p>
                         </div>
 
                         <div v-else class="h-[200px] flex flex-col items-center justify-center">
@@ -480,28 +491,28 @@ const speakBriefing = () => {
 
 <style scoped>
 .dashboard-card {
-    background: rgba(255, 255, 255, 0.05); /* زيادة الشفافية */
-    backdrop-filter: blur(40px); /* زيادة الضبابية للخلفية */
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--c-card-bg);
+    backdrop-filter: blur(40px);
+    border: 1px solid var(--c-border);
     border-radius: 40px;
-    padding: 1.5rem; /* تقليل الـ padding ليناسب 4 أعمدة */
+    padding: 1.5rem;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .dashboard-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(6, 155, 255, 0.4);
+    background: var(--c-card-hover);
+    border-color: var(--c-accent);
     transform: translateY(-8px);
 }
 
 .dashboard-ai-btn {
-    background: rgba(255, 255, 255, 0.05);
-    color: white;
+    background: var(--c-card-bg);
+    color: var(--c-text);
     padding: 1.2rem 3rem;
     border-radius: 100px;
     font-weight: 700;
     font-size: 1.2rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--c-border);
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
     display: flex;
@@ -510,25 +521,25 @@ const speakBriefing = () => {
 }
 
 .dashboard-ai-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(6, 155, 255, 0.5);
+    background: var(--c-card-hover);
+    border-color: var(--c-accent);
     box-shadow: 0 0 30px rgba(6, 155, 255, 0.15);
 }
 
 .dashboard-input {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--c-input-bg);
+    border: 1px solid var(--c-border-subtle);
     border-radius: 20px;
     padding: 1rem 1.5rem;
-    color: white;
+    color: var(--c-text);
     font-size: 1.1rem;
     transition: all 0.3s;
 }
 
 .dashboard-input:focus {
     outline: none;
-    border-color: #069BFF;
-    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--c-accent);
+    background: var(--c-surface);
     box-shadow: 0 0 20px rgba(6, 155, 255, 0.2);
 }
 

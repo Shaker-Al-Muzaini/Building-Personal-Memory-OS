@@ -41,17 +41,33 @@ class DashboardController extends Controller
 
         $goal = DB::table('goals')->where('user_id', $user->id)->where('status', 'pending')->latest()->first();
 
+        $sealedDecisionsCount = DB::table('decisions')->where('user_id', $user->id)->whereNotNull('final_decision')->count();
+        $dailyLogsCount = DB::table('daily_logs')->where('user_id', $user->id)->count();
+        
+        // --- Gamification (Leveling System) ---
+        $xp = ($completedTasksCount * 15) + ($sealedDecisionsCount * 50) + ($dailyLogsCount * 10);
+        $level = floor(sqrt($xp / 25)) + 1;
+        $currentLevelXP = pow($level - 1, 2) * 25;
+        $nextLevelXP = pow($level, 2) * 25;
+        $progressToNext = $nextLevelXP > $currentLevelXP ? (($xp - $currentLevelXP) / ($nextLevelXP - $currentLevelXP)) * 100 : 0;
+
         return Inertia::render('Dashboard', [
             'tasks' => $tasks,
             'habit' => $habit,
             'goal' => $goal,
+            'gamification' => [
+                'xp' => $xp,
+                'level' => $level,
+                'progress' => (int)min(100, max(0, $progressToNext)),
+                'next_xp' => $nextLevelXP
+            ],
             'overview' => [
                 'balance' => $balance,
                 'last_idea' => $lastIdea ? $lastIdea->content : null,
                 'person_to_contact' => $personToContact ? $personToContact->name : null,
                 'stability_index' => $stabilityIndex,
                 'decision_logic_avg' => $avgDecisionScore,
-                'sealed_decisions_count' => DB::table('decisions')->where('user_id', $user->id)->whereNotNull('final_decision')->count(),
+                'sealed_decisions_count' => $sealedDecisionsCount,
                 'income_expense_ratio' => $totalIncome > 0 ? (int)(($totalExpense / $totalIncome) * 100) : 0,
             ],
             'shadow_prediction' => $this->getShadowPrediction($user, $balance, $pendingTasksCount),
@@ -85,7 +101,12 @@ class DashboardController extends Controller
                     'model' => 'llama-3.3-70b-versatile',
                     'messages' => [['role' => 'user', 'content' => $prompt]],
                 ]);
-            return $response->json()['choices'][0]['message']['content'] ?? 'مستعد ليوم عظيم؟';
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['choices'][0]['message']['content'] ?? 'مستعد ليوم عظيم؟';
+            }
+            return 'العقل قيد التحديث... (خوادم الذكاء منشغلة)';
         } catch (\Exception $e) {
             return 'العقل قيد التحديث...';
         }
@@ -105,7 +126,12 @@ class DashboardController extends Controller
                     'model' => 'llama-3.3-70b-versatile',
                     'messages' => [['role' => 'user', 'content' => $prompt]],
                 ]);
-            return $response->json()['choices'][0]['message']['content'] ?? 'المستقبل غامض حالياً...';
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['choices'][0]['message']['content'] ?? 'المستقبل غامض حالياً...';
+            }
+            return 'جاري البحث في فراغ الاحتمالات...';
         } catch (\Exception $e) {
             return 'جاري قراءة المسارات العصبية...';
         }
@@ -217,33 +243,37 @@ class DashboardController extends Controller
                     'response_format' => ['type' => 'json_object']
                 ]);
 
-            $json = $response->json()['choices'][0]['message']['content'];
-            $res = json_decode($json, true);
+            if ($response->successful()) {
+                $data = $response->json();
+                $json = $data['choices'][0]['message']['content'] ?? '{}';
+                $res = json_decode($json, true) ?: ['type' => 'unknown', 'reply' => 'الرد غير منسق بشكل صحيح.'];
 
-            if ($res['type'] === 'money') {
-                DB::table('transactions')->insert([
-                    'user_id' => $user->id,
-                    'amount' => $res['data']['amount'] ?? 0,
-                    'type' => $res['data']['type'] ?? 'expense',
-                    'category' => $res['data']['category'] ?? 'عام',
-                    'description' => $res['data']['description'] ?? $command,
-                    'created_at' => now(), 'updated_at' => now()
-                ]);
-            } elseif ($res['type'] === 'task') {
-                DB::table('tasks')->insert([
-                    'user_id' => $user->id,
-                    'title' => $res['data']['title'] ?? $command,
-                    'status' => 'pending', 'created_at' => now(), 'updated_at' => now()
-                ]);
-            } elseif ($res['type'] === 'idea') {
-                DB::table('ideas')->insert([
-                    'user_id' => $user->id,
-                    'content' => $res['data']['content'] ?? $command,
-                    'status' => 'draft', 'category' => 'ذكية', 'created_at' => now(), 'updated_at' => now()
-                ]);
+                if (($res['type'] ?? '') === 'money') {
+                    DB::table('transactions')->insert([
+                        'user_id' => $user->id,
+                        'amount' => $res['data']['amount'] ?? 0,
+                        'type' => $res['data']['type'] ?? 'expense',
+                        'category' => $res['data']['category'] ?? 'عام',
+                        'description' => $res['data']['description'] ?? $command,
+                        'created_at' => now(), 'updated_at' => now()
+                    ]);
+                } elseif (($res['type'] ?? '') === 'task') {
+                    DB::table('tasks')->insert([
+                        'user_id' => $user->id,
+                        'title' => $res['data']['title'] ?? $command,
+                        'status' => 'pending', 'created_at' => now(), 'updated_at' => now()
+                    ]);
+                } elseif (($res['type'] ?? '') === 'idea') {
+                    DB::table('ideas')->insert([
+                        'user_id' => $user->id,
+                        'content' => $res['data']['content'] ?? $command,
+                        'status' => 'draft', 'category' => 'ذكية', 'created_at' => now(), 'updated_at' => now()
+                    ]);
+                }
+
+                return response()->json($res);
             }
-
-            return response()->json($res);
+            return response()->json(['reply' => 'تعذر الاتصال بالذكاء الاصطناعي، يرجى المحاولة لاحقاً.', 'type' => 'unknown']);
         } catch (\Exception $e) {
             return response()->json(['reply' => 'لم أفهم الأمر بدقة، حاول مجدداً.', 'type' => 'unknown']);
         }

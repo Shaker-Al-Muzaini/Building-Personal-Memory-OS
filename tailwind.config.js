@@ -13,9 +13,18 @@ export default {
     theme: {
         extend: {
             colors: {
-                primary: "#121B06", // Dark background
-                secondary: "#062F69", // Deep Blue
-                accent: "#069BFF", // Light Blue/Accent
+                primary: "var(--c-accent)", 
+                accent: "var(--c-accent)",
+                surface: "var(--c-surface)",
+                "surface-2": "var(--c-surface2)",
+                "card-bg": "var(--c-card-bg)",
+                "glass-bg": "var(--c-glass-bg)",
+                "glass-border": "var(--c-glass-border)",
+                "input-bg": "var(--c-input-bg)",
+                "text-main": "var(--c-text)",
+                "text-muted": "var(--c-text-muted)",
+                "border-main": "var(--c-border)",
+                "border-subtle": "var(--c-border-subtle)",
                 memory: {
                     dark: "#0d1304",
                     light: "#e2f0d5",

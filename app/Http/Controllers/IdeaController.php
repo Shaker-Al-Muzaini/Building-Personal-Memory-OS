@@ -61,15 +61,15 @@ class IdeaController extends Controller
                 $full_response = $data['choices'][0]['message']['content'] ?? '';
                 
                 $lines = explode("\n", $full_response);
-                $category = trim(str_replace(['[', ']', 'التصنيف:', '#', '*'], '', $lines[0]));
+                $category = trim(str_replace(['[', ']', 'التصنيف:', '#', '*'], '', $lines[0] ?? 'فكرة'));
                 if (strlen($category) > 20) $category = 'فكرة';
                 
                 $ai_analysis = implode("\n", array_slice($lines, 1));
             } else {
-                $ai_analysis = "⚠️ فشل في التواصل مع الذكاء الاصطناعي: " . $response->status() . " - " . ($response->json()['error']['message'] ?? 'خطأ غير معروف');
+                $ai_analysis = "النظام العصبي منشغل حالياً. يرجى تحليل هذه الفكرة في وقت لاحق.";
             }
         } catch (\Exception $e) {
-            $ai_analysis = "❌ خطأ تقني: " . $e->getMessage();
+            $ai_analysis = "انقطع الاتصال بالذكاء الاصطناعي، يرجى المحاولة لاحقاً.";
         }
 
 

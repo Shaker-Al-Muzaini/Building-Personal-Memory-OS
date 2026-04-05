@@ -16,6 +16,7 @@ const isMuted = ref(false);
 const lastSpokenText = ref('');
 const lastSpeechTime = ref(0);
 const voicesLoaded = ref(false);
+const sceneSpoken = ref(-1);
 
 const steps = [
     {

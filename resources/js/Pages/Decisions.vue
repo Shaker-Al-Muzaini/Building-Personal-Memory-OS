@@ -94,49 +94,55 @@ const parseAdvice = (advice) => {
             </h2>
         </template>
 
-        <div class="py-12 bg-primary min-h-screen text-memory-light" dir="rtl">
-            <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-16">
+        <div class="py-12 bg-black min-h-screen text-memory-light relative overflow-hidden" dir="rtl">
+            <!-- Cinematic Vignette & Grain -->
+            <div class="absolute inset-0 z-0 pointer-events-none opacity-50 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#000_100%)]"></div>
+            <div class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-accent/5 to-transparent pointer-events-none"></div>
 
-                <!-- Decision Input Portal -->
-                <div class="relative group">
-                    <div class="absolute -inset-1 bg-gradient-to-r from-accent to-purple-600 rounded-[40px] blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200"></div>
-                    <div class="relative bg-black/60 backdrop-blur-3xl border border-white/5 p-10 rounded-[40px] shadow-2xl overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-30"></div>
+            <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-16 relative z-10">
+
+                <!-- Decision Input Portal: The Dark Room -->
+                <div class="relative group mt-10">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-accent/20 to-purple-600/20 rounded-[40px] blur-xl opacity-50 transition duration-1000"></div>
+                    <div class="relative bg-black border border-white/10 p-12 md:p-20 rounded-[40px] shadow-2xl overflow-hidden flex flex-col items-center justify-center min-h-[400px]">
                         
-                        <div class="max-w-3xl">
-                            <h3 class="text-4xl font-black text-white mb-4 tracking-tighter text-right">{{ $t('I am confused... help me!') }}</h3>
-                            <p class="text-gray-500 mb-10 text-lg font-light leading-relaxed text-right">{{ $t('Describe the crossroad you are standing at, and let the AI analyze the neural weights of your choices.') }}</p>
+                        <div class="w-full max-w-4xl text-center">
+                            <span class="text-accent/50 tracking-[0.5em] uppercase text-xs font-black mb-6 block">{{ $t('The Dark Room') }}</span>
+                            <h3 class="text-3xl md:text-5xl font-black text-white mb-6 tracking-tighter">{{ $t('I am confused... help me!') }}</h3>
+                            <p class="text-gray-500 mb-12 text-lg md:text-xl font-light leading-relaxed max-w-2xl mx-auto">{{ $t('Describe the crossroad you are standing at, and let the AI analyze the neural weights of your choices.') }}</p>
                             
-                            <form @submit.prevent="saveProblem" class="space-y-6">
+                            <form @submit.prevent="saveProblem" class="space-y-8 w-full">
                                 <div class="relative">
                                     <textarea
                                         v-model="decisionForm.problem"
-                                        class="w-full bg-black/40 border border-white/10 rounded-[30px] px-8 py-6 text-white focus:ring-accent focus:border-accent text-xl font-light placeholder:text-gray-800 min-h-[180px] transition-all resize-none shadow-inner bidi-plaintext"
-                                        :placeholder="$t('Example: Should I leave my current job to start my own tech project?')"
+                                        class="w-full bg-transparent border-b-2 border-white/20 px-4 py-6 text-center text-white focus:ring-0 focus:border-accent text-2xl md:text-3xl font-light placeholder:text-gray-800 min-h-[100px] transition-all resize-none bidi-plaintext"
+                                        :placeholder="$t('Example: Should I leave my current job...?')"
                                         required
                                         dir="auto"
                                     ></textarea>
                                 </div>
                                 
-                                <button
-                                    type="submit"
-                                    :disabled="decisionForm.processing"
-                                    class="bg-accent text-white px-12 py-5 rounded-[20px] font-black text-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-4 shadow-[0_20px_40px_rgba(6,155,255,0.2)] ms-auto"
-                                >
-                                    <span v-if="decisionForm.processing" class="animate-spin w-6 h-6 border-4 border-white border-t-transparent rounded-full block"></span>
-                                    <span v-else class="text-2xl">⚡</span>
-                                    <span>{{ decisionForm.processing ? $t('Analyzing Neural Weights...') : $t('Start Lab Analysis') }}</span>
-                                </button>
+                                <div class="flex justify-center">
+                                    <button
+                                        type="submit"
+                                        :disabled="decisionForm.processing"
+                                        class="bg-white/5 border border-white/10 text-white px-12 py-5 rounded-full font-black text-lg hover:bg-white/10 hover:border-accent active:scale-95 transition-all disabled:opacity-50 flex items-center gap-4 shadow-2xl"
+                                    >
+                                        <span v-if="decisionForm.processing" class="animate-spin w-6 h-6 border-4 border-white border-t-transparent rounded-full block"></span>
+                                        <span v-else class="text-accent text-2xl">⚡</span>
+                                        <span>{{ decisionForm.processing ? $t('Analyzing Neural Weights...') : $t('Initialize Socratic Analysis') }}</span>
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>
                 </div>
 
                 <!-- Archives/Pending Filter Tabs -->
-                <div class="flex justify-center gap-6 mb-12">
+                <div class="flex justify-center gap-6 mb-12 pt-10">
                     <button 
                         @click="activeFilter = 'pending'"
-                        class="px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-500"
+                        class="px-8 py-3 rounded-full font-black text-sm uppercase tracking-widest transition-all duration-500"
                         :class="activeFilter === 'pending' ? 'bg-accent/20 text-accent border border-accent/40 shadow-[0_0_30px_rgba(6,155,255,0.15)]' : 'bg-white/5 text-gray-600 hover:text-gray-400 border border-white/5'"
                     >
                         {{ $t('Pending Contexts') }} ({{ props.decisions.filter(d => !d.final_decision).length }})

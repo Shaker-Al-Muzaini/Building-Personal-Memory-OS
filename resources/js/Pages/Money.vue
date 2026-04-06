@@ -1,12 +1,14 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import axios from 'axios';
 import { trans } from 'laravel-vue-i18n';
 import Swal from 'sweetalert2';
 import VueApexCharts from 'vue3-apexcharts';
-import { computed } from 'vue';
+import { useTheme } from '@/Composables/useTheme';
+
+const { isDark } = useTheme();
 
 const props = defineProps({
     transactions: Array,
@@ -52,9 +54,9 @@ const deleteTransaction = async (id) => {
         cancelButtonColor: '#4b5563',
         confirmButtonText: trans('Yes, delete it!'),
         cancelButtonText: trans('Cancel'),
-        background: '#0d1304',
-        color: '#fff',
-        customClass: { popup: 'border border-gray-800 rounded-2xl shadow-2xl' }
+        background: 'var(--c-surface)',
+        color: 'var(--c-text)',
+        customClass: { popup: 'border border-glass-border rounded-2xl shadow-2xl' }
     });
 
     if (result.isConfirmed) {
@@ -73,11 +75,11 @@ const incomeVsExpenseOptions = computed(() => ({
     chart: { type: 'donut', background: 'transparent' },
     labels: [trans('Income'), trans('Expense')],
     colors: ['#22c55e', '#ef4444'],
-    theme: { mode: 'dark' },
+    theme: { mode: isDark.value ? 'dark' : 'light' },
     stroke: { show: false },
-    legend: { position: 'bottom' },
+    legend: { position: 'bottom', labels: { colors: 'var(--c-text)' } },
     dataLabels: { enabled: false },
-    tooltip: { theme: 'dark' }
+    tooltip: { theme: isDark.value ? 'dark' : 'light' }
 }));
 
 const categoryData = computed(() => {
@@ -94,9 +96,9 @@ const categorySeries = computed(() => Object.values(categoryData.value));
 const categoryOptions = computed(() => ({
     chart: { type: 'donut', background: 'transparent' },
     labels: Object.keys(categoryData.value),
-    theme: { mode: 'dark' },
+    theme: { mode: isDark.value ? 'dark' : 'light' },
     stroke: { show: false },
-    legend: { position: 'bottom' },
+    legend: { position: 'bottom', labels: { colors: 'var(--c-text)' } },
     plotOptions: {
         pie: {
             donut: {
@@ -106,13 +108,14 @@ const categoryOptions = computed(() => ({
                     total: {
                         show: true,
                         label: trans('Total'),
+                        color: 'var(--c-text)',
                         formatter: (w) => `${w.globals.seriesTotals.reduce((a, b) => a + b, 0)} $`
                     }
                 }
             }
         }
     },
-    tooltip: { theme: 'dark' }
+    tooltip: { theme: isDark.value ? 'dark' : 'light' }
 }));
 
 const forecastData = ref([]);
@@ -134,9 +137,14 @@ const forecastOptions = computed(() => ({
     chart: { type: 'line', toolbar: { show: false }, background: 'transparent' },
     stroke: { curve: 'smooth', dashArray: [0, 8] },
     colors: ['#22c55e', '#069BFF'],
-    xaxis: { categories: [trans('Month 1'), trans('Month 2'), trans('Month 3')] },
-    theme: { mode: 'dark' },
+    xaxis: { 
+        categories: [trans('Month 1'), trans('Month 2'), trans('Month 3')],
+        labels: { style: { colors: 'var(--c-text-muted)' } }
+    },
+    yaxis: { labels: { style: { colors: 'var(--c-text-muted)' } } },
+    theme: { mode: isDark.value ? 'dark' : 'light' },
     markers: { size: 4 },
+    grid: { borderColor: 'var(--c-border-subtle)' }
 }));
 
 const forecastSeries = computed(() => [
@@ -149,38 +157,38 @@ const forecastSeries = computed(() => [
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-2xl text-accent leading-tight flex items-center gap-2">
+            <h2 class="font-black text-2xl text-text-main leading-tight flex items-center gap-2">
                 <span>💰</span> {{ $t('Money Memory') }}
             </h2>
         </template>
 
-        <div class="py-12 bg-primary min-h-screen text-memory-light" dir="rtl">
+        <div class="py-12 bg-surface min-h-screen text-text-main" dir="rtl">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
                 <!-- Summary Board -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl text-center">
-                        <span class="text-gray-400 block mb-2 text-sm">{{ $t('Total Income') }}</span>
+                    <div class="bg-glass-bg border border-glass-border rounded-2xl p-6 shadow-xl text-center transition-all hover:translate-y-[-4px]">
+                        <span class="text-text-muted block mb-2 text-sm">{{ $t('Total Income') }}</span>
                         <h3 class="text-3xl font-bold text-green-500">{{ summary.income }} $</h3>
                     </div>
-                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl text-center">
-                        <span class="text-gray-400 block mb-2 text-sm">{{ $t('Total Expenses') }}</span>
+                    <div class="bg-glass-bg border border-glass-border rounded-2xl p-6 shadow-xl text-center transition-all hover:translate-y-[-4px]">
+                        <span class="text-text-muted block mb-2 text-sm">{{ $t('Total Expenses') }}</span>
                         <h3 class="text-3xl font-bold text-red-500">{{ summary.expense }} $</h3>
                     </div>
-                    <div class="bg-gray-900 border border-t-[4px] border-accent rounded-2xl p-6 shadow-xl text-center relative overflow-hidden">
+                    <div class="bg-glass-bg border border-t-[4px] border-accent rounded-2xl p-6 shadow-xl text-center relative overflow-hidden transition-all hover:translate-y-[-4px]">
                         <div class="absolute inset-0 bg-accent opacity-5"></div>
-                        <span class="text-gray-400 block mb-2 text-sm relative z-10">{{ $t('Remaining Balance') }}</span>
-                        <h3 :class="['text-4xl font-bold relative z-10', summary.balance >= 0 ? 'text-white' : 'text-red-500']">{{ summary.balance }} $</h3>
+                        <span class="text-text-muted block mb-2 text-sm relative z-10">{{ $t('Remaining Balance') }}</span>
+                        <h3 :class="['text-4xl font-bold relative z-10', summary.balance >= 0 ? 'text-text-main' : 'text-red-500']">{{ summary.balance }} $</h3>
                     </div>
                 </div>
 
                 <!-- AI Button -->
-                <div class="bg-gray-900 border border-gray-800 overflow-hidden shadow-2xl sm:rounded-2xl p-8 relative">
+                <div class="bg-glass-bg border border-glass-border overflow-hidden shadow-2xl sm:rounded-2xl p-8 relative">
                     <div class="absolute -bottom-16 -right-16 w-40 h-40 bg-green-600 opacity-20 rounded-full blur-[60px]"></div>
                     <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div>
-                            <h3 class="text-2xl font-bold text-white mb-2">{{ $t('Budget Leaking?') }}</h3>
-                            <p class="text-gray-400">{{ $t('Let AI analyze your numbers...') }}</p>
+                            <h3 class="text-2xl font-bold text-text-main mb-2">{{ $t('Budget Leaking?') }}</h3>
+                            <p class="text-text-muted">{{ $t('Let AI analyze your numbers...') }}</p>
                         </div>
                         <button 
                             @click="generatePlan" 
@@ -192,7 +200,7 @@ const forecastSeries = computed(() => [
                         </button>
                     </div>
 
-                    <div v-if="aiPlanText" class="mt-8 p-6 bg-black bg-opacity-40 rounded-xl border border-gray-800 whitespace-pre-wrap leading-relaxed">
+                    <div v-if="aiPlanText" class="mt-8 p-6 bg-input-bg rounded-xl border border-border-subtle whitespace-pre-wrap leading-relaxed">
                        <div class="flex items-center gap-2 mb-4 text-accent">
                            <span class="text-xl">💰</span>
                            <h4 class="font-bold text-xl">{{ $t('Financial Advisor Tip:') }}</h4>
@@ -203,8 +211,8 @@ const forecastSeries = computed(() => [
 
                 <!-- Financial Charts Section -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
-                        <h4 class="text-lg font-bold text-white mb-6 flex items-center justify-between">
+                    <div class="bg-glass-bg border border-glass-border rounded-2xl p-6 shadow-xl">
+                        <h4 class="text-lg font-bold text-text-main mb-6 flex items-center justify-between">
                              <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 bg-accent rounded-full"></span>
                                 {{ $t('Income vs Expenses') }}
@@ -215,8 +223,8 @@ const forecastSeries = computed(() => [
                         </div>
                     </div>
 
-                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
-                        <h4 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <div class="bg-glass-bg border border-glass-border rounded-2xl p-6 shadow-xl">
+                        <h4 class="text-lg font-bold text-text-main mb-6 flex items-center gap-2">
                              <span class="w-2 h-2 bg-green-500 rounded-full"></span>
                              {{ $t('Expenses by Category') }}
                         </h4>
@@ -226,9 +234,9 @@ const forecastSeries = computed(() => [
                     </div>
 
                     <!-- AI PROPHET FORECAST CARD -->
-                    <div class="bg-gray-900 border border-white/5 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                    <div class="bg-glass-bg border border-glass-border rounded-2xl p-6 shadow-xl relative overflow-hidden group">
                         <div class="absolute -top-10 -left-10 w-32 h-32 bg-accent/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <h4 class="text-lg font-black text-white mb-6 flex items-center justify-between relative z-10">
+                        <h4 class="text-lg font-black text-text-main mb-6 flex items-center justify-between relative z-10">
                             <div class="flex items-center gap-2 font-black">
                                 <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
                                 {{ $t('Money Forecast (AI)') }}
@@ -240,7 +248,7 @@ const forecastSeries = computed(() => [
                         <div v-if="forecastData.length > 0" class="relative z-10 h-40">
                              <VueApexCharts height="160" :options="forecastOptions" :series="forecastSeries" />
                         </div>
-                        <div v-else class="h-40 flex flex-col items-center justify-center text-gray-700 text-xs text-center px-4 relative z-10 border border-dashed border-white/5 rounded-xl">
+                        <div v-else class="h-40 flex flex-col items-center justify-center text-text-muted text-xs text-center px-4 relative z-10 border border-dashed border-border-subtle rounded-xl">
                             <span class="text-2xl mb-2">🔮</span>
                             {{ $t('Activate AI Projection to see your future balance.') }}
                         </div>
@@ -249,30 +257,30 @@ const forecastSeries = computed(() => [
 
                 <!-- Add Transaction Form -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-20">
-                    <div class="md:col-span-1 bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl text-white">
+                    <div class="md:col-span-1 bg-glass-bg border border-glass-border rounded-2xl p-6 shadow-xl text-text-main">
                         <h3 class="text-xl font-bold mb-6">➕ {{ $t('New Transaction') }}</h3>
                         <form @submit.prevent="saveTransaction" class="space-y-4">
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Transaction Type') }}</label>
+                                <label class="block text-sm text-text-muted mb-1">{{ $t('Transaction Type') }}</label>
                                 <div class="flex gap-2">
-                                    <button type="button" @click="transactionForm.type = 'expense'" :class="['flex-1 py-2 rounded-lg font-bold transition', transactionForm.type === 'expense' ? 'bg-red-600' : 'bg-gray-800 text-gray-400']">{{ $t('Expense') }}</button>
-                                    <button type="button" @click="transactionForm.type = 'income'" :class="['flex-1 py-2 rounded-lg font-bold transition', transactionForm.type === 'income' ? 'bg-green-600' : 'bg-gray-800 text-gray-400']">{{ $t('Income') }}</button>
+                                    <button type="button" @click="transactionForm.type = 'expense'" :class="['flex-1 py-2 rounded-lg font-bold transition', transactionForm.type === 'expense' ? 'bg-red-600 text-white' : 'bg-surface-2 text-text-muted']">{{ $t('Expense') }}</button>
+                                    <button type="button" @click="transactionForm.type = 'income'" :class="['flex-1 py-2 rounded-lg font-bold transition', transactionForm.type === 'income' ? 'bg-green-600 text-white' : 'bg-surface-2 text-text-muted']">{{ $t('Income') }}</button>
                                 </div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Amount ($)') }}</label>
-                                <input v-model="transactionForm.amount" type="number" step="0.01" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" required />
+                                <label class="block text-sm text-text-muted mb-1">{{ $t('Amount ($)') }}</label>
+                                <input v-model="transactionForm.amount" type="number" step="0.01" class="w-full bg-input-bg border border-border-subtle rounded-lg px-3 py-2 text-text-main focus:ring-accent" required />
                             </div>
 
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Category') }}</label>
-                                <input v-model="transactionForm.category" type="text" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" required />
+                                <label class="block text-sm text-text-muted mb-1">{{ $t('Category') }}</label>
+                                <input v-model="transactionForm.category" type="text" class="w-full bg-input-bg border border-border-subtle rounded-lg px-3 py-2 text-text-main focus:ring-accent" required />
                             </div>
 
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Description (Optional)') }}</label>
-                                <input v-model="transactionForm.description" type="text" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" />
+                                <label class="block text-sm text-text-muted mb-1">{{ $t('Description (Optional)') }}</label>
+                                <input v-model="transactionForm.description" type="text" class="w-full bg-input-bg border border-border-subtle rounded-lg px-3 py-2 text-text-main focus:ring-accent" />
                             </div>
                             
                             <button type="submit" :disabled="transactionForm.processing" class="bg-accent text-white px-4 py-2 rounded-lg font-bold hover:bg-opacity-80 transition w-full mt-2">
@@ -282,29 +290,29 @@ const forecastSeries = computed(() => [
                     </div>
 
                     <!-- Transactions History -->
-                    <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl flex flex-col">
-                        <h3 class="text-xl font-bold text-white mb-6">{{ $t('Transactions History') }}</h3>
+                    <div class="md:col-span-2 bg-glass-bg border border-glass-border rounded-2xl p-6 shadow-xl flex flex-col">
+                        <h3 class="text-xl font-bold text-text-main mb-6">{{ $t('Transactions History') }}</h3>
                         
-                        <div v-if="transactions.length === 0" class="text-center py-12 text-gray-500 font-medium">
+                        <div v-if="transactions.length === 0" class="text-center py-12 text-text-muted font-medium">
                             {{ $t('No financial records!') }}
                         </div>
                         
                         <div v-else class="space-y-3 custom-scrollbar overflow-y-auto max-h-[400px] pr-2">
-                            <div v-for="t in transactions" :key="t.id" class="flex items-center justify-between p-4 bg-black bg-opacity-30 border border-gray-800 rounded-xl relative group transition hover:border-accent">
+                            <div v-for="t in transactions" :key="t.id" class="flex items-center justify-between p-4 bg-input-bg border border-border-subtle rounded-xl relative group transition hover:border-accent">
                                 <div class="flex items-center gap-4">
                                     <div :class="['w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold', t.type === 'income' ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500']">
                                         {{ t.type === 'income' ? '+' : '-' }}
                                     </div>
                                     <div>
-                                        <h4 class="font-bold text-white">{{ t.category }}</h4>
-                                        <span class="text-xs text-gray-500">{{ t.description || 'لا يوجد وصف' }} | {{ new Date(t.created_at).toLocaleDateString() }}</span>
+                                        <h4 class="font-bold text-text-main">{{ t.category }}</h4>
+                                        <span class="text-xs text-text-muted">{{ t.description || 'لا يوجد وصف' }} | {{ new Date(t.created_at).toLocaleDateString() }}</span>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-4">
                                     <h3 :class="['text-xl font-bold', t.type === 'income' ? 'text-green-500' : 'text-red-500']">
                                         {{ t.amount }} $
                                     </h3>
-                                    <button @click="deleteTransaction(t.id)" class="text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition px-2">✖</button>
+                                    <button @click="deleteTransaction(t.id)" class="text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition px-2">✖</button>
                                 </div>
                             </div>
                         </div>
@@ -317,11 +325,7 @@ const forecastSeries = computed(() => [
 </template>
 
 <style scoped>
-:deep(.bg-white) { background-color: #0d1304 !important; border-color: #1f2937 !important; }
-:deep(.text-gray-800) { color: #e2f0d5 !important; }
-:deep(header) { background-color: #0d1304 !important; border-bottom: 1px solid #1f2937 !important; }
-:deep(nav) { background-color: #0d1304 !important; border-bottom: 1px solid #1f2937 !important; }
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #062F69; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: var(--c-accent); border-radius: 10px; opacity: 0.2; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 </style>

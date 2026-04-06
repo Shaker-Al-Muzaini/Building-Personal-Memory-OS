@@ -31,8 +31,8 @@ const startVoice = () => {
             title: trans('Not Supported'),
             text: trans('Your browser does not support voice recognition.'),
             icon: 'error',
-            background: '#0d1304',
-            color: '#fff'
+            background: 'var(--c-surface)',
+            color: 'var(--c-text)'
         });
         return;
     }
@@ -72,9 +72,9 @@ const deleteIdea = async (id) => {
         cancelButtonColor: '#4b5563',
         confirmButtonText: trans('Yes, delete it!'),
         cancelButtonText: trans('Cancel'),
-        background: '#0d1304',
-        color: '#fff',
-        customClass: { popup: 'border border-gray-800 rounded-2xl shadow-2xl' }
+        background: 'var(--c-surface)',
+        color: 'var(--c-text)',
+        customClass: { popup: 'border border-glass-border rounded-2xl shadow-2xl' }
     });
 
     if (result.isConfirmed) {
@@ -98,28 +98,28 @@ const getIdeasByStatus = (status) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-black text-3xl text-white tracking-tight flex items-center gap-3">
+            <h2 class="font-black text-3xl text-text-main tracking-tight flex items-center gap-3">
                 <span class="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-2xl">💡</span>
                 {{ $t('Ideas Memory') }}
             </h2>
         </template>
 
-        <div class="py-12 bg-primary min-h-screen text-memory-light" dir="rtl">
+        <div class="py-12 bg-surface min-h-screen text-text-main" dir="rtl">
             <div class="max-w-[1600px] mx-auto sm:px-6 lg:px-8 space-y-12">
 
                 <!-- Add Idea Section -->
-                <div class="bg-black/40 backdrop-blur-2xl border border-white/5 p-8 rounded-[40px] shadow-2xl relative overflow-hidden group">
+                <div class="bg-glass-bg backdrop-blur-2xl border border-glass-border p-8 rounded-[40px] shadow-2xl relative overflow-hidden group">
                     <div class="absolute inset-0 bg-gradient-to-r from-accent/10 to-purple-500/10 blur-[100px] -z-10 opacity-50"></div>
                     
                     <div class="relative z-10">
-                        <h3 class="text-2xl font-black text-white mb-2">{{ $t("What's on your mind?") }}</h3>
-                        <p class="text-gray-400 mb-8 font-light text-lg">{{ $t('Record any idea...') }}</p>
+                        <h3 class="text-2xl font-black text-text-main mb-2">{{ $t("What's on your mind?") }}</h3>
+                        <p class="text-text-muted mb-8 font-light text-lg">{{ $t('Record any idea...') }}</p>
                         
                         <form @submit.prevent="saveIdea" class="space-y-4">
                             <div class="relative group/input">
                                 <textarea
                                     v-model="ideaForm.content"
-                                    class="w-full bg-black/60 border border-white/5 rounded-[30px] px-8 py-6 ltr:pr-20 rtl:pl-20 text-white focus:ring-accent focus:border-accent text-xl font-light placeholder:text-gray-700 min-h-[150px] transition-all resize-none"
+                                    class="w-full bg-input-bg border border-border-subtle rounded-[30px] px-8 py-6 ltr:pr-20 rtl:pl-20 text-text-main focus:ring-accent focus:border-accent text-xl font-light placeholder:text-text-muted min-h-[150px] transition-all resize-none"
                                     :placeholder="trans('Record any idea...')"
                                     required
                                 ></textarea>
@@ -127,11 +127,11 @@ const getIdeasByStatus = (status) => {
                                 <button 
                                     type="button"
                                     @click="startVoice"
-                                    :class="['absolute bottom-6 ltr:right-6 rtl:left-6 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300', isRecording ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)] animate-pulse' : 'bg-white/10 hover:bg-accent/20 text-gray-400 hover:text-accent']"
+                                    :class="['absolute bottom-6 ltr:right-6 rtl:left-6 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300', isRecording ? 'bg-red-500 shadow-lg animate-pulse' : 'bg-surface-2 hover:bg-accent/20 text-text-muted hover:text-accent']"
                                     :title="isRecording ? 'إيقاف التسجيل' : 'إملاء صوتي'"
                                 >
                                     <span v-if="!isRecording" class="text-xl">🎤</span>
-                                    <span v-else class="text-xl text-white">⏹</span>
+                                    <span v-else class="text-xl text-text-main">⏹</span>
                                 </button>
                             </div>
                             
@@ -139,7 +139,7 @@ const getIdeasByStatus = (status) => {
                                 <button
                                     type="submit"
                                     :disabled="ideaForm.processing"
-                                    class="bg-accent text-white px-10 py-4 rounded-2xl font-black text-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3 shadow-[0_0_30px_rgba(6,155,255,0.2)]"
+                                    class="bg-accent text-white px-10 py-4 rounded-2xl font-black text-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3 shadow-lg"
                                 >
                                     <span v-if="ideaForm.processing" class="animate-spin w-6 h-6 border-4 border-white border-t-transparent rounded-full block"></span>
                                     <span v-else>✨</span>
@@ -155,58 +155,58 @@ const getIdeasByStatus = (status) => {
                     <div v-for="col in statusColumns" :key="col.id" class="flex flex-col h-full min-h-[600px]">
                         <!-- Column Header -->
                         <div class="flex items-center justify-between mb-6 px-4">
-                            <h3 class="text-xl font-black text-white flex items-center gap-3">
-                                <span class="p-2 bg-white/5 rounded-xl">{{ col.icon }}</span>
+                            <h3 class="text-xl font-black text-text-main flex items-center gap-3">
+                                <span class="p-2 bg-surface-2 rounded-xl">{{ col.icon }}</span>
                                 {{ col.label }}
                                 <span class="text-sm bg-accent/20 text-accent px-3 py-1 rounded-full">{{ getIdeasByStatus(col.id).length }}</span>
                             </h3>
                         </div>
 
                         <!-- Column Content -->
-                        <div class="flex-1 space-y-6 p-4 bg-black/20 rounded-[40px] border border-white/5 custom-scroll overflow-y-auto max-h-[800px]">
+                        <div class="flex-1 space-y-6 p-4 bg-surface-2 rounded-[40px] border border-border-subtle custom-scroll overflow-y-auto max-h-[800px]">
                             <div v-for="idea in getIdeasByStatus(col.id)" :key="idea.id" 
-                                class="bg-black/40 border border-white/5 p-6 rounded-[30px] group hover:border-accent/40 transition-all duration-500 relative shadow-xl"
+                                class="bg-glass-bg border border-glass-border p-6 rounded-[30px] group hover:border-accent/40 transition-all duration-500 relative shadow-xl"
                             >
                                 <!-- Card Header -->
                                 <div class="flex justify-between items-start mb-4">
                                     <span class="px-3 py-1 bg-accent/10 text-accent text-[10px] uppercase tracking-widest font-black rounded-lg">
                                         {{ idea.category || 'عام' }}
                                     </span>
-                                    <button @click="deleteIdea(idea.id)" class="text-gray-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all active:scale-75">
+                                    <button @click="deleteIdea(idea.id)" class="text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all active:scale-75">
                                         ✖
                                     </button>
                                 </div>
 
                                 <!-- Idea Content -->
-                                <p class="text-white text-lg font-bold leading-relaxed mb-4 break-words">
+                                <p class="text-text-main text-lg font-bold leading-relaxed mb-4 break-words">
                                     {{ idea.content }}
                                 </p>
 
                                 <!-- AI Analysis Preview -->
-                                <div v-if="idea.ai_analysis" class="mb-6 p-4 bg-black/40 rounded-2xl border border-white/5 text-sm text-gray-400 font-light leading-relaxed whitespace-pre-wrap italic">
+                                <div v-if="idea.ai_analysis" class="mb-6 p-4 bg-surface-2 rounded-2xl border border-border-subtle text-sm text-text-muted font-light leading-relaxed whitespace-pre-wrap italic">
                                     <span class="text-accent font-black block mb-2 text-xs">AI INSIGHT:</span>
                                     {{ idea.ai_analysis }}
                                 </div>
 
                                 <!-- Card Footer: Status Controls -->
-                                <div class="flex items-center gap-2 mt-auto pt-4 border-t border-white/5">
+                                <div class="flex items-center gap-2 mt-auto pt-4 border-t border-border-subtle">
                                     <button 
                                         v-for="target in statusColumns" 
                                         :key="target.id"
                                         v-show="target.id !== idea.status"
                                         @click="updateStatus(idea.id, target.id)"
-                                        class="p-2 bg-white/5 hover:bg-accent/20 text-gray-500 hover:text-accent rounded-lg transition-all text-xs font-bold"
+                                        class="p-2 bg-surface-2 hover:bg-accent/20 text-text-muted hover:text-accent rounded-lg transition-all text-xs font-bold"
                                         :title="`نقل إلى ${target.label}`"
                                     >
                                         {{ target.icon }}
                                     </button>
-                                    <span class="ms-auto text-[10px] text-gray-700 font-mono">
+                                    <span class="ms-auto text-[10px] text-text-muted font-mono">
                                         {{ new Date(idea.created_at).toLocaleDateString() }}
                                     </span>
                                 </div>
                             </div>
 
-                            <div v-if="getIdeasByStatus(col.id).length === 0" class="flex flex-col items-center justify-center py-20 text-gray-700 opacity-40">
+                            <div v-if="getIdeasByStatus(col.id).length === 0" class="flex flex-col items-center justify-center py-20 text-text-muted opacity-40">
                                 <span class="text-4xl mb-4">🌑</span>
                                 <p class="font-bold">فارغ حالياً</p>
                             </div>
@@ -221,12 +221,6 @@ const getIdeasByStatus = (status) => {
 
 <style scoped>
 .custom-scroll::-webkit-scrollbar { width: 4px; }
-.custom-scroll::-webkit-scrollbar-thumb { background: rgba(6, 155, 255, 0.1); border-radius: 10px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: var(--c-accent); border-radius: 10px; opacity: 0.1; }
 .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-
-/* Ensure consistent backgrounds during transitions */
-:deep(.bg-white) { background-color: #0d1304 !important; border-color: #1f2937 !important; }
-:deep(.text-gray-800) { color: #e2f0d5 !important; }
-:deep(header) { background-color: #0d1304 !important; border-bottom: 1px solid #1f2937 !important; }
-:deep(nav) { background-color: #0d1304 !important; border-bottom: 1px solid #1f2937 !important; }
 </style>

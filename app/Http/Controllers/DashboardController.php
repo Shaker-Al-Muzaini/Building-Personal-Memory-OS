@@ -11,7 +11,6 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        
         $user = $request->user();
         
         $tasks = DB::table('tasks')->where('user_id', $user->id)->get();
@@ -31,8 +30,6 @@ class DashboardController extends Controller
 
         $avgDecisionScore = (int)DB::table('decisions')->where('user_id', $user->id)->avg(DB::raw("CAST(JSON_EXTRACT(ai_advice, '$.score') AS UNSIGNED)")) ?: 0;
         
-        // --- Calculate Stability Index (Weighted 1-100) ---
-        // Finance (40%), Tasks (30%), Decisions (30%)
         $financeScore = $totalIncome > 0 ? max(0, min(100, ($balance / $totalIncome) * 100)) : 50;
         $stabilityIndex = (int)(($financeScore * 0.4) + ($taskFactor * 0.3) + ($avgDecisionScore * 0.3));
 
@@ -51,16 +48,20 @@ class DashboardController extends Controller
         $nextLevelXP = pow($level, 2) * 25;
         $progressToNext = $nextLevelXP > $currentLevelXP ? (($xp - $currentLevelXP) / ($nextLevelXP - $currentLevelXP)) * 100 : 0;
 
+        // 6. Telegram Sync Code & Routines
+        if (!$user->telegram_chat_id && !$user->telegram_sync_code) {
+            $syncCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            DB::table('users')->where('id', $user->id)->update(['telegram_sync_code' => $syncCode]);
+            $user->telegram_sync_code = $syncCode;
+        }
+
         return Inertia::render('Dashboard', [
+            'sync_code' => $user->telegram_sync_code,
+            'is_telegram_linked' => (bool)$user->telegram_chat_id,
             'tasks' => $tasks,
             'habit' => $habit,
             'goal' => $goal,
-            'gamification' => [
-                'xp' => $xp,
-                'level' => $level,
-                'progress' => (int)min(100, max(0, $progressToNext)),
-                'next_xp' => $nextLevelXP
-            ],
+            'gamification' => [ 'xp' => $xp, 'level' => $level, 'progress' => (int)min(100, max(0, $progressToNext)), 'next_xp' => $nextLevelXP ],
             'overview' => [
                 'balance' => $balance,
                 'last_idea' => $lastIdea ? $lastIdea->content : null,
@@ -72,8 +73,52 @@ class DashboardController extends Controller
             ],
             'shadow_prediction' => $this->getShadowPrediction($user, $balance, $pendingTasksCount),
             'harmony_score' => $this->calculateHarmony($balance, $pendingTasksCount, $completedTasksCount),
-            'daily_briefing' => $this->getDailyBriefing($user, $balance, $pendingTasksCount)
+            'daily_briefing' => $this->getDailyBriefing($user, $balance, $pendingTasksCount),
+            'routine_templates' => $this->getRoutineTemplates()
         ]);
+    }
+
+    private function getRoutineTemplates()
+    {
+        return [
+            [
+                'id' => 'shugairi', 'title' => 'Ihsan Morning', 'author' => 'Ahmad Al-Shugairi', 'icon' => '🌙',
+                'description' => 'Focus on deep work, spiritual balance, and early productivity.',
+                'tasks' => ['Early Morning Meditation', '4 Hours of Deep Focus', 'Gratitude Journaling'],
+                'color' => 'linear-gradient(135deg, #059669, #10b981)'
+            ],
+            [
+                'id' => 'huberman', 'title' => 'Biohacker Flow', 'author' => 'Andrew Huberman', 'icon' => '🧬',
+                'description' => 'Science-backed routine for peak cognitive and physical state.',
+                'tasks' => ['Morning Sunlight Exposure', 'Cold Exposure', 'High Energy Task Sprint'],
+                'color' => 'linear-gradient(135deg, #0ea5e9, #6366f1)'
+            ],
+            [
+                'id' => 'founder', 'title' => 'Founder Sprint', 'author' => 'Elon Musk', 'icon' => '🚀',
+                'description' => 'High-intensity time-blocking for massive strategic projects.',
+                'tasks' => ['5-Minute Time Blocks', 'Strategic Roadmap Sync', 'Asynchronous Comms Only'],
+                'color' => 'linear-gradient(135deg, #f59e0b, #d97706)'
+            ]
+        ];
+    }
+
+    public function applyRoutine(Request $request)
+    {
+        $id = $request->input('routine_id');
+        $user = $request->user();
+        $templates = $this->getRoutineTemplates();
+        $selected = collect($templates)->firstWhere('id', $id);
+
+        if ($selected) {
+            foreach ($selected['tasks'] as $taskTitle) {
+                DB::table('tasks')->insert([
+                    'user_id' => $user->id, 'title' => $taskTitle, 'status' => 'pending', 
+                    'created_at' => now(), 'updated_at' => now()
+                ]);
+            }
+            return back()->with('success', 'Routine adopted successfully!');
+        }
+        return back()->with('error', 'Routine not found.');
     }
 
     private function calculateHarmony($balance, $pending, $done)

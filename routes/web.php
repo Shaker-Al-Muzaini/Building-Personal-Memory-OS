@@ -26,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/dashboard/generate-plan', [DashboardController::class, 'generatePlan'])->name('dashboard.generate-plan');
     Route::get('/dashboard/search', [DashboardController::class, 'search'])->name('dashboard.search');
     Route::post('/dashboard/command', [DashboardController::class, 'handleCommand'])->name('dashboard.command');
+    Route::post('/dashboard/apply-routine', [DashboardController::class, 'applyRoutine'])->name('dashboard.apply-routine');
     
   
     Route::get('/focus', [FocusController::class, 'index'])->name('focus.index');

@@ -5,6 +5,7 @@ import * as THREE from "three";
 import LanguageSwitcher from "@/Components/LanguageSwitcher.vue";
 import ThemeToggle from "@/Components/ThemeToggle.vue";
 import MotionIntro from "@/Components/MotionIntro.vue";
+import GlowingTubesCursor from "@/Components/GlowingTubesCursor.vue";
 import { useTheme } from "@/Composables/useTheme";
 
 defineProps({ canLogin: Boolean, canRegister: Boolean });
@@ -12,26 +13,65 @@ const { isDark } = useTheme();
 
 const canvasRef = ref(null);
 const showIntro = ref(false);
-let renderer, animId;
+const scrollWidth = ref(0);
+let renderer, animId, scene, cam, pts, crystal;
 
 onMounted(() => {
-    const scene = new THREE.Scene();
-    const cam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    cam.position.z = 5;
+    scene = new THREE.Scene();
+    cam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    cam.position.z = 6;
+
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     canvasRef.value.appendChild(renderer.domElement);
 
-    const geo = new THREE.IcosahedronGeometry(2.5, 6);
-    const mat = new THREE.PointsMaterial({ color: 0x3b82f6, size: 0.015, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
-    const pts = new THREE.Points(geo, mat);
+    // ─── Neural Crystal Core ───
+    const crystalGeo = new THREE.IcosahedronGeometry(2, 0); // Low poly for crystal look
+    const crystalMat = new THREE.MeshPhongMaterial({
+        color: 0x3b82f6,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.1,
+        emissive: 0x3b82f6,
+        emissiveIntensity: 0.5
+    });
+    crystal = new THREE.Mesh(crystalGeo, crystalMat);
+    scene.add(crystal);
+
+    // ─── Floating Neural Particles ───
+    const ptsGeo = new THREE.BufferGeometry();
+    const count = 1500;
+    const pos = new Float32Array(count * 3);
+    for(let i=0; i<count*3; i++) pos[i] = (Math.random() - 0.5) * 15;
+    ptsGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    
+    const ptsMat = new THREE.PointsMaterial({
+        color: 0x3b82f6,
+        size: 0.02,
+        transparent: true,
+        opacity: 0.4,
+        blending: THREE.AdditiveBlending
+    });
+    pts = new THREE.Points(ptsGeo, ptsMat);
     scene.add(pts);
+
+    // Lights
+    const light = new THREE.PointLight(0x3b82f6, 1);
+    light.position.set(5, 5, 5);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 
     const animate = () => {
         animId = requestAnimationFrame(animate);
-        pts.rotation.y += 0.0008;
-        pts.rotation.x += 0.0003;
+        pts.rotation.y += 0.0005;
+        crystal.rotation.y -= 0.001;
+        crystal.rotation.z += 0.0005;
+        
+        // Pulse effect
+        const scale = 1 + Math.sin(Date.now() * 0.001) * 0.05;
+        crystal.scale.set(scale, scale, scale);
+        
         renderer.render(scene, cam);
     };
     animate();
@@ -43,6 +83,13 @@ onMounted(() => {
     };
     window.addEventListener('resize', onResize);
 
+    const onScroll = () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        scrollWidth.value = (winScroll / height) * 100;
+    };
+    window.addEventListener('scroll', onScroll);
+
     // Scroll reveal
     const observer = new IntersectionObserver(entries => {
         entries.forEach(e => {
@@ -51,18 +98,39 @@ onMounted(() => {
         });
     }, { threshold: 0.1 });
     document.querySelectorAll('.sr').forEach(el => observer.observe(el));
+
+    window.addEventListener('mousemove', handleMouseMove);
 });
+
+const mouseX = ref(0);
+const mouseY = ref(0);
+const handleMouseMove = (e) => {
+    mouseX.value = e.clientX;
+    mouseY.value = e.clientY;
+    
+    // Parallax effect on 3D
+    if(crystal) {
+        crystal.rotation.x = (e.clientY / window.innerHeight - 0.5) * 0.2;
+        crystal.rotation.y = (e.clientX / window.innerWidth - 0.5) * 0.2;
+    }
+};
 
 onUnmounted(() => {
     cancelAnimationFrame(animId);
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('scroll', onScroll);
     renderer?.dispose();
+    scene?.clear();
 });
 </script>
 
 <template>
     <Head :title="`${$t('Memory OS')} — ${$t('Second Brain')}`" />
 
-    <div class="lp-root" :class="isDark ? 'os-dark' : 'os-light'">
+    <div class="lp-root">
+        <!-- Scroll Progress -->
+        <div id="scroll-progress" :style="{ width: scrollWidth + '%' }"></div>
 
         <!-- BG -->
         <div ref="canvasRef" class="lp-canvas"></div>
@@ -71,7 +139,7 @@ onUnmounted(() => {
         <nav class="lp-nav">
             <div class="flex items-center gap-2">
                 <span class="text-xl">🧠</span>
-                <span class="font-black text-lg text-white tracking-tight">{{ $t('Memory OS') }}</span>
+                <span class="font-black text-lg tracking-tight">{{ $t('Memory OS') }}</span>
             </div>
             <div class="flex items-center gap-4">
                 <ThemeToggle />
@@ -90,14 +158,15 @@ onUnmounted(() => {
             <h1 class="lp-title">{{ $t('Smart Experience') }}</h1>
             <p class="lp-sub">{{ $t('Bento Description') }}</p>
             <div class="lp-cta-row">
-                <Link :href="route('register')" class="lp-btn-main">{{ $t('Start your journey for free') }}</Link>
-                <button @click="showIntro = true" class="lp-btn-ghost">
+                <Link :href="route('register')" class="lp-btn-main hover-lift">{{ $t('Start your journey for free') }}</Link>
+                <button @click="showIntro = true" class="lp-btn-ghost hover-lift">
                     <span class="lp-play">▶</span> {{ $t('Watch the Story') }}
                 </button>
             </div>
         </section>
 
         <MotionIntro :show="showIntro" @close="showIntro = false" />
+        <GlowingTubesCursor />
 
         <!-- Features -->
         <section class="lp-section">
@@ -106,7 +175,7 @@ onUnmounted(() => {
 
             <div class="lp-grid">
                 <div v-for="(f, i) in features" :key="i"
-                     class="sr lp-card"
+                     class="sr lp-card hover-lift"
                      :style="`transition-delay:${i * 0.08}s`">
                     <div class="lp-icon" :style="`background:${f.bg}; box-shadow: 0 4px 20px ${f.glow}`">{{ f.icon }}</div>
                     <h3 class="lp-card-title">{{ $t(f.title) }}</h3>
@@ -120,7 +189,7 @@ onUnmounted(() => {
             <h2 class="sr lp-section-title">{{ $t('Decide Better') }}</h2>
             <div class="lp-why-row">
                 <div v-for="(w, i) in whys" :key="i"
-                     class="sr lp-why"
+                     class="sr lp-why hover-lift"
                      :style="`transition-delay:${i * 0.1}s`">
                     <span class="lp-why-icon">{{ w.icon }}</span>
                     <strong class="lp-why-title">{{ $t(w.title) }}</strong>
@@ -131,10 +200,10 @@ onUnmounted(() => {
 
         <!-- CTA -->
         <section class="lp-cta-section">
-            <div class="sr lp-cta-box">
+            <div class="sr lp-cta-box glass-surface">
                 <h2 class="lp-cta-title">{{ $t('End the Chaos') }}</h2>
                 <p class="lp-cta-desc">{{ $t('No more lost ideas, forgotten tasks, or messy budgets.') }}</p>
-                <Link :href="route('register')" class="lp-btn-main">{{ $t('Start your journey for free') }} →</Link>
+                <Link :href="route('register')" class="lp-btn-main hover-lift">{{ $t('Start your journey for free') }} →</Link>
             </div>
         </section>
 
@@ -164,18 +233,19 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 /* ─── Root ─── */
 .lp-root {
-    background: #000;
+    background: var(--c-bg);
     min-height: 100vh;
-    color: #fff;
+    color: var(--c-text);
     overflow-x: hidden;
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 .lp-canvas {
     position: fixed; inset: 0; z-index: 0;
-    pointer-events: none; opacity: 0.25;
+    pointer-events: none; opacity: 0.4;
 }
 
 /* ─── Navbar ─── */
@@ -183,21 +253,22 @@ export default {
     position: fixed; top: 0; left: 0; right: 0; z-index: 50;
     display: flex; align-items: center; justify-content: space-between;
     padding: 1rem 2rem;
-    background: rgba(0,0,0,0.85);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: var(--c-nav-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--c-border);
 }
 
-.lp-link { font-size: 0.875rem; color: rgba(255,255,255,0.5); transition: color .2s; }
-.lp-link:hover { color: #fff; }
+.lp-link { font-size: 0.875rem; color: var(--c-text-muted); transition: color .2s; }
+.lp-link:hover { color: var(--c-text); }
 
 .lp-btn-sm {
-    background: #fff; color: #000;
+    background: var(--c-accent); color: #fff;
     padding: 0.5rem 1.2rem; border-radius: 100px;
     font-weight: 800; font-size: 0.875rem;
-    transition: opacity .2s;
+    transition: all .2s;
+    box-shadow: 0 4px 12px var(--c-accent-bg);
 }
-.lp-btn-sm:hover { opacity: 0.85; }
+.lp-btn-sm:hover { opacity: 0.85; transform: translateY(-1px); }
 
 /* ─── Hero ─── */
 .lp-hero {
@@ -210,9 +281,10 @@ export default {
     display: inline-block;
     font-size: 0.7rem; font-weight: 800;
     letter-spacing: 0.35em; text-transform: uppercase;
-    color: rgba(59,130,246,0.8);
-    border: 1px solid rgba(59,130,246,0.25);
+    color: var(--c-accent);
+    border: 1px solid var(--c-accent-bg);
     padding: 0.3rem 1rem; border-radius: 100px;
+    background: var(--c-accent-bg);
     margin-bottom: 1.5rem;
 }
 
@@ -222,140 +294,140 @@ export default {
     line-height: 1.1;
     letter-spacing: -0.03em;
     margin-bottom: 1.2rem;
-    background: linear-gradient(135deg, #fff 40%, #3b82f6);
+    background: linear-gradient(135deg, var(--c-text) 40%, var(--c-accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .lp-sub {
-    font-size: 1rem; color: rgba(255,255,255,0.4);
-    max-width: 480px; margin: 0 auto 2.5rem;
+    font-size: 1.1rem; color: var(--c-text-muted);
+    max-width: 550px; margin: 0 auto 2.5rem;
     line-height: 1.7;
 }
 
 .lp-cta-row { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; }
 
 .lp-btn-main {
-    background: #3b82f6; color: #fff;
-    padding: 0.85rem 2rem; border-radius: 100px;
-    font-weight: 800; font-size: 0.95rem;
+    background: var(--c-accent); color: #fff;
+    padding: 1rem 2.5rem; border-radius: 100px;
+    font-weight: 800; font-size: 1rem;
     transition: all .3s; display: inline-block;
-    box-shadow: 0 0 24px rgba(59,130,246,0.35);
+    box-shadow: 0 8px 24px var(--c-accent-bg);
 }
-.lp-btn-main:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 0 40px rgba(59,130,246,0.5); }
+.lp-btn-main:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 12px 32px var(--c-accent-bg); }
 
 .lp-btn-ghost {
     display: flex; align-items: center; gap: 0.6rem;
-    color: rgba(255,255,255,0.4); font-size: 0.875rem; font-weight: 600;
-    border: 1px solid rgba(255,255,255,0.1); padding: 0.85rem 1.5rem;
-    border-radius: 100px; transition: all .2s; background: transparent;
+    color: var(--c-text); font-size: 0.9rem; font-weight: 700;
+    border: 1px solid var(--c-border); padding: 1rem 2rem;
+    border-radius: 100px; transition: all .2s; background: var(--c-surface);
 }
-.lp-btn-ghost:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+.lp-btn-ghost:hover { border-color: var(--c-accent); background: var(--c-surface2); }
 
 .lp-play {
     width: 28px; height: 28px;
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid var(--c-accent);
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 0.6rem;
+    font-size: 0.6rem; color: var(--c-accent);
 }
 
 /* ─── Sections ─── */
 .lp-section {
     position: relative; z-index: 10;
-    max-width: 1100px; margin: 0 auto;
-    padding: 5rem 1.5rem;
+    max-width: 1200px; margin: 0 auto;
+    padding: 6rem 1.5rem;
 }
 
 .lp-section-title {
-    text-align: center; font-size: 2rem; font-weight: 900;
-    letter-spacing: -0.02em; color: #fff; margin-bottom: 0.6rem;
+    text-align: center; font-size: 2.5rem; font-weight: 900;
+    letter-spacing: -0.02em; color: var(--c-text); margin-bottom: 0.8rem;
 }
 .lp-section-sub {
-    text-align: center; color: rgba(255,255,255,0.35);
-    font-size: 0.9rem; margin-bottom: 3rem;
+    text-align: center; color: var(--c-text-muted);
+    font-size: 1rem; margin-bottom: 4rem;
 }
 
 /* ─── Cards ─── */
 .lp-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
 }
 
 .lp-card {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 20px; padding: 1.8rem;
-    transition: all 0.4s ease;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 30px; padding: 2.5rem;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: var(--c-shadow);
 }
 .lp-card:hover {
-    background: rgba(255,255,255,0.04);
-    border-color: rgba(59,130,246,0.2);
-    transform: translateY(-4px);
+    border-color: var(--c-accent);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
 }
 
 .lp-icon {
-    width: 60px; height: 60px; border-radius: 16px;
+    width: 65px; height: 65px; border-radius: 20px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem; margin-bottom: 1.2rem;
-    transition: transform 0.3s ease;
+    font-size: 2rem; margin-bottom: 1.5rem;
+    transition: transform 0.4s ease;
 }
-.lp-card:hover .lp-icon { transform: scale(1.1); }
+.lp-card:hover .lp-icon { transform: scale(1.15) rotate(5deg); }
 
 .lp-card-title {
-    font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem;
+    font-size: 1.25rem; font-weight: 900; color: var(--c-text); margin-bottom: 0.6rem;
 }
-.lp-card-desc { font-size: 0.82rem; color: rgba(255,255,255,0.35); line-height: 1.6; }
+.lp-card-desc { font-size: 0.95rem; color: var(--c-text-muted); line-height: 1.7; }
 
 /* ─── Why ─── */
-.lp-why-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+.lp-why-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 
 .lp-why {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 20px; padding: 1.8rem;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 30px; padding: 2.5rem;
     transition: all 0.4s ease;
+    box-shadow: var(--c-shadow);
 }
-.lp-why:hover { background: rgba(255,255,255,0.04); transform: translateY(-3px); }
 
-.lp-why-icon { font-size: 2rem; display: block; margin-bottom: 1rem; }
-.lp-why-title { display: block; font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; }
-.lp-why-desc { font-size: 0.82rem; color: rgba(255,255,255,0.35); line-height: 1.6; }
+.lp-why-icon { font-size: 2.5rem; display: block; margin-bottom: 1.2rem; }
+.lp-why-title { display: block; font-size: 1.25rem; font-weight: 900; color: var(--c-text); margin-bottom: 0.6rem; }
+.lp-why-desc { font-size: 0.95rem; color: var(--c-text-muted); line-height: 1.7; }
 
 /* ─── CTA ─── */
 .lp-cta-section {
     position: relative; z-index: 10;
-    max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 5rem;
+    max-width: 1200px; margin: 0 auto; padding: 4rem 1.5rem 8rem;
 }
 
 .lp-cta-box {
-    background: rgba(59,130,246,0.06);
-    border: 1px solid rgba(59,130,246,0.15);
-    border-radius: 24px; padding: 3.5rem 2rem;
+    border-radius: 40px; padding: 5rem 2rem;
     text-align: center;
 }
 
-.lp-cta-title { font-size: 1.8rem; font-weight: 900; color: #fff; margin-bottom: 0.6rem; }
-.lp-cta-desc { font-size: 0.9rem; color: rgba(255,255,255,0.4); margin-bottom: 2rem; }
+.lp-cta-title { font-size: 3rem; font-weight: 900; color: var(--c-text); margin-bottom: 1rem; }
+.lp-cta-desc { font-size: 1.1rem; color: var(--c-text-muted); margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
 
 /* ─── Footer ─── */
 .lp-footer {
     position: relative; z-index: 10;
-    text-align: center; padding: 1.5rem;
-    font-size: 0.75rem; color: rgba(255,255,255,0.15);
-    border-top: 1px solid rgba(255,255,255,0.04);
-    letter-spacing: 0.15em;
+    text-align: center; padding: 3rem;
+    font-size: 0.85rem; color: var(--c-text-muted);
+    border-top: 1px solid var(--c-border);
+    letter-spacing: 0.2em;
+    opacity: 0.6;
 }
 
 /* ─── Scroll Reveal ─── */
 .sr {
     opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.2, 0, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0, 0.2, 1);
 }
 .sr.in { opacity: 1; transform: translateY(0); }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: var(--c-accent); border-radius: 10px; }
 </style>
+

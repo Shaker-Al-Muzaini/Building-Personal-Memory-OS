@@ -85,10 +85,10 @@ const getMoodEmoji = (score) => {
                 
                 <!-- Page Header -->
                 <div class="mb-10 text-center md:text-right">
-                    <h1 class="text-3xl md:text-5xl font-black text-white tracking-tighter mb-4 flex justify-center md:justify-start items-center gap-3">
+                    <h1 class="text-3xl md:text-5xl font-black text-text-main tracking-tighter mb-4 flex justify-center md:justify-start items-center gap-3">
                         <span class="text-emerald-500">🧬</span> {{ $t('Health & Mood Matrix') }}
                     </h1>
-                    <p class="text-emerald-100/60 max-w-2xl mx-auto md:mx-0 text-lg">
+                    <p class="text-text-muted max-w-2xl mx-auto md:mx-0 text-lg">
                         {{ $t('Track your biological energy to understand how your sleep and mood affect your financial decisions and time management.') }}
                     </p>
                 </div>
@@ -97,48 +97,48 @@ const getMoodEmoji = (score) => {
                     
                     <!-- Logger Form -->
                     <div class="w-full lg:w-1/3">
-                        <div class="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.05)]">
+                        <div class="bg-glass-bg backdrop-blur-3xl border border-glass-border rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-lg">
                             <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/5 to-transparent -z-10"></div>
                             
-                            <h2 class="text-xl font-bold text-white mb-6">{{ $t('Daily Bio-Log') }}</h2>
+                            <h2 class="text-xl font-bold text-text-main mb-6">{{ $t('Daily Bio-Log') }}</h2>
                             
                             <form @submit.prevent="submitLog" class="space-y-6">
                                 <!-- Custom Date Selector -->
                                 <div>
-                                    <label class="block text-sm font-bold text-white/50 mb-3">{{ $t('Date') }}</label>
+                                    <label class="block text-sm font-bold text-text-muted mb-3">{{ $t('Date') }}</label>
                                     <div class="grid grid-cols-3 gap-2">
-                                        <select v-model.number="selectedDay" class="bg-white/5 border border-white/10 rounded-xl px-2 py-3 text-white text-center font-mono focus:ring-emerald-500 focus:border-emerald-500 appearance-none cursor-pointer">
-                                            <option v-for="d in days" :key="d" :value="d" class="bg-gray-900">{{ d }}</option>
+                                        <select v-model.number="selectedDay" class="bg-surface-2 border border-border-subtle rounded-xl px-2 py-3 text-text-main text-center font-mono focus:ring-emerald-500 focus:border-emerald-500 appearance-none cursor-pointer">
+                                            <option v-for="d in days" :key="d" :value="d" class="bg-surface-2">{{ d }}</option>
                                         </select>
-                                        <select v-model.number="selectedMonth" class="bg-white/5 border border-white/10 rounded-xl px-2 py-3 text-white text-center focus:ring-emerald-500 focus:border-emerald-500 appearance-none cursor-pointer">
-                                            <option v-for="m in months" :key="m.v" :value="m.v" class="bg-gray-900">{{ m.ar }}</option>
+                                        <select v-model.number="selectedMonth" class="bg-surface-2 border border-border-subtle rounded-xl px-2 py-3 text-text-main text-center focus:ring-emerald-500 focus:border-emerald-500 appearance-none cursor-pointer">
+                                            <option v-for="m in months" :key="m.v" :value="m.v" class="bg-surface-2">{{ m.ar }}</option>
                                         </select>
-                                        <select v-model.number="selectedYear" class="bg-white/5 border border-white/10 rounded-xl px-2 py-3 text-white text-center font-mono focus:ring-emerald-500 focus:border-emerald-500 appearance-none cursor-pointer">
-                                            <option v-for="y in years" :key="y" :value="y" class="bg-gray-900">{{ y }}</option>
+                                        <select v-model.number="selectedYear" class="bg-surface-2 border border-border-subtle rounded-xl px-2 py-3 text-text-main text-center font-mono focus:ring-emerald-500 focus:border-emerald-500 appearance-none cursor-pointer">
+                                            <option v-for="y in years" :key="y" :value="y" class="bg-surface-2">{{ y }}</option>
                                         </select>
                                     </div>
-                                    <p class="text-emerald-400/60 text-xs font-mono mt-1 text-center">{{ formattedDate }}</p>
+                                    <p class="text-emerald-500/60 text-xs font-mono mt-1 text-center">{{ formattedDate }}</p>
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-white/50 mb-2 flex justify-between">
+                                    <label class="block text-sm font-bold text-text-muted mb-2 flex justify-between">
                                         <span>{{ $t('Sleep Hours') }}</span>
-                                        <span class="text-emerald-400 font-mono">{{ form.sleep_hours }} h</span>
+                                        <span class="text-emerald-500 font-mono">{{ form.sleep_hours }} h</span>
                                     </label>
                                     <input type="range" v-model.number="form.sleep_hours" min="0" max="14" step="0.5" class="w-full accent-emerald-500" />
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-white/50 mb-2 flex justify-between">
+                                    <label class="block text-sm font-bold text-text-muted mb-2 flex justify-between">
                                         <span>{{ $t('Mood Score') }}</span>
-                                        <span class="text-emerald-400 font-mono">{{ form.mood_score }}/10 ({{ getMoodEmoji(form.mood_score) }})</span>
+                                        <span class="text-emerald-500 font-mono">{{ form.mood_score }}/10 ({{ getMoodEmoji(form.mood_score) }})</span>
                                     </label>
                                     <input type="range" v-model.number="form.mood_score" min="1" max="10" step="1" class="w-full accent-emerald-500" />
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-white/50 mb-2">{{ $t('Notes (Optional)') }}</label>
-                                    <textarea v-model="form.notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-emerald-500 focus:border-emerald-500" placeholder="e.g. Worked out, stressed at work..."></textarea>
+                                    <label class="block text-sm font-bold text-text-muted mb-2">{{ $t('Notes (Optional)') }}</label>
+                                    <textarea v-model="form.notes" rows="2" class="w-full bg-input-bg border border-border-subtle rounded-xl px-4 py-3 text-text-main focus:ring-emerald-500 focus:border-emerald-500" placeholder="e.g. Worked out, stressed at work..."></textarea>
                                 </div>
 
                                 <button type="submit" :disabled="form.processing" class="w-full py-4 rounded-xl font-bold text-white text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-xl disabled:opacity-50"
@@ -153,41 +153,41 @@ const getMoodEmoji = (score) => {
                     <div class="flex-1 flex flex-col gap-8">
                         
                         <!-- AI Neurological Analysis -->
-                        <div class="bg-gradient-to-br from-emerald-950/40 to-black border border-emerald-500/20 rounded-3xl p-6 flex flex-col min-h-[250px]">
-                            <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2 mb-4">
+                        <div class="bg-gradient-to-br from-emerald-500/10 to-surface border border-emerald-500/20 rounded-3xl p-6 flex flex-col min-h-[250px]">
+                            <h2 class="text-lg font-bold text-emerald-500 flex items-center gap-2 mb-4">
                                 <span class="text-2xl">🧠</span> {{ $t('Neural Health Analysis') }}
                             </h2>
-                            <button v-if="!aiAnalysis && !isAnalyzing" @click="getAnalysis" class="w-full py-4 rounded-xl border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition font-bold tracking-wider mb-4">
+                            <button v-if="!aiAnalysis && !isAnalyzing" @click="getAnalysis" class="w-full py-4 rounded-xl border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 transition font-bold tracking-wider mb-4">
                                 {{ $t('Diagnose My Patterns') }}
                             </button>
                             <div v-if="isAnalyzing" class="my-auto text-center text-emerald-500/50 animate-pulse font-mono tracking-widest text-sm">
                                 {{ $t('Processing bio-data...') }}
                             </div>
-                            <div v-if="aiAnalysis" class="text-emerald-50/80 leading-relaxed text-sm bidi-plaintext custom-scroll overflow-y-auto pr-2">
+                            <div v-if="aiAnalysis" class="text-text-main/80 leading-relaxed text-sm bidi-plaintext custom-scroll overflow-y-auto pr-2">
                                 {{ aiAnalysis }}
                             </div>
                         </div>
 
                         <!-- Logs History -->
-                        <div class="bg-black/40 border border-white/5 rounded-3xl p-6 flex-1 max-h-[400px] flex flex-col">
-                            <h2 class="text-lg font-bold text-white mb-4">{{ $t('Recent Logs') }}</h2>
+                        <div class="bg-glass-bg border border-glass-border rounded-3xl p-6 flex-1 max-h-[400px] flex flex-col">
+                            <h2 class="text-lg font-bold text-text-main mb-4">{{ $t('Recent Logs') }}</h2>
                             <div class="space-y-3 overflow-y-auto custom-scroll pr-2 flex-1">
-                                <div v-for="log in logs" :key="log.id" class="p-4 bg-white/5 border border-white/5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-white/10 transition">
+                                <div v-for="log in logs" :key="log.id" class="p-4 bg-input-bg border border-border-subtle rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-card-hover transition">
                                     <div class="flex items-center gap-4">
                                         <div class="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg"
-                                             :class="log.mood_score >= 7 ? 'bg-emerald-500/20 text-emerald-400' : (log.mood_score <= 4 ? 'bg-rose-500/20 text-rose-400' : 'bg-blue-500/20 text-blue-400')">
+                                             :class="log.mood_score >= 7 ? 'bg-emerald-500/20 text-emerald-500' : (log.mood_score <= 4 ? 'bg-rose-500/20 text-rose-500' : 'bg-blue-500/20 text-blue-500')">
                                             {{ log.mood_score }}
                                         </div>
                                         <div>
-                                            <p class="text-white font-bold">{{ log.log_date }}</p>
-                                            <p class="text-xs text-white/40 font-mono">{{ $t('Sleep') }}: {{ log.sleep_hours }}h</p>
+                                            <p class="text-text-main font-bold">{{ log.log_date }}</p>
+                                            <p class="text-xs text-text-muted font-mono">{{ $t('Sleep') }}: {{ log.sleep_hours }}h</p>
                                         </div>
                                     </div>
                                     <div class="flex-1 md:text-right">
-                                        <p class="text-white/60 text-sm line-clamp-2 md:line-clamp-1 italic text-right rtl:text-left">{{ log.notes || $t('No notes provided.') }}</p>
+                                        <p class="text-text-muted text-sm line-clamp-2 md:line-clamp-1 italic text-right rtl:text-left">{{ log.notes || $t('No notes provided.') }}</p>
                                     </div>
                                 </div>
-                                <p v-if="logs.length === 0" class="text-center text-white/30 py-8">{{ $t('No biological logs found.') }}</p>
+                                <p v-if="logs.length === 0" class="text-center text-text-muted py-8">{{ $t('No biological logs found.') }}</p>
                             </div>
                         </div>
 
@@ -202,5 +202,5 @@ const getMoodEmoji = (score) => {
 <style scoped>
 .custom-scroll::-webkit-scrollbar { width: 4px; }
 .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-.custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: var(--c-accent); border-radius: 4px; opacity: 0.2; }
 </style>

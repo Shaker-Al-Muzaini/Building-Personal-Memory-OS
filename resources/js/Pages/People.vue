@@ -53,9 +53,9 @@ const deletePerson = async (id) => {
         cancelButtonColor: '#4b5563',
         confirmButtonText: trans('Yes, delete it!'),
         cancelButtonText: trans('Cancel'),
-        background: '#0d1304',
-        color: '#fff',
-        customClass: { popup: 'border border-gray-800 rounded-2xl shadow-2xl' }
+        background: 'var(--c-surface)',
+        color: 'var(--c-text)',
+        customClass: { popup: 'border border-glass-border rounded-2xl shadow-2xl' }
     });
 
     if (result.isConfirmed) {
@@ -84,22 +84,22 @@ const getPersonAdvice = async (id) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-2xl text-accent leading-tight flex items-center gap-2">
+            <h2 class="font-black text-2xl text-text-main leading-tight flex items-center gap-2">
                 <span>👥</span> {{ $t('People Memory') }}
             </h2>
         </template>
 
-        <div class="py-12 bg-primary min-h-screen text-memory-light" dir="rtl">
+        <div class="py-12 bg-surface min-h-screen text-text-main" dir="rtl">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 flex flex-col gap-8">
                 
                 <!-- AI Analysis -->
-                <div class="bg-gray-900 border border-gray-800 overflow-hidden shadow-2xl sm:rounded-2xl p-8 relative">
+                <div class="bg-glass-bg border border-glass-border overflow-hidden shadow-2xl sm:rounded-2xl p-8 relative">
                     <div class="absolute -top-24 text-left -right-24 w-60 h-60 bg-secondary opacity-20 rounded-full blur-[80px]"></div>
 
                     <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div>
-                            <h3 class="text-3xl font-bold text-white mb-2">{{ $t('How are your relations?') }}</h3>
-                            <p class="text-gray-400 text-lg">{{ $t('AI Relations Support') }}</p>
+                            <h3 class="text-3xl font-bold text-text-main mb-2">{{ $t('How are your relations?') }}</h3>
+                            <p class="text-text-muted text-lg">{{ $t('AI Relations Support') }}</p>
                         </div>
                         <button 
                             @click="generatePlan" 
@@ -113,7 +113,7 @@ const getPersonAdvice = async (id) => {
                     </div>
 
                     <!-- AI Response Area -->
-                    <div v-if="aiPlanText" class="mt-8 p-6 bg-black bg-opacity-40 rounded-xl border border-gray-800 whitespace-pre-wrap leading-relaxed transition-all">
+                    <div v-if="aiPlanText" class="mt-8 p-6 bg-input-bg rounded-xl border border-border-subtle whitespace-pre-wrap leading-relaxed transition-all">
                        <div class="flex items-center gap-2 mb-4 text-accent">
                            <span class="text-xl">🤖</span>
                            <h4 class="font-bold text-xl">{{ $t('AI Advice on Relations:') }}</h4>
@@ -126,22 +126,22 @@ const getPersonAdvice = async (id) => {
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     
                     <!-- Add Person Form -->
-                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl relative text-white">
+                    <div class="bg-glass-bg border border-glass-border rounded-2xl p-6 shadow-xl relative text-text-main">
                         <h3 class="text-xl font-bold mb-6">➕ {{ $t('Add Important Person') }}</h3>
                         <form @submit.prevent="addPerson" class="space-y-4">
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Name') }}</label>
-                                <input v-model="personForm.name" type="text" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" required />
+                                <label class="block text-sm text-text-muted mb-1">{{ $t('Name') }}</label>
+                                <input v-model="personForm.name" type="text" class="w-full bg-input-bg border border-border-subtle rounded-lg px-3 py-2 text-text-main focus:ring-accent" required />
                             </div>
                             
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Relation') }}</label>
-                                <input v-model="personForm.relation" type="text" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent" />
+                                <label class="block text-sm text-text-muted mb-1">{{ $t('Relation') }}</label>
+                                <input v-model="personForm.relation" type="text" class="w-full bg-input-bg border border-border-subtle rounded-lg px-3 py-2 text-text-main focus:ring-accent" />
                             </div>
 
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Importance') }}</label>
-                                <select v-model="personForm.importance" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent">
+                                <label class="block text-sm text-text-muted mb-1">{{ $t('Importance') }}</label>
+                                <select v-model="personForm.importance" class="w-full bg-input-bg border border-border-subtle rounded-lg px-3 py-2 text-text-main focus:ring-accent">
                                     <option value="عالية">عالية جداً (كالعائلة والأصدقاء المقربين)</option>
                                     <option value="متوسطة">متوسطة</option>
                                     <option value="منخفضة">منخفضة / علاقة عابرة</option>
@@ -149,8 +149,8 @@ const getPersonAdvice = async (id) => {
                             </div>
 
                             <div>
-                                <label class="block text-sm text-gray-400 mb-1">{{ $t('Gifts & Notes (Optional)') }}</label>
-                                <textarea v-model="personForm.gifts_notes" class="w-full bg-black bg-opacity-30 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-accent h-24"></textarea>
+                                <label class="block text-sm text-text-muted mb-1">{{ $t('Gifts & Notes (Optional)') }}</label>
+                                <textarea v-model="personForm.gifts_notes" class="w-full bg-input-bg border border-border-subtle rounded-lg px-3 py-2 text-text-main focus:ring-accent h-24"></textarea>
                             </div>
                             
                             <button type="submit" :disabled="personForm.processing" class="bg-accent text-white px-4 py-2 rounded-lg font-bold hover:bg-opacity-80 transition w-full disabled:opacity-50 mt-2">
@@ -160,53 +160,53 @@ const getPersonAdvice = async (id) => {
                     </div>
 
                     <!-- List of People -->
-                    <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl relative flex flex-col">
-                        <h3 class="text-xl font-bold text-white mb-6">{{ $t('Registered People List') }}</h3>
+                    <div class="md:col-span-2 bg-glass-bg border border-glass-border rounded-2xl p-6 shadow-xl relative flex flex-col">
+                        <h3 class="text-xl font-bold text-text-main mb-6">{{ $t('Registered People List') }}</h3>
                         
-                        <div v-if="people.length === 0" class="text-center py-12 text-gray-500 flex flex-col items-center">
+                        <div v-if="people.length === 0" class="text-center py-12 text-text-muted flex flex-col items-center">
                             <span class="text-5xl mb-4">📇</span>
                             <p>{{ $t('No people added yet.') }}</p>
                         </div>
                         
                         <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-6 custom-scrollbar overflow-y-auto max-h-[600px] pr-2">
                             <div v-for="person in people" :key="person.id" 
-                                :class="['bg-black border rounded-[30px] p-6 transition-all group relative overflow-hidden', 
-                                person.bond_strength > 70 ? 'border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]' : 
-                                (person.bond_strength > 30 ? 'border-orange-500/20' : 'border-gray-800 opacity-80')]"
+                                :class="['bg-surface-2 border rounded-[30px] p-6 transition-all group relative overflow-hidden', 
+                                person.bond_strength > 70 ? 'border-green-500/20 shadow-lg' : 
+                                (person.bond_strength > 30 ? 'border-orange-500/20' : 'border-border-subtle opacity-80')]"
                             >
                                 <!-- Thermal Pulse Background -->
                                 <div :class="['absolute -inset-1 opacity-5 mix-blend-screen transition-opacity', person.bond_strength > 70 ? 'bg-green-500' : (person.bond_strength > 30 ? 'bg-orange-500' : 'bg-blue-500')]"></div>
 
                                 <!-- Delete Button -->
-                                <button @click="deletePerson(person.id)" class="absolute top-4 left-4 text-gray-700 hover:text-red-500 transition opacity-0 group-hover:opacity-100 z-10">✖</button>
+                                <button @click="deletePerson(person.id)" class="absolute top-4 left-4 text-text-muted hover:text-red-500 transition opacity-0 group-hover:opacity-100 z-10">✖</button>
                                 
                                 <div class="flex items-start justify-between mb-4 relative z-10">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-xl font-black text-gray-500">
+                                        <div class="w-12 h-12 rounded-2xl bg-surface flex items-center justify-center text-xl font-black text-text-muted">
                                             {{ person.name.charAt(0) }}
                                         </div>
                                         <div>
-                                            <h4 class="font-black text-lg text-white leading-none mb-1">{{ person.name }}</h4>
+                                            <h4 class="font-black text-lg text-text-main leading-none mb-1">{{ person.name }}</h4>
                                             <span class="text-[10px] text-accent uppercase tracking-widest">{{ person.relation }}</span>
                                         </div>
                                     </div>
                                     <div class="text-right">
-                                        <div class="text-[10px] font-mono text-gray-500 mb-1">BOND_STRENGTH</div>
-                                        <div :class="['text-sm font-black', person.bond_strength > 70 ? 'text-green-500' : (person.bond_strength > 30 ? 'text-orange-500' : 'text-gray-600')]">
+                                        <div class="text-[10px] font-mono text-text-muted mb-1">BOND_STRENGTH</div>
+                                        <div :class="['text-sm font-black', person.bond_strength > 70 ? 'text-green-500' : (person.bond_strength > 30 ? 'text-orange-500' : 'text-text-muted')]">
                                             {{ Math.round(person.bond_strength) }}%
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Bond Bar -->
-                                <div class="w-full h-1 bg-white/5 rounded-full mb-6 overflow-hidden relative">
+                                <div class="w-full h-1 bg-border-subtle rounded-full mb-6 overflow-hidden relative">
                                     <div 
                                         :style="{ width: person.bond_strength + '%' }" 
-                                        :class="['h-full transition-all duration-1000', person.bond_strength > 70 ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : (person.bond_strength > 30 ? 'bg-orange-500' : 'bg-gray-700')]"
+                                        :class="['h-full transition-all duration-1000', person.bond_strength > 70 ? 'bg-green-500 shadow-lg' : (person.bond_strength > 30 ? 'bg-orange-500' : 'bg-gray-700')]"
                                     ></div>
                                 </div>
                                 
-                                <p v-if="person.gifts_notes" class="text-sm text-gray-500 mb-6 line-clamp-2 italic bidi-plaintext">
+                                <p v-if="person.gifts_notes" class="text-sm text-text-muted mb-6 line-clamp-2 italic bidi-plaintext">
                                     "{{ person.gifts_notes }}"
                                 </p>
 
@@ -215,16 +215,16 @@ const getPersonAdvice = async (id) => {
                                     <p class="text-xs text-accent font-bold bidi-plaintext leading-relaxed">🤖 {{ individualAdvice[person.id] }}</p>
                                 </div>
                                 
-                                <div class="pt-4 border-t border-white/5 flex items-center justify-between relative z-10">
+                                <div class="pt-4 border-t border-border-subtle flex items-center justify-between relative z-10">
                                     <button 
                                         @click="getPersonAdvice(person.id)" 
                                         :disabled="isLoadingAdvice[person.id]"
-                                        class="text-[10px] font-black uppercase tracking-widest text-accent hover:text-white disabled:opacity-50 transition-colors"
+                                        class="text-[10px] font-black uppercase tracking-widest text-accent hover:text-text-main disabled:opacity-50 transition-colors"
                                     >
                                         {{ isLoadingAdvice[person.id] ? $t('Thinking...') : 'Neural Advice' }}
                                     </button>
                                     
-                                    <button @click="touchPerson(person.id)" class="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-[10px] uppercase font-black tracking-widest transition-all">
+                                    <button @click="touchPerson(person.id)" class="bg-input-bg hover:bg-card-hover px-4 py-2 rounded-xl text-[10px] uppercase font-black tracking-widest transition-all">
                                         {{ $t('Updated Contact') }}
                                     </button>
                                 </div>
@@ -240,11 +240,7 @@ const getPersonAdvice = async (id) => {
 </template>
 
 <style scoped>
-:deep(.bg-white) { background-color: #0d1304 !important; border-color: #1f2937 !important; }
-:deep(.text-gray-800) { color: #e2f0d5 !important; }
-:deep(header) { background-color: #0d1304 !important; border-bottom: 1px solid #1f2937 !important; }
-:deep(nav) { background-color: #0d1304 !important; border-bottom: 1px solid #1f2937 !important; }
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #062F69; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: var(--c-accent); border-radius: 10px; opacity: 0.2; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 </style>

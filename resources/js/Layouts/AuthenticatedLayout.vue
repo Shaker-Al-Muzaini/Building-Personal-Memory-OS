@@ -7,9 +7,11 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import LanguageSwitcher from '@/Components/LanguageSwitcher.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import OmniChat from '@/Components/OmniChat.vue';
+import GlowingTubesCursor from '@/Components/GlowingTubesCursor.vue';
 import { Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import { useTheme } from '@/Composables/useTheme';
+import { onMounted, onUnmounted } from 'vue';
 
 const { isDark } = useTheme();
 
@@ -69,13 +71,21 @@ const runOracle = async () => {
     }
 };
 
-window.addEventListener('keydown', (e) => {
+onMounted(() => {
+    window.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown);
+});
+
+const handleKeydown = (e) => {
     if (e.key === '/' && !showOracle.value && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
         e.preventDefault();
         showOracle.value = true;
     }
     if (e.key === 'Escape') showOracle.value = false;
-});
+};
 </script>
 
 <template>
@@ -125,7 +135,7 @@ window.addEventListener('keydown', (e) => {
                         <!-- Universal Search Bar -->
                         <div class="hidden lg:flex flex-1 max-w-md mx-8 items-center relative">
                             <div class="w-full relative group">
-                                <span class="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-accent transition-colors">🔍</span>
+                                <span class="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent transition-colors">🔍</span>
                                 <input 
                                     v-model="searchQuery"
                                     type="text" 
@@ -134,8 +144,8 @@ window.addEventListener('keydown', (e) => {
                                 />
                                 
                                 <!-- Search Results Dropdown -->
-                                <div v-if="searchResults.length > 0 || isSearching" class="absolute top-[calc(100%+8px)] left-0 right-0 bg-surface border border-border-main rounded-2xl shadow-2xl z-50 overflow-hidden backdrop-blur-3xl">
-                                    <div v-if="isSearching" class="p-4 text-center text-sm text-gray-500 animate-pulse">
+                                <div v-if="searchResults.length > 0 || isSearching" class="absolute top-[calc(100%+8px)] left-0 right-0 bg-glass-bg border border-border-subtle rounded-2xl shadow-2xl z-50 overflow-hidden backdrop-blur-3xl">
+                                    <div v-if="isSearching" class="p-4 text-center text-sm text-text-muted animate-pulse">
                                         {{ $t('Searching everywhere...') }}
                                     </div>
                                     <div v-else class="max-h-[350px] overflow-y-auto custom-scroll">
@@ -143,7 +153,7 @@ window.addEventListener('keydown', (e) => {
                                             v-for="item in searchResults" 
                                             :key="item.type + item.id"
                                             @click="navigateTo(item)"
-                                            class="p-4 border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors flex items-start gap-3"
+                                            class="p-4 border-b border-border-subtle hover:bg-card-hover cursor-pointer transition-colors flex items-start gap-3"
                                         >
                                             <span class="text-lg">
                                                 {{ item.type === 'ideas' ? '💡' : (item.type === 'people' ? '🤝' : (item.type === 'tasks' ? '📋' : '⚖️')) }}
@@ -188,7 +198,7 @@ window.addEventListener('keydown', (e) => {
 
                         <!-- Hamburger -->
                         <div class="-me-2 flex items-center sm:hidden">
-                            <button @click="showingNavigationDropdown = !showingNavigationDropdown" class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-white/10 hover:text-white focus:outline-none">
+                            <button @click="showingNavigationDropdown = !showingNavigationDropdown" class="inline-flex items-center justify-center rounded-md p-2 text-text-muted transition duration-150 ease-in-out hover:bg-surface-2 hover:text-text-main focus:outline-none">
                                 <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                     <path :class="{'hidden': showingNavigationDropdown, 'inline-flex': !showingNavigationDropdown}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                     <path :class="{'hidden': !showingNavigationDropdown, 'inline-flex': showingNavigationDropdown}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -228,7 +238,7 @@ window.addEventListener('keydown', (e) => {
                     <div class="border-t border-white/5 pb-1 pt-4">
                         <div class="px-4 flex justify-between items-center mb-4">
                             <div>
-                                <div class="text-base font-medium text-text-main">{{ $page.props.auth.user.name }}</div>
+                                <div class="text-base font-bold text-text-main">{{ $page.props.auth.user.name }}</div>
                                 <div class="text-sm font-medium text-text-muted">{{ $page.props.auth.user.email }}</div>
                             </div>
                             <LanguageSwitcher />
@@ -266,17 +276,17 @@ window.addEventListener('keydown', (e) => {
                                 <input 
                                     v-model="oracleCommand"
                                     type="text" 
-                                    placeholder="Execute command (e.g. Add task, Record expense...)"
-                                    class="flex-1 bg-transparent border-none focus:ring-0 text-white font-mono placeholder:text-gray-700 py-4"
+                                    placeholder="Execute command... (e.g. Add task, Record expense)"
+                                    class="flex-1 bg-transparent border-none focus:ring-0 text-text-main font-mono placeholder:text-text-muted py-4 shadow-none"
                                     autofocus
                                 />
                                 <button type="button" @click="showOracle = false" class="pe-4 text-text-muted hover:text-text-main transition-all">esc</button>
                             </form>
                             
-                            <div v-if="oracleReply || isOracleLoading" class="border-t border-border-subtle p-4 bg-surface-2">
-                                <p v-if="isOracleLoading" class="text-accent text-sm font-mono animate-pulse">Processing context...</p>
-                                <p v-else class="text-gray-300 text-sm font-mono leading-relaxed bidi-plaintext flex items-center gap-2">
-                                    <span class="w-1.5 h-1.5 bg-accent rounded-full"></span>
+                            <div v-if="oracleReply || isOracleLoading" class="border-t border-border-subtle p-4 bg-surface shadow-inner">
+                                <p v-if="isOracleLoading" class="text-accent text-sm font-mono animate-pulse tracking-widest">{{ $t('PROCESSING_CONTEXT...') }}</p>
+                                <p v-else class="text-text-main text-sm font-mono leading-relaxed bidi-plaintext flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 bg-accent rounded-full shadow-[0_0_8px_var(--c-accent)]"></span>
                                     {{ oracleReply }}
                                 </p>
                             </div>
@@ -286,6 +296,7 @@ window.addEventListener('keydown', (e) => {
             </main>
             
             <OmniChat />
+            <GlowingTubesCursor />
             
         </div>
     </div>

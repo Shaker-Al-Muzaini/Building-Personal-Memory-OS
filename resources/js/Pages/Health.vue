@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import axios from 'axios';
+import { trans, getActiveLanguage } from 'laravel-vue-i18n';
 
 const props = defineProps({
     logs: Array
@@ -19,10 +20,10 @@ const daysInMonth = computed(() => {
 
 const days    = computed(() => Array.from({ length: daysInMonth.value }, (_, i) => i + 1));
 const months  = [
-    { v: 1,  ar: 'يناير' }, { v: 2,  ar: 'فبراير' }, { v: 3,  ar: 'مارس' },
-    { v: 4,  ar: 'أبريل' }, { v: 5,  ar: 'مايو'   }, { v: 6,  ar: 'يونيو' },
-    { v: 7,  ar: 'يوليو' }, { v: 8,  ar: 'أغسطس' }, { v: 9,  ar: 'سبتمبر' },
-    { v: 10, ar: 'أكتوبر'}, { v: 11, ar: 'نوفمبر' }, { v: 12, ar: 'ديسمبر' }
+    { v: 1,  name: 'January' }, { v: 2,  name: 'February' }, { v: 3,  name: 'March' },
+    { v: 4,  name: 'April' }, { v: 5,  name: 'May'   }, { v: 6,  name: 'June' },
+    { v: 7,  name: 'July' }, { v: 8,  name: 'August' }, { v: 9,  name: 'September' },
+    { v: 10, name: 'October'}, { v: 11, name: 'November' }, { v: 12, name: 'December' }
 ];
 const years   = computed(() => {
     const y = [];
@@ -62,17 +63,17 @@ const getAnalysis = async () => {
         const response = await axios.post(route('health.analyze'));
         aiAnalysis.value = response.data.analysis;
     } catch(e) {
-        aiAnalysis.value = 'النظام الشتخيصي خارج الخدمة.';
+        aiAnalysis.value = trans('Diagnostic system offline.');
     } finally {
         isAnalyzing.value = false;
     }
 };
 
 const getMoodEmoji = (score) => {
-    if (score <= 3) return '📉 مرهق';
-    if (score <= 6) return '〰️ عادي';
-    if (score <= 8) return '📈 جيد';
-    return '🚀 ممتاز';
+    if (score <= 3) return `📉 ${trans('Exhausted')}`;
+    if (score <= 6) return `〰️ ${trans('Normal')}`;
+    if (score <= 8) return `📈 ${trans('Good')}`;
+    return `🚀 ${trans('Excellent')}`;
 };
 </script>
 
@@ -84,11 +85,11 @@ const getMoodEmoji = (score) => {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <!-- Page Header -->
-                <div class="mb-10 text-center md:text-right">
-                    <h1 class="text-3xl md:text-5xl font-black text-text-main tracking-tighter mb-4 flex justify-center md:justify-start items-center gap-3">
+                <div class="mb-10 text-center" :class="getActiveLanguage() === 'ar' ? 'md:text-right' : 'md:text-left'">
+                    <h1 class="text-3xl md:text-5xl font-black text-text-main tracking-tighter mb-4 flex justify-center items-center gap-3" :class="getActiveLanguage() === 'ar' ? 'md:justify-start' : 'md:justify-start'">
                         <span class="text-emerald-500">🧬</span> {{ $t('Health & Mood Matrix') }}
                     </h1>
-                    <p class="text-text-muted max-w-2xl mx-auto md:mx-0 text-lg">
+                    <p class="text-text-muted max-w-2xl mx-auto text-lg" :class="getActiveLanguage() === 'ar' ? 'md:mx-0' : 'md:mx-0'">
                         {{ $t('Track your biological energy to understand how your sleep and mood affect your financial decisions and time management.') }}
                     </p>
                 </div>
@@ -111,7 +112,7 @@ const getMoodEmoji = (score) => {
                                             <option v-for="d in days" :key="d" :value="d" class="bg-surface-2">{{ d }}</option>
                                         </select>
                                         <select v-model.number="selectedMonth" class="bg-surface-2 border border-border-subtle rounded-xl px-2 py-3 text-text-main text-center focus:ring-emerald-500 focus:border-emerald-500 appearance-none cursor-pointer">
-                                            <option v-for="m in months" :key="m.v" :value="m.v" class="bg-surface-2">{{ m.ar }}</option>
+                                            <option v-for="m in months" :key="m.v" :value="m.v" class="bg-surface-2">{{ $t(m.name) }}</option>
                                         </select>
                                         <select v-model.number="selectedYear" class="bg-surface-2 border border-border-subtle rounded-xl px-2 py-3 text-text-main text-center font-mono focus:ring-emerald-500 focus:border-emerald-500 appearance-none cursor-pointer">
                                             <option v-for="y in years" :key="y" :value="y" class="bg-surface-2">{{ y }}</option>
@@ -138,7 +139,7 @@ const getMoodEmoji = (score) => {
 
                                 <div>
                                     <label class="block text-sm font-bold text-text-muted mb-2">{{ $t('Notes (Optional)') }}</label>
-                                    <textarea v-model="form.notes" rows="2" class="w-full bg-input-bg border border-border-subtle rounded-xl px-4 py-3 text-text-main focus:ring-emerald-500 focus:border-emerald-500" placeholder="e.g. Worked out, stressed at work..."></textarea>
+                                    <textarea v-model="form.notes" rows="2" class="w-full bg-input-bg border border-border-subtle rounded-xl px-4 py-3 text-text-main focus:ring-emerald-500 focus:border-emerald-500" :placeholder="$t('Mood Notes Placeholder')"></textarea>
                                 </div>
 
                                 <button type="submit" :disabled="form.processing" class="w-full py-4 rounded-xl font-bold text-white text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-xl disabled:opacity-50"

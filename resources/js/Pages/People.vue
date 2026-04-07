@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
-import { trans } from 'laravel-vue-i18n';
+import { trans, getActiveLanguage } from 'laravel-vue-i18n';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
@@ -19,7 +19,7 @@ const generatePlan = async () => {
         const response = await axios.post(route('people.generate-plan'));
         aiPlanText.value = response.data.plan;
     } catch (e) {
-        aiPlanText.value = "حدث خطأ أثناء محاولة الاتصال بـ الذكاء الاصطناعي، يرجى المحاولة لاحقاً.";
+        aiPlanText.value = trans("Error connecting to AI advisor. Please try again later.");
     } finally {
         isGeneratingPlan.value = false;
     }
@@ -28,7 +28,7 @@ const generatePlan = async () => {
 const personForm = useForm({
     name: '',
     relation: '',
-    importance: 'متوسطة',
+    importance: 'medium',
     gifts_notes: '',
 });
 
@@ -72,7 +72,7 @@ const getPersonAdvice = async (id) => {
         const response = await axios.get(route('people.advice', id));
         individualAdvice.value[id] = response.data.advice;
     } catch (e) {
-        individualAdvice.value[id] = " Neural logic error. Just say Hi!";
+        individualAdvice.value[id] = "Neural logic error. Just say Hi!";
     } finally {
         isLoadingAdvice.value[id] = false;
     }
@@ -80,7 +80,7 @@ const getPersonAdvice = async (id) => {
 </script>
 
 <template>
-    <Head title="ذاكرة الناس — Personal Memory" />
+    <Head :title="`${$t('People Memory')} — Personal Memory`" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -89,7 +89,7 @@ const getPersonAdvice = async (id) => {
             </h2>
         </template>
 
-        <div class="py-12 bg-surface min-h-screen text-text-main" dir="rtl">
+        <div class="py-12 bg-surface min-h-screen text-text-main">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 flex flex-col gap-8">
                 
                 <!-- AI Analysis -->
@@ -142,9 +142,9 @@ const getPersonAdvice = async (id) => {
                             <div>
                                 <label class="block text-sm text-text-muted mb-1">{{ $t('Importance') }}</label>
                                 <select v-model="personForm.importance" class="w-full bg-input-bg border border-border-subtle rounded-lg px-3 py-2 text-text-main focus:ring-accent">
-                                    <option value="عالية">عالية جداً (كالعائلة والأصدقاء المقربين)</option>
-                                    <option value="متوسطة">متوسطة</option>
-                                    <option value="منخفضة">منخفضة / علاقة عابرة</option>
+                                    <option value="high">{{ $t('Importance_High') }}</option>
+                                    <option value="medium">{{ $t('Importance_Medium') }}</option>
+                                    <option value="low">{{ $t('Importance_Low') }}</option>
                                 </select>
                             </div>
 
@@ -178,7 +178,7 @@ const getPersonAdvice = async (id) => {
                                 <div :class="['absolute -inset-1 opacity-5 mix-blend-screen transition-opacity', person.bond_strength > 70 ? 'bg-green-500' : (person.bond_strength > 30 ? 'bg-orange-500' : 'bg-blue-500')]"></div>
 
                                 <!-- Delete Button -->
-                                <button @click="deletePerson(person.id)" class="absolute top-4 left-4 text-text-muted hover:text-red-500 transition opacity-0 group-hover:opacity-100 z-10">✖</button>
+                                <button @click="deletePerson(person.id)" class="absolute top-4 inset-inline-start-4 text-text-muted hover:text-red-500 transition opacity-0 group-hover:opacity-100 z-10">✖</button>
                                 
                                 <div class="flex items-start justify-between mb-4 relative z-10">
                                     <div class="flex items-center gap-3">
@@ -221,7 +221,7 @@ const getPersonAdvice = async (id) => {
                                         :disabled="isLoadingAdvice[person.id]"
                                         class="text-[10px] font-black uppercase tracking-widest text-accent hover:text-text-main disabled:opacity-50 transition-colors"
                                     >
-                                        {{ isLoadingAdvice[person.id] ? $t('Thinking...') : 'Neural Advice' }}
+                                        {{ isLoadingAdvice[person.id] ? $t('Thinking...') : $t('Neural Advice') }}
                                     </button>
                                     
                                     <button @click="touchPerson(person.id)" class="bg-input-bg hover:bg-card-hover px-4 py-2 rounded-xl text-[10px] uppercase font-black tracking-widest transition-all">

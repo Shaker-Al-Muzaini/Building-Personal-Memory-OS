@@ -55,6 +55,8 @@ class DashboardController extends Controller
             $user->telegram_sync_code = $syncCode;
         }
 
+        $locale = app()->getLocale();
+
         return Inertia::render('Dashboard', [
             'sync_code' => $user->telegram_sync_code,
             'is_telegram_linked' => (bool)$user->telegram_chat_id,
@@ -71,9 +73,9 @@ class DashboardController extends Controller
                 'sealed_decisions_count' => $sealedDecisionsCount,
                 'income_expense_ratio' => $totalIncome > 0 ? (int)(($totalExpense / $totalIncome) * 100) : 0,
             ],
-            'shadow_prediction' => $this->getShadowPrediction($user, $balance, $pendingTasksCount),
+            'shadow_prediction' => $this->getShadowPrediction($user, $balance, $pendingTasksCount, $locale),
             'harmony_score' => $this->calculateHarmony($balance, $pendingTasksCount, $completedTasksCount),
-            'daily_briefing' => $this->getDailyBriefing($user, $balance, $pendingTasksCount),
+            'daily_briefing' => $this->getDailyBriefing($user, $balance, $pendingTasksCount, $locale),
             'routine_templates' => $this->getRoutineTemplates()
         ]);
     }
@@ -83,20 +85,50 @@ class DashboardController extends Controller
         return [
             [
                 'id' => 'shugairi', 'title' => 'Ihsan Morning', 'author' => 'Ahmad Al-Shugairi', 'icon' => '🌙',
-                'description' => 'Focus on deep work, spiritual balance, and early productivity.',
-                'tasks' => ['Early Morning Meditation', '4 Hours of Deep Focus', 'Gratitude Journaling'],
+                'description' => 'A holistic spiritual and productivity routine focused on "Ihsan" (Excellence).',
+                'full_routine' => [
+                    ['time' => '04:30 AM', 'task' => 'Fajr Prayer & Spiritual Meditation'],
+                    ['time' => '05:30 AM', 'task' => 'Daily Qur’an Reading & Reflection'],
+                    ['time' => '06:30 AM', 'task' => 'Light Morning Exercise / Walk'],
+                    ['time' => '08:00 AM', 'task' => 'Deep Work Block 1 (High Focus)'],
+                    ['time' => '12:00 PM', 'task' => 'Healthy Lunch & Social Recharge'],
+                    ['time' => '02:00 PM', 'task' => 'Deep Work Block 2'],
+                    ['time' => '05:00 PM', 'task' => 'Family Time & Personal Growth Reading'],
+                    ['time' => '09:00 PM', 'task' => 'Neural Reflection & Early Sleep'],
+                ],
+                'tasks' => ['Fajr & Meditation', 'Deep Work Block', 'Reading', 'Neural Reflection'],
                 'color' => 'linear-gradient(135deg, #059669, #10b981)'
             ],
             [
                 'id' => 'huberman', 'title' => 'Biohacker Flow', 'author' => 'Andrew Huberman', 'icon' => '🧬',
-                'description' => 'Science-backed routine for peak cognitive and physical state.',
-                'tasks' => ['Morning Sunlight Exposure', 'Cold Exposure', 'High Energy Task Sprint'],
+                'description' => 'Science-backed protocols for maximizing neuroplasticity and daily energy.',
+                'full_routine' => [
+                    ['time' => '06:00 AM', 'task' => 'Morning Sunlight Exposure (10-30 mins)'],
+                    ['time' => '06:30 AM', 'task' => 'Hydration with Salts & Cold Exposure'],
+                    ['time' => '07:30 AM', 'task' => 'Deep Work Block (Before Caffeine)'],
+                    ['time' => '10:00 AM', 'task' => 'First Caffeine Intake'],
+                    ['time' => '12:00 PM', 'task' => 'Physiological Sigh / Resistance Training'],
+                    ['time' => '03:00 PM', 'task' => 'Non-Sleep Deep Rest (NSDR) / Nap'],
+                    ['time' => '06:00 PM', 'task' => 'Dim Overhead Lights / Viewing Sunset'],
+                    ['time' => '10:00 PM', 'task' => 'Cool Room Temperature & Deep Sleep'],
+                ],
+                'tasks' => ['Sunlight Exposure', 'Cold Plunge', 'NSDR Session', 'Dim Lights'],
                 'color' => 'linear-gradient(135deg, #0ea5e9, #6366f1)'
             ],
             [
                 'id' => 'founder', 'title' => 'Founder Sprint', 'author' => 'Elon Musk', 'icon' => '🚀',
-                'description' => 'High-intensity time-blocking for massive strategic projects.',
-                'tasks' => ['5-Minute Time Blocks', 'Strategic Roadmap Sync', 'Asynchronous Comms Only'],
+                'description' => 'High-intensity "Time-Blocking" for strategic engineers and leaders.',
+                'full_routine' => [
+                    ['time' => '07:00 AM', 'task' => 'Wake up & Critical Shower'],
+                    ['time' => '07:30 AM', 'task' => '5-Minute Time Blocks: Emails/Sync'],
+                    ['time' => '09:00 AM', 'task' => 'Engineering Design Review (SpaceX/Tesla)'],
+                    ['time' => '01:00 PM', 'task' => 'Quick Multi-tasking Lunch'],
+                    ['time' => '02:00 PM', 'task' => 'Strategic Scaling & High-Stakes Meetings'],
+                    ['time' => '06:00 PM', 'task' => 'Technical Deep Dive with Product Teams'],
+                    ['time' => '10:00 PM', 'task' => 'Reading & Theoretical Physics Study'],
+                    ['time' => '01:00 AM', 'task' => 'Neural Shutdown (Sleep)'],
+                ],
+                'tasks' => ['5-Min Timeblocks', 'Design Review', 'Strategic Sync', 'Critical Reading'],
                 'color' => 'linear-gradient(135deg, #f59e0b, #d97706)'
             ]
         ];
@@ -116,9 +148,9 @@ class DashboardController extends Controller
                     'created_at' => now(), 'updated_at' => now()
                 ]);
             }
-            return back()->with('success', 'Routine adopted successfully!');
+            return back()->with('success', trans('Routine adopted successfully!'));
         }
-        return back()->with('error', 'Routine not found.');
+        return back()->with('error', trans('Routine not found.'));
     }
 
     private function calculateHarmony($balance, $pending, $done)
@@ -129,56 +161,62 @@ class DashboardController extends Controller
         return (int)($moneyScore + $taskScore);
     }
 
-    private function getDailyBriefing($user, $balance, $tasksCount)
+    private function getDailyBriefing($user, $balance, $tasksCount, $locale = 'ar')
     {
         $recentPerson = DB::table('people')->where('user_id', $user->id)->where('importance', 'عالية')->orderBy('last_contact', 'asc')->first();
         $recentIdea = DB::table('ideas')->where('user_id', $user->id)->latest()->value('content');
         
-        $prompt = "Generate a short, super professional daily briefing for the user in 3 short sentences. 
-        Context: Balance is $balance$. Pending Tasks: $tasksCount. Recent Idea: \"$recentIdea\". 
-        Important Person to contact: \"". ($recentPerson->name ?? 'None') ."\". 
-        Tone: Strategic, encouraging, wise master. Language: Arabic.";
+        $prompt = $locale === 'ar' 
+            ? "أنت العقل الموازي الاستراتيجي. بناءً على: الرصيد ($balance$)، المهام المعلقة ($tasksCount)، وآخر فكرة (\"$recentIdea\"). أخبر المستخدم بإحاطة صباحية مهنية قصيرة جداً (3 جمل). اللغة: العربية. تجنب التحيات المكررة."
+            : "You are the Strategic Shadow Brain. Based on: Balance ($balance$), Pending Tasks ($tasksCount$), and Recent Idea (\"$recentIdea\"). Generate a short, professional daily briefing (3 short sentences). Tone: Strategic, wise master. Language: English. Avoid repetitive greetings.";
 
         try {
             $response = Http::timeout(15)->withoutVerifying()
                 ->withHeaders(['Authorization' => 'Bearer ' . config('services.groq.key')])
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
                     'model' => 'llama-3.3-70b-versatile',
-                    'messages' => [['role' => 'user', 'content' => $prompt]],
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are the Memory OS Global Intelligence. You MUST respond ONLY in Arabic. This is a strict requirement.'],
+                        ['role' => 'user', 'content' => $prompt]
+                    ],
                 ]);
             
             if ($response->successful()) {
                 $data = $response->json();
-                return $data['choices'][0]['message']['content'] ?? 'مستعد ليوم عظيم؟';
+                return $data['choices'][0]['message']['content'] ?? trans('Ready for a great day?');
             }
-            return 'العقل قيد التحديث... (خوادم الذكاء منشغلة)';
+            return trans('Neural servers busy... updating mind.');
         } catch (\Exception $e) {
-            return 'العقل قيد التحديث...';
+            return trans('Thinking...');
         }
     }
 
 
-    private function getShadowPrediction($user, $balance, $tasksCount)
+    private function getShadowPrediction($user, $balance, $tasksCount, $locale = 'ar')
     {
         $recentIdea = DB::table('ideas')->where('user_id', $user->id)->latest()->value('content');
-        $prompt = "You are the Predictive Shadow Brain. Based on: Balance: $balance$, Pending Tasks: $tasksCount, Recent Idea: \"$recentIdea\".
-        Predict the user's near future vibe and give 1 shocking strategic insight in Arabic. Max 2 short sentences. No greeting.";
+        $prompt = $locale === 'ar'
+            ? "أنت الظل المنبئ. بناءً على المعلومات: الرصيد ($balance$)، المهام ($tasksCount)، الفكرة ($recentIdea). أعطِ نبوءة مستقبلية صادمة ومختصرة جداً (جملة واحدة). اللغة العربية."
+            : "You are the Predictive Shadow. Based on Context: Balance ($balance$), Tasks ($tasksCount$), Idea ($recentIdea). Predict the user's near future vibe and give 1 shocking strategic insight in English. Max 1 short sentence. No greeting.";
 
         try {
             $response = Http::timeout(10)->withoutVerifying()
                 ->withHeaders(['Authorization' => 'Bearer ' . config('services.groq.key')])
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
                     'model' => 'llama-3.3-70b-versatile',
-                    'messages' => [['role' => 'user', 'content' => $prompt]],
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are the Shadow Predictive Brain. You MUST respond ONLY in Arabic. Do not use English even for analysis.'],
+                        ['role' => 'user', 'content' => $prompt]
+                    ],
                 ]);
             
             if ($response->successful()) {
                 $data = $response->json();
-                return $data['choices'][0]['message']['content'] ?? 'المستقبل غامض حالياً...';
+                return $data['choices'][0]['message']['content'] ?? trans('The future is currently clouded...');
             }
-            return 'جاري البحث في فراغ الاحتمالات...';
+            return trans('Searching the void of possibilities...');
         } catch (\Exception $e) {
-            return 'جاري قراءة المسارات العصبية...';
+            return trans('Reading neural pathways...');
         }
     }
 
@@ -248,18 +286,17 @@ class DashboardController extends Controller
 
         if ($response->successful()) {
             $data = $response->json();
-            $plan = $data['choices'][0]['message']['content'] ?? 'لم يتم الحصول على رد.';
+            $plan = $data['choices'][0]['message']['content'] ?? trans('No response obtained.');
             return response()->json(['plan' => $plan]);
         }
 
-        // لو فشل الـ request نشوف سبب الفشل
         return response()->json([
-            'plan' => '⚠️ فشل الطلب: ' . $response->status() . ' | ' . $response->body()
+            'plan' => '⚠️ ' . trans('Request failed: ') . $response->status()
         ]);
 
     } catch (\Exception $e) {
         return response()->json([
-            'plan' => '⚠️ خطأ: ' . $e->getMessage()
+            'plan' => '⚠️ ' . trans('Error: ') . $e->getMessage()
         ]);
     }
 }
@@ -269,6 +306,8 @@ class DashboardController extends Controller
         $command = $request->input('command');
         $user = $request->user();
         
+        $locale = $request->input('locale', 'ar');
+        
         $prompt = "You are the Command Center of Personal Memory OS. 
         Analyze this user voice command: \"$command\".
         If it contains a financial expense/income, task, or idea, extract the data.
@@ -276,7 +315,7 @@ class DashboardController extends Controller
         Format: {
           \"type\": \"money|task|idea|unknown\",
           \"data\": { ... relevant fields ... },
-          \"reply\": \"A cool smart reply in Arabic\"
+          \"reply\": \"A cool smart reply in " . ($locale === 'ar' ? 'Arabic' : 'English') . " (max 10 words)\"
         }";
 
         try {
@@ -298,7 +337,7 @@ class DashboardController extends Controller
                         'user_id' => $user->id,
                         'amount' => $res['data']['amount'] ?? 0,
                         'type' => $res['data']['type'] ?? 'expense',
-                        'category' => $res['data']['category'] ?? 'عام',
+                        'category' => $res['data']['category'] ?? trans('General'),
                         'description' => $res['data']['description'] ?? $command,
                         'created_at' => now(), 'updated_at' => now()
                     ]);

@@ -76,31 +76,22 @@ onMounted(() => {
     };
     animate();
 
-    const onResize = () => {
+    window.addEventListener('mousemove', handleMouseMove);
+});
+
+const onResize = () => {
+    if (cam && renderer) {
         cam.aspect = window.innerWidth / window.innerHeight;
         cam.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener('resize', onResize);
+    }
+};
 
-    const onScroll = () => {
-        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-        scrollWidth.value = (winScroll / height) * 100;
-    };
-    window.addEventListener('scroll', onScroll);
-
-    // Scroll reveal
-    const observer = new IntersectionObserver(entries => {
-        entries.forEach(e => {
-            if (e.isIntersecting) e.target.classList.add('in');
-            else e.target.classList.remove('in');
-        });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.sr').forEach(el => observer.observe(el));
-
-    window.addEventListener('mousemove', handleMouseMove);
-});
+const onScroll = () => {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    scrollWidth.value = (winScroll / height) * 100;
+};
 
 const mouseX = ref(0);
 const mouseY = ref(0);

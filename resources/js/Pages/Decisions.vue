@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { trans } from 'laravel-vue-i18n';
+import { trans, getActiveLanguage } from 'laravel-vue-i18n';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
@@ -84,7 +84,7 @@ const parseAdvice = (advice) => {
 </script>
 
 <template>
-    <Head title="محلل القرارات الذكي — Personal Memory" />
+    <Head :title="`${$t('Decision Neural Lab')} — Personal Memory`" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -94,7 +94,7 @@ const parseAdvice = (advice) => {
             </h2>
         </template>
 
-        <div class="py-12 bg-surface min-h-screen text-text-main relative overflow-hidden" dir="rtl">
+        <div class="py-12 bg-surface min-h-screen text-text-main relative overflow-hidden">
             <!-- Cinematic Vignette & Grain -->
             <div class="absolute inset-0 z-0 pointer-events-none opacity-10 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_var(--c-bg)_100%)]"></div>
             <div class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-accent/5 to-transparent pointer-events-none"></div>
@@ -161,7 +161,7 @@ const parseAdvice = (advice) => {
                     <div v-for="decision in filteredDecisions" :key="decision.id" 
                         class="bg-glass-bg border border-glass-border rounded-[50px] p-10 relative group hover:border-accent/30 transition-all duration-700 shadow-2xl"
                     >
-                        <button @click="deleteDecision(decision.id)" class="absolute top-8 left-8 text-text-muted hover:text-red-500 transition-all active:scale-75 opacity-0 group-hover:opacity-100">
+                        <button @click="deleteDecision(decision.id)" class="absolute top-8 inset-inline-start-8 text-text-muted hover:text-red-500 transition-all active:scale-75 opacity-0 group-hover:opacity-100">
                             <span class="text-2xl">✖</span>
                         </button>
                         
@@ -182,40 +182,40 @@ const parseAdvice = (advice) => {
                                 <!-- OR Divider -->
                                 <div class="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none">
                                     <div class="w-[1px] h-full bg-gradient-to-b from-transparent via-border-main to-transparent"></div>
-                                    <div class="w-12 h-12 rounded-full bg-surface border border-border-subtle flex items-center justify-center text-[10px] font-black text-text-muted shadow-2xl z-10">VS</div>
+                                    <div class="w-12 h-12 rounded-full bg-surface border border-border-subtle flex items-center justify-center text-[10px] font-black text-text-muted shadow-2xl z-10">{{ $t('VS') }}</div>
                                 </div>
 
                                 <!-- Pros -->
                                 <div class="bg-green-500/[0.03] border border-green-500/10 p-8 rounded-[35px] space-y-4">
-                                    <h5 class="text-green-500 font-black text-xs uppercase tracking-widest flex items-center gap-2 mb-4 text-right">
+                                    <h5 class="text-green-500 font-black text-xs uppercase tracking-widest flex items-center gap-2 mb-4 text-start">
                                         <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,1)]"></span>
                                         {{ $t('Potential Rewards') }}
                                     </h5>
-                                    <ul class="space-y-4 text-right">
-                                        <li v-for="pro in parseAdvice(decision.ai_advice).pros" :key="pro" class="flex items-start justify-end gap-3 text-text-main font-light leading-relaxed bidi-plaintext">
-                                            <span>{{ pro }}</span>
+                                    <ul class="space-y-4 text-start">
+                                        <li v-for="pro in parseAdvice(decision.ai_advice).pros" :key="pro" class="flex items-start justify-start gap-3 text-text-main font-light leading-relaxed bidi-plaintext text-start">
                                             <span class="text-green-500/60 mt-1">✓</span>
+                                            <span>{{ pro }}</span>
                                         </li>
                                     </ul>
                                 </div>
 
                                 <!-- Cons -->
                                 <div class="bg-red-500/[0.03] border border-red-500/10 p-8 rounded-[35px] space-y-4">
-                                    <h5 class="text-red-500 font-black text-xs uppercase tracking-widest flex items-center gap-2 mb-4 text-right">
+                                    <h5 class="text-red-500 font-black text-xs uppercase tracking-widest flex items-center gap-2 mb-4 text-start">
                                         <span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,1)]"></span>
                                         {{ $t('Identified Risks') }}
                                     </h5>
-                                    <ul class="space-y-4 text-right">
-                                        <li v-for="con in parseAdvice(decision.ai_advice).cons" :key="con" class="flex items-start justify-end gap-3 text-text-main font-light leading-relaxed bidi-plaintext">
-                                            <span>{{ con }}</span>
+                                    <ul class="space-y-4 text-start">
+                                        <li v-for="con in parseAdvice(decision.ai_advice).cons" :key="con" class="flex items-start justify-start gap-3 text-text-main font-light leading-relaxed bidi-plaintext text-start">
                                             <span class="text-red-500/60 mt-1">⚠</span>
+                                            <span>{{ con }}</span>
                                         </li>
                                     </ul>
                                 </div>
                             </div>
 
                             <!-- Suggestion & Analysis -->
-                            <div class="bg-accent/[0.03] border border-accent/10 p-8 rounded-[35px] text-right flex flex-col md:flex-row gap-10 items-center">
+                            <div class="bg-accent/[0.03] border border-accent/10 p-8 rounded-[35px] text-start flex flex-col md:flex-row gap-10 items-center">
                                 <!-- Strategic Score Gauge -->
                                 <div class="relative w-32 h-32 flex-shrink-0 group/score">
                                     <svg class="w-full h-full transform -rotate-90">
@@ -237,9 +237,9 @@ const parseAdvice = (advice) => {
                                 </div>
 
                                 <div class="flex-1">
-                                    <div class="flex items-center justify-end gap-3 mb-4">
-                                        <h5 class="text-accent font-black text-xs uppercase tracking-widest">{{ $t('Strategic Insight') }}</h5>
+                                    <div class="flex items-center justify-start gap-3 mb-4 text-start">
                                         <span class="text-2xl">🔮</span>
+                                        <h5 class="text-accent font-black text-xs uppercase tracking-widest">{{ $t('Strategic Insight') }}</h5>
                                     </div>
                                     <p class="text-text-main font-light italic leading-relaxed mb-6 bidi-plaintext">{{ parseAdvice(decision.ai_advice).analysis }}</p>
                                     <div class="p-5 bg-accent/10 border border-accent/20 rounded-2xl text-center">
@@ -257,7 +257,7 @@ const parseAdvice = (advice) => {
                                 <div class="flex gap-4 p-2 bg-input-bg border border-border-subtle rounded-[30px] shadow-inner">
                                     <button @click="finalizeDecision(decision.id, choices[decision.id])" class="bg-accent hover:bg-accent/80 text-white px-8 py-4 rounded-[22px] font-black shadow-xl transition-all active:scale-95 group/btn">
                                         {{ $t('Seal It') }}
-                                        <span class="inline-block group-hover/btn:translate-x-1 transition-transform mr-1 text-xs">⚡</span>
+                                        <span class="inline-block group-hover/btn:translate-x-1 transition-transform ms-1 text-xs">⚡</span>
                                     </button>
                                     <input 
                                         type="text" 

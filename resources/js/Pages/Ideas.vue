@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, computed, onMounted } from 'vue';
-import { trans } from 'laravel-vue-i18n';
+import { trans, getActiveLanguage } from 'laravel-vue-i18n';
 import Swal from 'sweetalert2';
 
 const isRecording = ref(false);
@@ -83,9 +83,9 @@ const deleteIdea = async (id) => {
 };
 
 const statusColumns = [
-    { id: 'draft', label: 'مسودة', icon: '📝', color: 'border-blue-500/30' },
-    { id: 'developing', label: 'قيد التطوير', icon: '🧪', color: 'border-yellow-500/30' },
-    { id: 'ready', label: 'جاهز للتنفيذ', icon: '🚀', color: 'border-green-500/30' }
+    { id: 'draft', label: trans('Draft'), icon: '📝', color: 'border-blue-500/30' },
+    { id: 'developing', label: trans('Developing'), icon: '🧪', color: 'border-yellow-500/30' },
+    { id: 'ready', label: trans('Ready'), icon: '🚀', color: 'border-green-500/30' }
 ];
 
 const getIdeasByStatus = (status) => {
@@ -94,7 +94,7 @@ const getIdeasByStatus = (status) => {
 </script>
 
 <template>
-    <Head title="ذاكرة الأفكار — Personal Memory" />
+    <Head :title="`${$t('Ideas Memory')} — Personal Memory`" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -104,7 +104,7 @@ const getIdeasByStatus = (status) => {
             </h2>
         </template>
 
-        <div class="py-12 bg-surface min-h-screen text-text-main" dir="rtl">
+        <div class="py-12 bg-surface min-h-screen text-text-main">
             <div class="max-w-[1600px] mx-auto sm:px-6 lg:px-8 space-y-12">
 
                 <!-- Add Idea Section -->
@@ -128,7 +128,7 @@ const getIdeasByStatus = (status) => {
                                     type="button"
                                     @click="startVoice"
                                     :class="['absolute bottom-6 ltr:right-6 rtl:left-6 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300', isRecording ? 'bg-red-500 shadow-lg animate-pulse' : 'bg-surface-2 hover:bg-accent/20 text-text-muted hover:text-accent']"
-                                    :title="isRecording ? 'إيقاف التسجيل' : 'إملاء صوتي'"
+                                    :title="isRecording ? $t('Stop Recording') : $t('Voice Dictation')"
                                 >
                                     <span v-if="!isRecording" class="text-xl">🎤</span>
                                     <span v-else class="text-xl text-text-main">⏹</span>
@@ -170,7 +170,7 @@ const getIdeasByStatus = (status) => {
                                 <!-- Card Header -->
                                 <div class="flex justify-between items-start mb-4">
                                     <span class="px-3 py-1 bg-accent/10 text-accent text-[10px] uppercase tracking-widest font-black rounded-lg">
-                                        {{ idea.category || 'عام' }}
+                                        {{ idea.category || $t('General') }}
                                     </span>
                                     <button @click="deleteIdea(idea.id)" class="text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all active:scale-75">
                                         ✖
@@ -184,7 +184,7 @@ const getIdeasByStatus = (status) => {
 
                                 <!-- AI Analysis Preview -->
                                 <div v-if="idea.ai_analysis" class="mb-6 p-4 bg-surface-2 rounded-2xl border border-border-subtle text-sm text-text-muted font-light leading-relaxed whitespace-pre-wrap italic">
-                                    <span class="text-accent font-black block mb-2 text-xs">AI INSIGHT:</span>
+                                    <span class="text-accent font-black block mb-2 text-xs">{{ $t('AI INSIGHT:') }}</span>
                                     {{ idea.ai_analysis }}
                                 </div>
 
@@ -196,7 +196,7 @@ const getIdeasByStatus = (status) => {
                                         v-show="target.id !== idea.status"
                                         @click="updateStatus(idea.id, target.id)"
                                         class="p-2 bg-surface-2 hover:bg-accent/20 text-text-muted hover:text-accent rounded-lg transition-all text-xs font-bold"
-                                        :title="`نقل إلى ${target.label}`"
+                                        :title="`${$t('Move to')} ${target.label}`"
                                     >
                                         {{ target.icon }}
                                     </button>
@@ -208,7 +208,7 @@ const getIdeasByStatus = (status) => {
 
                             <div v-if="getIdeasByStatus(col.id).length === 0" class="flex flex-col items-center justify-center py-20 text-text-muted opacity-40">
                                 <span class="text-4xl mb-4">🌑</span>
-                                <p class="font-bold">فارغ حالياً</p>
+                                <p class="font-bold">{{ $t('No ideas yet.') }}</p>
                             </div>
                         </div>
                     </div>

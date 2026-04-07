@@ -237,7 +237,7 @@ const adoptRoutine = async (id) => {
                                     </div>
                                 </div>
                                 <button @click="isFocusMode = !isFocusMode" :class="['focus-pill', isFocusMode ? 'active' : '']">
-                                    {{ isFocusMode ? '👁️' : '🕶️' }} {{ $t('Focus') }}
+                                    {{ isFocusMode ? '👁️' : '🕶️' }} {{ $t('Focus Mode') }}
                                 </button>
                             </div>
                             
@@ -282,7 +282,7 @@ const adoptRoutine = async (id) => {
                                     <div class="w-2 h-2 rounded-full bg-yellow-500/50"></div>
                                     <div class="w-2 h-2 rounded-full bg-green-500/50"></div>
                                 </div>
-                                <span class="text-[9px] font-mono text-text-muted uppercase tracking-widest">Neural_Advisor_Output.log</span>
+                                <span class="text-[9px] font-mono text-text-muted uppercase tracking-widest">{{ $t('Neural_Advisor_Output.log') }}</span>
                             </div>
                             <div class="text-text-main text-sm font-mono leading-relaxed whitespace-pre-wrap bidi-plaintext">
                                 {{ displayedAiText }}<span class="w-1.5 h-4 bg-accent inline-block animate-pulse ml-1"></span>
@@ -324,7 +324,7 @@ const adoptRoutine = async (id) => {
                     <div class="flex items-end justify-between">
                         <div>
                             <p class="text-3xl font-black text-text-main">{{ overview.decision_logic_avg }}%</p>
-                            <p class="text-[10px] text-text-muted mt-1 font-mono">{{ overview.sealed_decisions_count }} {{ $t('Decisions Sealed') }}</p>
+                            <p class="text-[10px] text-text-muted mt-1 font-mono">{{ overview.sealed_decisions_count }} {{ $t('Sessions Sealed') }}</p>
                         </div>
                         <div class="flex gap-1 h-8 items-end">
                             <div v-for="i in 12" :key="i" class="w-1.5 bg-blue-500/20 rounded-full" :style="`height: ${Math.random()*100}%`"></div>
@@ -430,13 +430,21 @@ const adoptRoutine = async (id) => {
                         <p class="text-[10px] text-text-muted leading-relaxed">
                             {{ $t('Connect your brain to Telegram. Send this code to our bot to start neural logging.') }}
                         </p>
-                        <div class="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5">
-                            <span class="text-2xl font-mono font-black text-accent tracking-widest">{{ sync_code }}</span>
-                            <div class="h-8 w-[1px] bg-white/10"></div>
-                            <div class="flex flex-col">
-                                <span class="text-[8px] uppercase font-black text-text-muted mb-1">{{ $t('Your Code') }}</span>
-                                <span class="text-[9px] text-text-muted italic">{{ $t('Send to @PersonalMemory_Bot') }}</span>
+                        <div class="flex flex-col gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+                            <div class="flex items-center justify-between">
+                                <span class="text-2xl font-mono font-black text-accent tracking-widest">{{ sync_code }}</span>
+                                <div class="flex flex-col text-right">
+                                    <span class="text-[8px] uppercase font-black text-text-muted mb-1">{{ $t('Your Code') }}</span>
+                                </div>
                             </div>
+                            <a 
+                                :href="`https://t.me/PersonalMemory_Bot?start=${sync_code}`" 
+                                target="_blank"
+                                class="w-full bg-accent hover:bg-accent/80 text-white text-[11px] font-black py-2 rounded-xl text-center transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(6,155,255,0.3)]"
+                            >
+                                <span>✈️</span> {{ $t('Open Neural Bot') }}
+                            </a>
+                            <p class="text-[8px] text-text-muted text-center italic">{{ $t('Or send code manualy to @PersonalMemory_Bot') }}</p>
                         </div>
                     </div>
                     <div v-else class="flex items-center gap-4 py-2">
@@ -469,20 +477,20 @@ const adoptRoutine = async (id) => {
                             <div class="relative z-10 h-full flex flex-col">
                                 <div class="flex justify-between items-start mb-6">
                                     <span class="text-4xl filter drop-shadow-lg">{{ routine.icon }}</span>
-                                    <span class="text-[10px] font-black uppercase tracking-widest text-white/40">Neural_Template.v1</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-white/40">{{ $t('Neural_Template.v1') }}</span>
                                 </div>
                                 
-                                <h3 class="text-xl font-black text-white mb-1">{{ routine.title }}</h3>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-accent mb-4">{{ routine.author }}</p>
+                                <h3 class="text-xl font-black text-white mb-1">{{ $t(routine.title) }}</h3>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-accent mb-4">{{ $t(routine.author) }}</p>
                                 
                                 <p class="text-xs text-white/60 leading-relaxed mb-6 flex-1">
-                                    {{ routine.description }}
+                                    {{ $t(routine.description) }}
                                 </p>
 
                                 <div class="space-y-2 mb-8">
                                     <div v-for="task in routine.tasks" :key="task" class="flex items-center gap-2 text-[10px] text-white/40">
                                         <span class="w-1 h-1 rounded-full bg-accent"></span>
-                                        {{ task }}
+                                        {{ $t(task) }}
                                     </div>
                                 </div>
 
@@ -494,7 +502,7 @@ const adoptRoutine = async (id) => {
                                         {{ $t('Adopt Neural Sync') }}
                                         <span class="group-hover:translate-x-1 transition-transform">→</span>
                                     </span>
-                                    <span v-else class="animate-pulse">Synchronizing...</span>
+                                    <span v-else class="animate-pulse">{{ $t('Synchronizing...') }}</span>
                                 </button>
                             </div>
                         </div>

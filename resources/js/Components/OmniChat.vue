@@ -3,12 +3,19 @@ import { ref, onMounted, nextTick } from 'vue';
 import axios from 'axios';
 import { router } from '@inertiajs/vue3';
 
+import { getActiveLanguage, trans } from 'laravel-vue-i18n';
+
 const isOpen = ref(false);
 const commandStr = ref('');
 const isLoading = ref(false);
-const messages = ref([
-    { role: 'system', content: 'مرحباً، أنا العقل الموازي الخاص بك. كيف يمكنني إدارتك اليوم؟' }
-]);
+const messages = ref([]);
+
+onMounted(() => {
+    messages.value.push({ 
+        role: 'system', 
+        content: trans('OmniChat_Greeting') 
+    });
+});
 const chatScroll = ref(null);
 
 const scrollToBottom = async () => {
@@ -29,7 +36,10 @@ const sendCommand = async () => {
     scrollToBottom();
 
     try {
-        const response = await axios.post(route('dashboard.command'), { command: currentCmd });
+        const response = await axios.post(route('dashboard.command'), { 
+            command: currentCmd,
+            locale: getActiveLanguage()
+        });
         
         messages.value.push({ role: 'assistant', content: response.data.reply });
         
@@ -37,7 +47,7 @@ const sendCommand = async () => {
             router.reload({ preserveScroll: true }); // Reload Inertia props softly
         }
     } catch (e) {
-        messages.value.push({ role: 'assistant', content: 'انقطع الاتصال بالشبكة العصبية، يرجى المحاولة لاحقاً.' });
+        messages.value.push({ role: 'assistant', content: trans('Neural connection lost, please try again later.') });
     } finally {
         isLoading.value = false;
         scrollToBottom();

@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed, onUnmounted } from 'vue';
-import axios from 'axios';
+import { trans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     tasks: Array
@@ -36,7 +36,7 @@ const getAIPlan = async () => {
         const response = await axios.post(route('focus.plan'));
         aiPlan.value = response.data.plan;
     } catch(e) {
-        aiPlan.value = 'النظام العصبي متوقف حالياً.';
+        aiPlan.value = trans('Neural system offline.');
     } finally {
         isLoadingPlan.value = false;
     }

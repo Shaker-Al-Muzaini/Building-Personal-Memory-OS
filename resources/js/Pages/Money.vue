@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import axios from 'axios';
-import { trans } from 'laravel-vue-i18n';
+import { trans, getActiveLanguage } from 'laravel-vue-i18n';
 import Swal from 'sweetalert2';
 import VueApexCharts from 'vue3-apexcharts';
 import { useTheme } from '@/Composables/useTheme';
@@ -24,7 +24,7 @@ const generatePlan = async () => {
         const response = await axios.post(route('money.analyze'));
         aiPlanText.value = response.data.plan;
     } catch (e) {
-        aiPlanText.value = "حدث خطأ أثناء الاتصال بالمستشار المالي، يرجى المحاولة لاحقاً.";
+        aiPlanText.value = trans("Error connecting to AI advisor. Please try again later.");
     } finally {
         isGeneratingPlan.value = false;
     }
@@ -33,7 +33,7 @@ const generatePlan = async () => {
 const transactionForm = useForm({
     type: 'expense',
     amount: '',
-    category: 'طعام',
+    category: trans('Food'),
     description: '',
 });
 
@@ -153,7 +153,7 @@ const forecastSeries = computed(() => [
 </script>
 
 <template>
-    <Head title="ذاكرة المال — Personal Memory" />
+    <Head :title="`${$t('Money Memory')} — Personal Memory`" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -162,7 +162,7 @@ const forecastSeries = computed(() => [
             </h2>
         </template>
 
-        <div class="py-12 bg-surface min-h-screen text-text-main" dir="rtl">
+        <div class="py-12 bg-surface min-h-screen text-text-main">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
                 <!-- Summary Board -->
@@ -305,7 +305,7 @@ const forecastSeries = computed(() => [
                                     </div>
                                     <div>
                                         <h4 class="font-bold text-text-main">{{ t.category }}</h4>
-                                        <span class="text-xs text-text-muted">{{ t.description || 'لا يوجد وصف' }} | {{ new Date(t.created_at).toLocaleDateString() }}</span>
+                                        <span class="text-xs text-text-muted">{{ t.description || $t('No description') }} | {{ new Date(t.created_at).toLocaleDateString() }}</span>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-4">

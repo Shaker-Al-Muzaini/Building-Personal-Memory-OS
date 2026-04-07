@@ -12,6 +12,7 @@ import { Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import { useTheme } from '@/Composables/useTheme';
 import { onMounted, onUnmounted } from 'vue';
+import { trans, getActiveLanguage } from 'laravel-vue-i18n';
 
 const { isDark } = useTheme();
 
@@ -65,7 +66,7 @@ const runOracle = async () => {
             router.reload({ preserveScroll: true });
         }
     } catch (e) {
-        oracleReply.value = "Neural overflow. System rejected.";
+        oracleReply.value = trans("Neural overflow. System rejected.");
     } finally {
         isOracleLoading.value = false;
     }
@@ -89,7 +90,7 @@ const handleKeydown = (e) => {
 </script>
 
 <template>
-    <div class="min-h-screen font-cairo overflow-x-hidden" :class="isDark ? 'os-dark' : 'os-light'">
+    <div class="min-h-screen font-cairo overflow-x-hidden" :class="isDark ? 'os-dark' : 'os-light'" :dir="getActiveLanguage() === 'ar' ? 'rtl' : 'ltr'">
         <div class="min-h-screen" style="background: var(--c-bg); color: var(--c-text)">
             <nav class="sticky top-0 z-50" style="background: var(--c-nav-bg); border-bottom: 1px solid var(--c-border); backdrop-filter: blur(12px)">
                 <!-- Primary Navigation Menu -->
@@ -276,7 +277,7 @@ const handleKeydown = (e) => {
                                 <input 
                                     v-model="oracleCommand"
                                     type="text" 
-                                    placeholder="Execute command... (e.g. Add task, Record expense)"
+                                    :placeholder="$t('Execute command... (e.g. Add task, Record expense)')"
                                     class="flex-1 bg-transparent border-none focus:ring-0 text-text-main font-mono placeholder:text-text-muted py-4 shadow-none"
                                     autofocus
                                 />

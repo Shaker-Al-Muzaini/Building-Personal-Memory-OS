@@ -77,6 +77,16 @@ onMounted(() => {
     animate();
 
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('resize', onResize);
+
+    // Scroll Reveal Logic
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) entry.target.classList.add('in');
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.sr').forEach(el => observer.observe(el));
 });
 
 const onResize = () => {

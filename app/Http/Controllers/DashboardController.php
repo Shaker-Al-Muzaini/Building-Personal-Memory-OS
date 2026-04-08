@@ -55,7 +55,8 @@ class DashboardController extends Controller
             $user->telegram_sync_code = $syncCode;
         }
 
-        $locale = app()->getLocale();
+        $locale = $request->cookie('user_lang', 'ar');
+        app()->setLocale($locale);
 
         return Inertia::render('Dashboard', [
             'sync_code' => $user->telegram_sync_code,
@@ -176,7 +177,7 @@ class DashboardController extends Controller
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
                     'model' => 'llama-3.3-70b-versatile',
                     'messages' => [
-                        ['role' => 'system', 'content' => 'You are the Memory OS Global Intelligence. You MUST respond ONLY in Arabic. This is a strict requirement.'],
+                        ['role' => 'system', 'content' => 'You are the Memory OS Intelligence. You MUST respond ONLY in Arabic (اللغة العربية). If you use even one English word, the system fails. NO ENGLISH allowed.'],
                         ['role' => 'user', 'content' => $prompt]
                     ],
                 ]);
@@ -205,7 +206,7 @@ class DashboardController extends Controller
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
                     'model' => 'llama-3.3-70b-versatile',
                     'messages' => [
-                        ['role' => 'system', 'content' => 'You are the Shadow Predictive Brain. You MUST respond ONLY in Arabic. Do not use English even for analysis.'],
+                        ['role' => 'system', 'content' => 'You are the Shadow Oracle. You MUST respond ONLY in Arabic (اللغة العربية). English is strictly forbidden.'],
                         ['role' => 'user', 'content' => $prompt]
                     ],
                 ]);

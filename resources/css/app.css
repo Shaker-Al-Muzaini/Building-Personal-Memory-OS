@@ -9,7 +9,7 @@
    ============================================= */
 
 /* Light Mode (Default) */
-html, html.light-mode {
+html, .os-light {
     --c-bg:        #f0f4f8;
     --c-surface:   #ffffff;
     --c-surface2:  #f8fafc;
@@ -30,7 +30,7 @@ html, html.light-mode {
 }
 
 /* Dark Mode (High-End Neural Aesthetic) */
-html.dark-mode {
+.os-dark {
     --c-bg:        #050505;
     --c-surface:   #0a0a0a;
     --c-surface2:  #141414;

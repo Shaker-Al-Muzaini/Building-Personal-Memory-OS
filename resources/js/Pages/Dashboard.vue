@@ -169,6 +169,19 @@ const speakBriefing = () => {
     window.speechSynthesis.speak(msg);
 };
 
+const isRoutineModalOpen = ref(false);
+const selectedRoutine = ref(null);
+
+const viewRoutine = (routine) => {
+    selectedRoutine.value = routine;
+    isRoutineModalOpen.value = true;
+};
+
+const closeRoutineModal = () => {
+    isRoutineModalOpen.value = false;
+    selectedRoutine.value = null;
+};
+
 const isAdopting = ref(null);
 const adoptRoutine = async (id) => {
     isAdopting.value = id;
@@ -182,6 +195,7 @@ const adoptRoutine = async (id) => {
             color: 'var(--c-text)',
             confirmButtonColor: 'var(--c-accent)'
         });
+        closeRoutineModal();
         router.reload();
     } catch (e) {
         Swal.fire({
@@ -192,6 +206,24 @@ const adoptRoutine = async (id) => {
     } finally {
         isAdopting.value = null;
     }
+};
+
+const showBotHelp = () => {
+    Swal.fire({
+        title: trans('Bot Connectivity'),
+        html: `
+            <div class="text-left text-sm space-y-4">
+                <p>🤖 <strong>Why it fails localy?</strong> Telegram cannot reach your computer (localhost).</p>
+                <p>🚀 <strong>How to fix:</strong> Use a tool like <b>ngrok</b> to create a public URL.</p>
+                <code class="bg-black/20 p-2 block rounded mt-2">ngrok http 8000</code>
+                <p>Then set the webhook to: <br/><i class="text-accent underline font-mono text-xs">/api/telegram/webhook</i></p>
+            </div>
+        `,
+        icon: 'info',
+        background: 'var(--c-surface)',
+        color: 'var(--c-text)',
+        confirmButtonColor: 'var(--c-accent)'
+    });
 };
 </script>
 
@@ -435,6 +467,9 @@ const adoptRoutine = async (id) => {
                                 <span class="text-2xl font-mono font-black text-accent tracking-widest">{{ sync_code }}</span>
                                 <div class="flex flex-col text-right">
                                     <span class="text-[8px] uppercase font-black text-text-muted mb-1">{{ $t('Your Code') }}</span>
+                                    <button @click="showBotHelp" class="text-[8px] text-accent underline flex items-center gap-1">
+                                        {{ $t('Why is it not working?') }}
+                                    </button>
                                 </div>
                             </div>
                             <a 
@@ -494,17 +529,61 @@ const adoptRoutine = async (id) => {
                                     </div>
                                 </div>
 
-                                <button @click="adoptRoutine(routine.id)" 
-                                        :disabled="isAdopting === routine.id"
+                                <button @click="viewRoutine(routine)" 
                                         class="adopt-btn group"
                                 >
-                                    <span v-if="isAdopting !== routine.id" class="flex items-center justify-center gap-2">
-                                        {{ $t('Adopt Neural Sync') }}
+                                    <span class="flex items-center justify-center gap-2">
+                                        {{ $t('View Full Daily Routine') }}
                                         <span class="group-hover:translate-x-1 transition-transform">→</span>
                                     </span>
-                                    <span v-else class="animate-pulse">{{ $t('Synchronizing...') }}</span>
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Routine Detail Modal -->
+            <div v-if="isRoutineModalOpen" class="fixed inset-0 z-[300] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/80 backdrop-blur-xl" @click="closeRoutineModal"></div>
+                
+                <div class="relative w-full max-w-2xl bg-surface border border-border-subtle rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                    <div class="h-32 bg-gradient-to-br opacity-20" :style="`background-image: ${selectedRoutine.color}`"></div>
+                    
+                    <div class="p-8 -mt-12 relative z-10">
+                        <div class="flex justify-between items-start mb-8">
+                            <div class="flex items-center gap-6">
+                                <span class="text-5xl filter drop-shadow-xl">{{ selectedRoutine.icon }}</span>
+                                <div>
+                                    <h3 class="text-3xl font-black text-text-main tracking-tighter">{{ $t(selectedRoutine.title) }}</h3>
+                                    <p class="text-accent font-black uppercase tracking-widest text-[10px] mt-1">{{ $t(selectedRoutine.author) }}</p>
+                                </div>
+                            </div>
+                            <button @click="closeRoutineModal" class="p-2 hover:bg-surface2 rounded-full transition-all text-text-muted">✕</button>
+                        </div>
+                        
+                        <div class="mb-10">
+                            <h4 class="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-4 border-b border-border-subtle pb-2">{{ $t('Complete Daily Timeline') }}</h4>
+                            <div class="space-y-4 max-h-[400px] overflow-y-auto custom-scroll pr-4">
+                                <div v-for="(step, i) in selectedRoutine.full_routine" :key="i" class="flex items-start gap-4 group/step">
+                                    <span class="text-[10px] font-bold text-accent font-mono w-20 flex-shrink-0 pt-1">{{ step.time }}</span>
+                                    <div class="flex-1 p-4 bg-surface2 border border-border-subtle rounded-2xl group-hover/step:border-accent/30 transition-all">
+                                        <p class="text-sm font-medium text-text-main bidi-plaintext">{{ $t(step.task) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button @click="closeRoutineModal" class="flex-1 py-4 text-xs font-black uppercase text-text-muted hover:text-text-main transition-all">{{ $t('Cancel') }}</button>
+                            <button 
+                                @click="adoptRoutine(selectedRoutine.id)" 
+                                :disabled="isAdopting === selectedRoutine.id"
+                                class="flex-[3] py-4 rounded-2xl bg-white text-black hover:bg-accent hover:text-white transition-all text-xs font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2"
+                            >
+                                <span v-if="isAdopting !== selectedRoutine.id">{{ $t('Adopt This Identity') }}</span>
+                                <span v-else class="animate-pulse">{{ $t('Synchronizing...') }}</span>
+                            </button>
                         </div>
                     </div>
                 </div>

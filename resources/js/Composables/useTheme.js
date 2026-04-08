@@ -4,11 +4,11 @@ const isDark = ref(false);
 
 const applyTheme = (dark) => {
     if (dark) {
-        document.documentElement.classList.add('dark-mode');
-        document.documentElement.classList.remove('light-mode');
+        document.documentElement.classList.add('os-dark');
+        document.documentElement.classList.remove('os-light');
     } else {
-        document.documentElement.classList.add('light-mode');
-        document.documentElement.classList.remove('dark-mode');
+        document.documentElement.classList.add('os-light');
+        document.documentElement.classList.remove('os-dark');
     }
     localStorage.setItem('theme', dark ? 'dark' : 'light');
 };
@@ -16,7 +16,8 @@ const applyTheme = (dark) => {
 export function useTheme() {
     onMounted(() => {
         const saved = localStorage.getItem('theme');
-        isDark.value = saved === 'dark'; // default = light
+        // Default to dark mode if no preference saved
+        isDark.value = saved ? (saved === 'dark') : true; 
         applyTheme(isDark.value);
     });
 

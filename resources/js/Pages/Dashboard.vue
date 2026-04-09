@@ -25,6 +25,11 @@ onMounted(() => {
             taskForm.title += (taskForm.title ? ' ' : '') + transcript;
         };
     }
+
+    if (props.last_ai_analysis) {
+        aiPlanText.value = props.last_ai_analysis;
+        displayedAiText.value = props.last_ai_analysis;
+    }
 });
 
 const startTaskVoice = () => {
@@ -84,7 +89,8 @@ const props = defineProps({
     harmony_score: Number,
     sync_code: String,
     is_telegram_linked: Boolean,
-    routine_templates: Array
+    routine_templates: Array,
+    last_ai_analysis: String
 });
 
 const isGeneratingPlan = ref(false);

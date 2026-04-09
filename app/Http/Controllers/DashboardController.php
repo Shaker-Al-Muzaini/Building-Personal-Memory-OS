@@ -77,7 +77,8 @@ class DashboardController extends Controller
             'shadow_prediction' => $this->getShadowPrediction($user, $balance, $pendingTasksCount, $locale),
             'harmony_score' => $this->calculateHarmony($balance, $pendingTasksCount, $completedTasksCount),
             'daily_briefing' => $this->getDailyBriefing($user, $balance, $pendingTasksCount, $locale),
-            'routine_templates' => $this->getRoutineTemplates()
+            'routine_templates' => $this->getRoutineTemplates(),
+            'last_ai_analysis' => $user->last_ai_analysis
         ]);
     }
 
@@ -288,6 +289,10 @@ class DashboardController extends Controller
         if ($response->successful()) {
             $data = $response->json();
             $plan = $data['choices'][0]['message']['content'] ?? trans('No response obtained.');
+            
+            // Save plan to user for persistence
+            DB::table('users')->where('id', $user->id)->update(['last_ai_analysis' => $plan]);
+            
             return response()->json(['plan' => $plan]);
         }
 

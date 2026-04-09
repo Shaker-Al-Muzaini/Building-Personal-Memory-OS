@@ -2,34 +2,38 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $user = $request->user();
-        
+
         $tasks = DB::table('tasks')->where('user_id', $user->id)->get();
         $habit = DB::table('habits')->where('user_id', $user->id)->first();
-        
+
         // --- Added for Neural Logic & Dashboard Overview ---
         $transactions = DB::table('transactions')->where('user_id', $user->id)->get();
         $totalIncome = $transactions->where('type', 'income')->sum('amount');
         $totalExpense = $transactions->where('type', 'expense')->sum('amount');
         $balance = $totalIncome - $totalExpense;
-        
+
         $pendingTasksCount = $tasks->where('status', 'pending')->count();
         $completedTasksCount = $tasks->where('status', 'completed')->count();
-        $taskFactor = ($pendingTasksCount + $completedTasksCount) > 0 
-            ? ($completedTasksCount / ($pendingTasksCount + $completedTasksCount)) * 100 
+        $taskFactor = ($pendingTasksCount + $completedTasksCount) > 0
+            ? ($completedTasksCount / ($pendingTasksCount + $completedTasksCount)) * 100
             : 100;
 
         $avgDecisionScore = (int)DB::table('decisions')->where('user_id', $user->id)->avg(DB::raw("CAST(JSON_EXTRACT(ai_advice, '$.score') AS UNSIGNED)")) ?: 0;
-        
+
         $financeScore = $totalIncome > 0 ? max(0, min(100, ($balance / $totalIncome) * 100)) : 50;
         $stabilityIndex = (int)(($financeScore * 0.4) + ($taskFactor * 0.3) + ($avgDecisionScore * 0.3));
 
@@ -40,15 +44,13 @@ class DashboardController extends Controller
 
         $sealedDecisionsCount = DB::table('decisions')->where('user_id', $user->id)->whereNotNull('final_decision')->count();
         $dailyLogsCount = DB::table('daily_logs')->where('user_id', $user->id)->count();
-        
-        // --- Gamification (Leveling System) ---
+
         $xp = ($completedTasksCount * 15) + ($sealedDecisionsCount * 50) + ($dailyLogsCount * 10);
         $level = floor(sqrt($xp / 25)) + 1;
         $currentLevelXP = pow($level - 1, 2) * 25;
         $nextLevelXP = pow($level, 2) * 25;
         $progressToNext = $nextLevelXP > $currentLevelXP ? (($xp - $currentLevelXP) / ($nextLevelXP - $currentLevelXP)) * 100 : 0;
 
-        // 6. Telegram Sync Code & Routines
         if (!$user->telegram_chat_id && !$user->telegram_sync_code) {
             $syncCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
             DB::table('users')->where('id', $user->id)->update(['telegram_sync_code' => $syncCode]);
@@ -82,7 +84,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function getRoutineTemplates()
+    private function getRoutineTemplates(): array
     {
         return [
             [
@@ -136,7 +138,7 @@ class DashboardController extends Controller
         ];
     }
 
-    public function applyRoutine(Request $request)
+    public function applyRoutine(Request $request): RedirectResponse
     {
         $id = $request->input('routine_id');
         $user = $request->user();
@@ -146,7 +148,7 @@ class DashboardController extends Controller
         if ($selected) {
             foreach ($selected['tasks'] as $taskTitle) {
                 DB::table('tasks')->insert([
-                    'user_id' => $user->id, 'title' => $taskTitle, 'status' => 'pending', 
+                    'user_id' => $user->id, 'title' => $taskTitle, 'status' => 'pending',
                     'created_at' => now(), 'updated_at' => now()
                 ]);
             }
@@ -155,7 +157,7 @@ class DashboardController extends Controller
         return back()->with('error', trans('Routine not found.'));
     }
 
-    private function calculateHarmony($balance, $pending, $done)
+    private function calculateHarmony($balance, $pending, $done): int
     {
         // معادلة التناغم: توازن بين المال والإنتاجية
         $moneyScore = $balance > 0 ? 40 : 10;
@@ -165,10 +167,10 @@ class DashboardController extends Controller
 
     private function getDailyBriefing($user, $balance, $tasksCount, $locale = 'ar')
     {
-        $recentPerson = DB::table('people')->where('user_id', $user->id)->where('importance', 'عالية')->orderBy('last_contact', 'asc')->first();
+        $recentPerson = DB::table('people')->where('user_id', $user->id)->where('importance', 'عالية')->orderBy('last_contact')->first();
         $recentIdea = DB::table('ideas')->where('user_id', $user->id)->latest()->value('content');
-        
-        $prompt = $locale === 'ar' 
+
+        $prompt = $locale === 'ar'
             ? "أنت العقل الموازي الاستراتيجي. بناءً على: الرصيد ($balance$)، المهام المعلقة ($tasksCount)، وآخر فكرة (\"$recentIdea\"). أخبر المستخدم بإحاطة صباحية مهنية قصيرة جداً (3 جمل). اللغة: العربية. تجنب التحيات المكررة."
             : "You are the Strategic Shadow Brain. Based on: Balance ($balance$), Pending Tasks ($tasksCount$), and Recent Idea (\"$recentIdea\"). Generate a short, professional daily briefing (3 short sentences). Tone: Strategic, wise master. Language: English. Avoid repetitive greetings.";
 
@@ -182,13 +184,13 @@ class DashboardController extends Controller
                         ['role' => 'user', 'content' => $prompt]
                     ],
                 ]);
-            
+
             if ($response->successful()) {
                 $data = $response->json();
                 return $data['choices'][0]['message']['content'] ?? trans('Ready for a great day?');
             }
             return trans('Neural servers busy... updating mind.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return trans('Thinking...');
         }
     }
@@ -211,30 +213,29 @@ class DashboardController extends Controller
                         ['role' => 'user', 'content' => $prompt]
                     ],
                 ]);
-            
+
             if ($response->successful()) {
                 $data = $response->json();
                 return $data['choices'][0]['message']['content'] ?? trans('The future is currently clouded...');
             }
             return trans('Searching the void of possibilities...');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return trans('Reading neural pathways...');
         }
     }
 
-    public function generatePlan(Request $request)
+    public function generatePlan(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $tasks = DB::table('tasks')->where('user_id', $user->id)
             ->get()->pluck('title')->toArray();
         $habit = DB::table('habits')->where('user_id', $user->id)->first();
-        
-        // --- Contextual Data for Neural Bridge ---
+
         $income = DB::table('transactions')->where('user_id', $user->id)->where('type', 'income')->sum('amount');
         $expense = DB::table('transactions')->where('user_id', $user->id)->where('type', 'expense')->sum('amount');
         $balance = $income - $expense;
-        
+
         $ideasCount = DB::table('ideas')->where('user_id', $user->id)->count();
         $peopleCount = DB::table('people')->where('user_id', $user->id)->count();
         $lastIdea = DB::table('ideas')->where('user_id', $user->id)->latest()->first();
@@ -242,8 +243,8 @@ class DashboardController extends Controller
         $tasksList = count($tasks) > 0 ? implode(', ', $tasks) : 'لا يوجد مهام';
         $habitName = $habit ? $habit->name : 'لا يوجد عادات';
         $locale = $request->input('locale', 'ar');
-        
-        $prompt = $locale === 'ar' 
+
+        $prompt = $locale === 'ar'
             ? "أنت العقل المساعد الشامل لنظام Personal Memory OS. \n" .
               "سياق المستخدم الحالي: \n" .
               "- الرصيد المالي: {$balance}$ \n" .
@@ -274,11 +275,11 @@ class DashboardController extends Controller
                'model' => 'llama-3.3-70b-versatile',
                 'messages' => [
                     [
-                        'role' => 'system', 
+                        'role' => 'system',
                         'content' => 'You are a helpful productivity assistant.'
                     ],
                     [
-                        'role' => 'user', 
+                        'role' => 'user',
                         'content' => $prompt
                     ]
                 ],
@@ -289,10 +290,10 @@ class DashboardController extends Controller
         if ($response->successful()) {
             $data = $response->json();
             $plan = $data['choices'][0]['message']['content'] ?? trans('No response obtained.');
-            
+
             // Save plan to user for persistence
             DB::table('users')->where('id', $user->id)->update(['last_ai_analysis' => $plan]);
-            
+
             return response()->json(['plan' => $plan]);
         }
 
@@ -300,24 +301,24 @@ class DashboardController extends Controller
             'plan' => '⚠️ ' . trans('Request failed: ') . $response->status()
         ]);
 
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'plan' => '⚠️ ' . trans('Error: ') . $e->getMessage()
         ]);
     }
 }
 
-    public function handleCommand(Request $request)
+    public function handleCommand(Request $request): JsonResponse
     {
         $command = $request->input('command');
         $user = $request->user();
-        
+
         $locale = $request->input('locale', 'ar');
-        
-        $prompt = "You are the Command Center of Personal Memory OS. 
+
+        $prompt = "You are the Command Center of Personal Memory OS.
         Analyze this user voice command: \"$command\".
         If it contains a financial expense/income, task, or idea, extract the data.
-        RESPOND ONLY WITH JSON. 
+        RESPOND ONLY WITH JSON.
         Format: {
           \"type\": \"money|task|idea|unknown\",
           \"data\": { ... relevant fields ... },
@@ -364,15 +365,15 @@ class DashboardController extends Controller
                 return response()->json($res);
             }
             return response()->json(['reply' => 'تعذر الاتصال بالذكاء الاصطناعي، يرجى المحاولة لاحقاً.', 'type' => 'unknown']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['reply' => 'لم أفهم الأمر بدقة، حاول مجدداً.', 'type' => 'unknown']);
         }
     }
 
 
-    
 
-    public function storeTask(Request $request)
+
+    public function storeTask(Request $request): RedirectResponse
     {
         $request->validate(['title' => 'required|string|max:255']);
         DB::table('tasks')->insert([
@@ -385,7 +386,7 @@ class DashboardController extends Controller
         return back();
     }
 
-    public function toggleTask(Request $request, $id)
+    public function toggleTask(Request $request, $id): RedirectResponse
     {
         $task = DB::table('tasks')->where('id', $id)->where('user_id', $request->user()->id)->first();
         if ($task) {
@@ -395,7 +396,7 @@ class DashboardController extends Controller
         return back();
     }
 
-    public function storeHabit(Request $request)
+    public function storeHabit(Request $request): RedirectResponse
     {
         $request->validate(['name' => 'required|string|max:255']);
         $existing = DB::table('habits')->where('user_id', $request->user()->id)->first();
@@ -417,10 +418,10 @@ class DashboardController extends Controller
         return back();
     }
 
-    public function search(Request $request)
+    public function search(Request $request): JsonResponse
     {
         $q = $request->input('q');
-        if (!$q) return response()->json([]);
+        if (!$q) return response()->json();
 
         $user_id = $request->user()->id;
 
@@ -448,14 +449,14 @@ class DashboardController extends Controller
             ->select('id', 'problem as title', DB::raw("'decisions' as type"))
             ->limit(5)->get();
 
-        return response()->json($ideas->concat($people)->concat($tasks)->concat($decisions));
+        return response()->json($ideas->concat((array)$people)->concat((array)$tasks)->concat((array)$decisions));
     }
 
-    public function storeGoal(Request $request)
+    public function storeGoal(Request $request): RedirectResponse
     {
         $request->validate(['title' => 'required|string|max:255']);
-        
-        // مارك الأهداف القديمة كمنتهية أو حذفها (نحن نريد هدف واحد نشط لليوم)
+
+        // مارك الأهداف القديمة كمنتهية أو حذفها (نحن نريد هدف واحد لليوم)
         DB::table('goals')->where('user_id', $request->user()->id)->update(['status' => 'archived']);
 
         DB::table('goals')->insert([

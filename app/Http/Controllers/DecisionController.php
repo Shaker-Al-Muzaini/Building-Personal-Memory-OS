@@ -9,7 +9,7 @@ use Inertia\Inertia;
 
 class DecisionController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): \Inertia\Response
     {
         $decisions = DB::table('decisions')->where('user_id', $request->user()->id)->orderBy('id', 'desc')->get();
         return Inertia::render('Decisions', [
@@ -22,7 +22,7 @@ class DecisionController extends Controller
         $request->validate(['problem' => 'required|string']);
         $user_id = $request->user()->id;
 
-        
+
         $income = DB::table('transactions')->where('user_id', $user_id)->where('type', 'income')->sum('amount');
         $expense = DB::table('transactions')->where('user_id', $user_id)->where('type', 'expense')->sum('amount');
         $balance = $income - $expense;
@@ -65,11 +65,11 @@ class DecisionController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 $ai_raw = $data['choices'][0]['message']['content'] ?? '';
-                
+
                 // --- تنظيف واستخراج الـ JSON بدقة عالية ---
                 $firstBrace = strpos($ai_raw, '{');
                 $lastBrace = strrpos($ai_raw, '}');
-                
+
                 if ($firstBrace !== false && $lastBrace !== false) {
                     $ai_json = substr($ai_raw, $firstBrace, $lastBrace - $firstBrace + 1);
                     // مراجعة إضافية للتأكد أنه JSON صحيح
@@ -87,10 +87,10 @@ class DecisionController extends Controller
             }
         } catch (\Exception $e) {
             $ai_advice = json_encode([
-                'pros' => ['تعذر تحليل البيانات حالياً'], 
+                'pros' => ['تعذر تحليل البيانات حالياً'],
                 'cons' => ['هناك ضغط على الذاكرة العصبية'],
                 'analysis' => 'فشل النظام في استخراج تحليل دقيق لهذا القرار. جرب إعادة صياغة السؤال بشكل أوضح.',
-                'suggestion' => 'أعد المحاولة لاحقاً', 
+                'suggestion' => 'أعد المحاولة لاحقاً',
                 'score' => 0
             ], JSON_UNESCAPED_UNICODE);
         }

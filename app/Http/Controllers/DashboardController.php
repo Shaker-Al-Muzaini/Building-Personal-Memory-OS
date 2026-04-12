@@ -80,7 +80,12 @@ class DashboardController extends Controller
             'harmony_score' => $this->calculateHarmony($balance, $pendingTasksCount, $completedTasksCount),
             'daily_briefing' => $this->getDailyBriefing($user, $balance, $pendingTasksCount, $locale),
             'routine_templates' => $this->getRoutineTemplates(),
-            'last_ai_analysis' => $user->last_ai_analysis
+            'last_ai_analysis' => $user->last_ai_analysis,
+            'neural_nodes' => [
+                'ideas'     => DB::table('ideas')->where('user_id', $user->id)->latest()->limit(8)->get(['id', 'content', 'category']),
+                'decisions' => DB::table('decisions')->where('user_id', $user->id)->latest()->limit(6)->get(['id', 'problem']),
+                'people'    => DB::table('people')->where('user_id', $user->id)->limit(8)->get(['id', 'name', 'importance']),
+            ],
         ]);
     }
 

@@ -77,7 +77,8 @@ const speakText = (stepIndex, title, subtitle) => {
     window.speechSynthesis.cancel();
     
     const lang = getActiveLanguage() || 'ar';
-    const speechLang = lang === 'ar' ? 'ar-SA' : 'en-US';
+    const savedDialect = localStorage.getItem('ar_voice_dialect') || 'ar-SA';
+    const speechLang = lang === 'ar' ? savedDialect : 'en-US';
     
     setTimeout(() => {
         if (!title && !subtitle) {
@@ -95,14 +96,22 @@ const speakText = (stepIndex, title, subtitle) => {
         utterance.volume = 1.0;
         
         const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => 
-            v.lang.startsWith(speechLang) && 
-            (v.name.includes('Zeina') || 
-             v.name.includes('Muna') || 
-             v.name.includes('Nadia') || 
-             v.name.includes('Microsoft') ||
-             v.name.toLowerCase().includes('female'))
-        );
+        let preferredVoice = null;
+        
+        if (lang === 'ar') {
+            preferredVoice = voices.find(v => v.lang === speechLang) 
+                          || voices.find(v => v.lang.startsWith(speechLang)) 
+                          || voices.find(v => v.lang.startsWith('ar'));
+        } else {
+            preferredVoice = voices.find(v => 
+                v.lang.startsWith(speechLang) && 
+                (v.name.includes('Zeina') || 
+                 v.name.includes('Muna') || 
+                 v.name.includes('Nadia') || 
+                 v.name.includes('Microsoft') ||
+                 v.name.toLowerCase().includes('female'))
+            );
+        }
         
         if (preferredVoice) utterance.voice = preferredVoice;
 

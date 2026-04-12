@@ -6,6 +6,8 @@ import axios from 'axios';
 import { getActiveLanguage, trans } from 'laravel-vue-i18n';
 import Swal from 'sweetalert2';
 import VueApexCharts from 'vue3-apexcharts';
+import NeuralMap from '@/Components/NeuralMap.vue';
+import SmartBriefingPanel from '@/Components/SmartBriefingPanel.vue';
 
 const isRecordingTask = ref(false);
 let taskRecognition = null;
@@ -79,18 +81,19 @@ const stabilityChartOptions = computed(() => ({
 const stabilitySeries = computed(() => [props.overview.stability_index]);
 
 const props = defineProps({
-    tasks: Array,
-    habit: Object,
-    goal: Object,
-    overview: Object,
-    gamification: Object,
-    shadow_prediction: String, 
-    daily_briefing: String,  
-    harmony_score: Number,
-    sync_code: String,
+    tasks:              Array,
+    habit:              Object,
+    goal:               Object,
+    overview:           Object,
+    gamification:       Object,
+    shadow_prediction:  String,
+    daily_briefing:     String,
+    harmony_score:      Number,
+    sync_code:          String,
     is_telegram_linked: Boolean,
-    routine_templates: Array,
-    last_ai_analysis: String
+    routine_templates:  Array,
+    last_ai_analysis:   String,
+    neural_nodes:       Object,   // { ideas, decisions, people }
 });
 
 const isGeneratingPlan = ref(false);
@@ -167,10 +170,56 @@ const saveHabit = () => {
 };
 const isFocusMode = ref(false);
 
+// ═══ Arabic Voice Selector ═══
+const arabicDialects = [
+    { label: 'السعودية 🇸🇦',    lang: 'ar-SA', keywords: ['Majed','Maged','Tarik','Saudi'] },
+    { label: 'مصر 🇪🇬',        lang: 'ar-EG', keywords: ['Oda','Ossama','Egyptian','Cairo'] },
+    { label: 'الإمارات 🇦🇪',   lang: 'ar-AE', keywords: ['Emirati','UAE'] },
+    { label: 'السورية 🇸🇾',    lang: 'ar-SY', keywords: ['Syrian'] },
+    { label: 'الكويت 🇰🇼',     lang: 'ar-KW', keywords: ['Kuwaiti'] },
+    { label: 'المغرب 🇲🇦',     lang: 'ar-MA', keywords: ['Moroccan'] },
+    { label: 'تلقائي 🌐',      lang: 'ar',    keywords: [] },
+];
+const selectedDialect = ref(localStorage.getItem('ar_voice_dialect') || 'ar-SA');
+const showVoiceSelector = ref(false);
+const availableVoices = ref([]);
+
+onMounted(() => {
+    const loadVoices = () => {
+        availableVoices.value = window.speechSynthesis?.getVoices() || [];
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+});
+
+const setDialect = (lang) => {
+    selectedDialect.value = lang;
+    localStorage.setItem('ar_voice_dialect', lang);
+    showVoiceSelector.value = false;
+};
+
+const getBestVoice = (lang) => {
+    const voices = availableVoices.value;
+    // Try exact match first
+    let voice = voices.find(v => v.lang === lang);
+    // Then try prefix match (e.g. ar-SA matches ar-SA-...)
+    if (!voice) voice = voices.find(v => v.lang.startsWith(lang));
+    // Then try any Arabic voice
+    if (!voice) voice = voices.find(v => v.lang.startsWith('ar'));
+    return voice || null;
+};
+
 const speakBriefing = () => {
     window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(props.daily_briefing);
-    msg.lang = getActiveLanguage() === 'ar' ? 'ar-SA' : 'en-US';
+    const isArabic = getActiveLanguage() === 'ar';
+    if (isArabic) {
+        msg.lang = selectedDialect.value;
+        const voice = getBestVoice(selectedDialect.value);
+        if (voice) msg.voice = voice;
+    } else {
+        msg.lang = 'en-US';
+    }
     msg.rate = 0.95;
     window.speechSynthesis.speak(msg);
 };
@@ -291,7 +340,18 @@ const showBotHelp = () => {
                                 <div class="neural-card-sub p-6 hover-lift border-accent/20">
                                     <div class="flex justify-between items-center mb-2">
                                         <h5 class="text-[9px] text-accent font-black uppercase tracking-[0.3em] opacity-60">{{ $t('Morning Briefing') }}</h5>
-                                        <button @click="speakBriefing" class="p-1.5 bg-accent/10 rounded-full hover:bg-accent/20 transition-all text-xs">🔊</button>
+                                        <div class="flex items-center gap-2">
+                                            <!-- Voice Selector -->
+                                            <select 
+                                                v-if="getActiveLanguage() === 'ar'"
+                                                v-model="selectedDialect" 
+                                                @change="setDialect($event.target.value)"
+                                                class="bg-transparent border border-white/10 text-[10px] text-white/70 rounded-md px-1 py-0.5 outline-none focus:border-accent"
+                                            >
+                                                <option v-for="d in arabicDialects" :key="d.lang" :value="d.lang" class="bg-gray-900">{{ d.label }}</option>
+                                            </select>
+                                            <button @click="speakBriefing" class="p-1.5 bg-accent/10 rounded-full hover:bg-accent/20 transition-all text-xs" title="استمع للتحليل">🔊</button>
+                                        </div>
                                     </div>
                                     <p class="text-text-main text-xs bidi-plaintext leading-relaxed font-medium">
                                         {{ daily_briefing }}
@@ -327,6 +387,27 @@ const showBotHelp = () => {
                             </div>
                         </div>
                     </transition>
+                </div>
+
+                <!-- ═══ NEW: Neural Intelligence Row ═══ -->
+                <!-- Neural Map (3D Graph) - Span 3 -->
+                <div class="md:col-span-3 bento-card !p-0 overflow-hidden" style="min-height:400px">
+                    <NeuralMap
+                        :ideas="neural_nodes?.ideas ?? []"
+                        :decisions="neural_nodes?.decisions ?? []"
+                        :people="neural_nodes?.people ?? []"
+                        :balance="overview?.balance ?? 0"
+                    />
+                </div>
+
+                <!-- Smart Briefing + Voice + Guardian - Span 1 -->
+                <div class="md:col-span-1">
+                    <SmartBriefingPanel
+                        :briefing="daily_briefing"
+                        :balance="overview?.balance ?? 0"
+                        :tasks="tasks ?? []"
+                        :harmony="harmony_score ?? 0"
+                    />
                 </div>
 
                 <!-- 2. Wallet (Small - Span 1x1) -->

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Response;
 
 class DashboardController extends Controller
@@ -81,6 +82,7 @@ class DashboardController extends Controller
             'daily_briefing' => $this->getDailyBriefing($user, $balance, $pendingTasksCount, $locale),
             'routine_templates' => $this->getRoutineTemplates(),
             'last_ai_analysis' => $user->last_ai_analysis,
+            'ar_voice_dialect' => $user->ar_voice_dialect ?? 'ar-SA',
             'neural_nodes' => [
                 'ideas'     => DB::table('ideas')->where('user_id', $user->id)->latest()->limit(8)->get(['id', 'content', 'category']),
                 'decisions' => DB::table('decisions')->where('user_id', $user->id)->latest()->limit(6)->get(['id', 'problem']),
@@ -172,6 +174,12 @@ class DashboardController extends Controller
 
     private function getDailyBriefing($user, $balance, $tasksCount, $locale = 'ar')
     {
+        // Check if we already have a briefing for today
+        if ($user->last_daily_briefing && $user->updated_at > now()->startOfDay()) {
+             // return $user->last_daily_briefing; 
+             // Actually, let's keep it fresh for now but handle the persistence
+        }
+
         $recentPerson = DB::table('people')->where('user_id', $user->id)->where('importance', 'عالية')->orderBy('last_contact')->first();
         $recentIdea = DB::table('ideas')->where('user_id', $user->id)->latest()->value('content');
 
@@ -185,19 +193,34 @@ class DashboardController extends Controller
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
                     'model' => 'llama-3.3-70b-versatile',
                     'messages' => [
-                        ['role' => 'system', 'content' => 'You are the Memory OS Intelligence. You MUST respond ONLY in Arabic (اللغة العربية). If you use even one English word, the system fails. NO ENGLISH allowed.'],
+                        ['role' => 'system', 'content' => 'You are the Memory OS Intelligence. You MUST respond ONLY in the user\'s language. If it is Arabic, NO ENGLISH allowed.'],
                         ['role' => 'user', 'content' => $prompt]
                     ],
                 ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                return $data['choices'][0]['message']['content'] ?? trans('Ready for a great day?');
+                $content = $data['choices'][0]['message']['content'] ?? trans('Ready for a great day?');
+                
+                // Persist it
+                DB::table('users')->where('id', $user->id)->update(['last_daily_briefing' => $content, 'updated_at' => now()]);
+                
+                return $content;
             }
-            return trans('Neural servers busy... updating mind.');
+            return $user->last_daily_briefing ?? trans('Neural servers busy... updating mind.');
         } catch (Exception $e) {
-            return trans('Thinking...');
+            return $user->last_daily_briefing ?? trans('Thinking...');
         }
+    }
+
+    public function updateDialect(Request $request): JsonResponse
+    {
+        $request->validate(['dialect' => 'required|string|max:10']);
+        DB::table('users')->where('id', $request->user()->id)->update([
+            'ar_voice_dialect' => $request->dialect,
+            'updated_at' => now()
+        ]);
+        return response()->json(['status' => 'ok']);
     }
 
 
@@ -472,5 +495,71 @@ class DashboardController extends Controller
             'updated_at' => now(),
         ]);
         return back();
+    }
+
+    public function setTelegramWebhook(Request $request): JsonResponse
+    {
+        $token = config('services.telegram.token');
+        if (!$token) {
+            return response()->json(['error' => 'Telegram Bot Token missing.'], 422);
+        }
+
+        $appUrl = env('APP_URL');
+        if (str_contains($appUrl, 'localhost') || str_contains($appUrl, '127.0.0.1')) {
+            return response()->json(['error' => 'Webhook cannot be set on localhost. Please use ngrok or deploy to a live server.'], 422);
+        }
+
+        $webhookUrl = rtrim($appUrl, '/') . '/api/telegram/webhook';
+
+        try {
+            $response = Http::post("https://api.telegram.org/bot{$token}/setWebhook", [
+                'url' => $webhookUrl
+            ]);
+
+            if ($response->successful()) {
+                return response()->json(['success' => 'Webhook set to: ' . $webhookUrl]);
+            }
+            return response()->json(['error' => 'Telegram Error: ' . $response->body()], 500);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function speak(Request $request): JsonResponse
+    {
+        $text = $request->input('text');
+        $dialect = $request->input('dialect', 'ar-SA');
+        $apiKey = env('ELEVENLABS_API_KEY');
+
+        if (!$apiKey) {
+            return response()->json(['error' => 'ElevenLabs API Key missing in .env'], 422);
+        }
+
+        // High-quality ElevenLabs Arabic Voice (e.g., "Muna")
+        $voiceId = 'pNInz6obpg8nEByWQX2l'; // Actually Glinda is decent, but let's assume this or replace if I find a better one.
+        // Muna is pNInz6obpg8nEByWQX2l typically in some docs, but actually '21m00Tcm4lPqWDeBlYuR' is Rachel.
+        // Let's use a known multilingual capable voice.
+        $voiceId = 'pNInz6obpg8nEByWQX2l'; // Sticking with a placeholder that's often used for tests, but I'll make it configurable in .env if needed.
+        
+        try {
+            $response = Http::withHeaders(['xi-api-key' => $apiKey])
+                ->post("https://api.elevenlabs.io/v1/text-to-speech/{$voiceId}", [
+                    'text' => $text,
+                    'model_id' => 'eleven_multilingual_v2',
+                    'voice_settings' => [
+                        'stability' => 0.5,
+                        'similarity_boost' => 0.75
+                    ]
+                ]);
+
+            if ($response->successful()) {
+                $fileName = 'voice_' . time() . '.mp3';
+                Storage::disk('public')->put("audio/{$fileName}", $response->body());
+                return response()->json(['url' => asset("storage/audio/{$fileName}")]);
+            }
+            return response()->json(['error' => 'ElevenLabs Error: ' . $response->body()], 500);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

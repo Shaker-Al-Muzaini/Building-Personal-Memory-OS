@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue';
+import * as THREE from 'three';
 
 const props = defineProps({
     ideas:     { type: Array, default: () => [] },
@@ -8,259 +9,252 @@ const props = defineProps({
     balance:   { type: Number, default: 0 },
 });
 
-const canvasRef = ref(null);
-const tooltip   = ref({ visible: false, x: 0, y: 0, text: '', color: '' });
+const containerRef = ref(null);
+const tooltip      = ref({ visible: false, x: 0, y: 0, text: '', color: '' });
 
-let ctx, animId, nodes = [], W, H;
+let scene, camera, renderer, animationId;
+let nodesGroup;
+let nodeMeshes = [];
+let raycaster = new THREE.Raycaster();
+let mouse     = new THREE.Vector2();
 
-// ─── Node categories config ───
 const CATS = {
-    idea:     { color: '#3b82f6', emoji: '💡', label: 'Idea' },
-    decision: { color: '#8b5cf6', emoji: '⚖️', label: 'Decision' },
-    person:   { color: '#f43f5e', emoji: '🤝', label: 'Person' },
-    finance:  { color: '#10b981', emoji: '💰', label: 'Finance' },
-    core:     { color: '#f59e0b', emoji: '🧠', label: 'Memory OS' },
+    idea:     { color: 0x3b82f6, emoji: '💡' },
+    decision: { color: 0x8b5cf6, emoji: '⚖️' },
+    person:   { color: 0xf43f5e, emoji: '🤝' },
+    finance:  { color: 0x10b981, emoji: '💰' },
+    core:     { color: 0xf59e0b, emoji: '🧠' },
 };
 
-// ─── Build node graph ───
-function buildNodes() {
-    nodes = [];
-    const cx = W / 2, cy = H / 2;
+// Helper to create text sprites for 3D labels
+function createTextSprite(text, color) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 512;
+    canvas.height = 128;
+    
+    ctx.font = 'bold 64px Inter, Cairo, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+    ctx.fillText(text, 256, 80);
 
-    // Core node
-    nodes.push({ id: 'core', label: 'Memory OS', cat: 'core', x: cx, y: cy, vx: 0, vy: 0, r: 24, angle: 0, orbit: 0 });
-
-    // Finance node
-    nodes.push({
-        id: 'finance', label: `💰 ${props.balance >= 0 ? '+' : ''}${props.balance}$`,
-        cat: 'finance', x: cx + 140, y: cy - 60, vx: 0, vy: 0, r: 16, angle: Math.PI * 0.3, orbit: 160
-    });
-
-    // Ideas
-    props.ideas.slice(0, 6).forEach((idea, i) => {
-        const angle = (i / 6) * Math.PI * 2;
-        nodes.push({
-            id: 'idea_' + i, label: (idea.content || '').slice(0, 20) + '…',
-            cat: 'idea', x: cx + Math.cos(angle) * 200, y: cy + Math.sin(angle) * 200,
-            vx: 0, vy: 0, r: 12, angle, orbit: 200
-        });
-    });
-
-    // Decisions
-    props.decisions.slice(0, 5).forEach((dec, i) => {
-        const angle = (i / 5) * Math.PI * 2 + 0.6;
-        nodes.push({
-            id: 'dec_' + i, label: (dec.problem || '').slice(0, 20) + '…',
-            cat: 'decision', x: cx + Math.cos(angle) * 270, y: cy + Math.sin(angle) * 270,
-            vx: 0, vy: 0, r: 12, angle, orbit: 270
-        });
-    });
-
-    // People
-    props.people.slice(0, 6).forEach((p, i) => {
-        const angle = (i / 6) * Math.PI * 2 + 1.2;
-        nodes.push({
-            id: 'person_' + i, label: p.name || '',
-            cat: 'person', x: cx + Math.cos(angle) * 340, y: cy + Math.sin(angle) * 340,
-            vx: 0, vy: 0, r: 12, angle, orbit: 340
-        });
-    });
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(80, 20, 1);
+    return sprite;
 }
 
-// ─── Draw ───
-function draw(time) {
-    ctx.clearRect(0, 0, W, H);
+function initThree() {
+    if (!containerRef.value) return;
+    const W = containerRef.value.offsetWidth;
+    const H = containerRef.value.offsetHeight;
 
-    const cx = W / 2, cy = H / 2;
-    const t = time * 0.0003;
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, W / H, 0.1, 2000);
+    camera.position.z = 600;
 
-    // Edges - drawn with gradient lines
-    nodes.slice(1).forEach(n => {
-        const core = nodes[0];
-        const grad = ctx.createLinearGradient(core.x, core.y, n.x, n.y);
-        const col = CATS[n.cat].color;
-        grad.addColorStop(0, col + '44');
-        grad.addColorStop(1, col + '11');
-        ctx.beginPath();
-        ctx.moveTo(core.x, core.y);
-        ctx.lineTo(n.x, n.y);
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-    });
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    containerRef.value.appendChild(renderer.domElement);
 
-    // Animate nodes in orbit
-    nodes.forEach(n => {
-        if (n.orbit > 0) {
-            n.angle += (n.orbit < 200 ? 0.004 : n.orbit < 280 ? 0.002 : 0.001);
-            n.x = cx + Math.cos(n.angle) * n.orbit;
-            n.y = cy + Math.sin(n.angle) * n.orbit;
-        }
-    });
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const pointLight = new THREE.PointLight(0x069BFF, 4, 1000);
+    pointLight.position.set(0, 0, 200);
+    scene.add(pointLight);
 
-    // Draw nodes
-    nodes.forEach(n => {
-        const cfg = CATS[n.cat];
+    nodesGroup = new THREE.Group();
+    scene.add(nodesGroup);
 
-        // Glow
-        const glow = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3);
-        glow.addColorStop(0, cfg.color + '55');
-        glow.addColorStop(1, 'transparent');
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r * 3, 0, Math.PI * 2);
-        ctx.fillStyle = glow;
-        ctx.fill();
-
-        // Circle
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = cfg.color + 'cc';
-        ctx.fill();
-        ctx.strokeStyle = cfg.color;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Icon
-        ctx.fillStyle = '#fff';
-        ctx.font = `${n.r * 0.9}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(cfg.emoji, n.x, n.y);
-
-        // Label (small)
-        if (n.cat !== 'core') {
-            ctx.font = '10px system-ui';
-            ctx.fillStyle = cfg.color;
-            ctx.fillText(n.label, n.x, n.y + n.r + 12);
-        }
-    });
-
-    animId = requestAnimationFrame(draw);
+    buildGraph();
+    animate();
 }
 
-// ─── Mouse hover tooltip ───
+function buildGraph() {
+    while(nodesGroup.children.length > 0) nodesGroup.remove(nodesGroup.children[0]);
+    nodeMeshes = [];
+
+    const addNode = (id, label, cat, pos, size) => {
+        // Node Sphere
+        const geo = new THREE.SphereGeometry(size, 24, 24);
+        const mat = new THREE.MeshPhongMaterial({ 
+            color: CATS[cat].color, 
+            emissive: CATS[cat].color,
+            emissiveIntensity: 0.6,
+            shininess: 100 
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.copy(pos);
+        mesh.userData = { id, label, cat };
+        nodesGroup.add(mesh);
+        nodeMeshes.push(mesh);
+
+        // Label Sprite
+        if (label) {
+            const shortLabel = label.length > 15 ? label.substring(0, 12) + '...' : label;
+            const sprite = createTextSprite(shortLabel, '#' + CATS[cat].color.toString(16).padStart(6, '0'));
+            sprite.position.set(pos.x, pos.y + size + 20, pos.z);
+            nodesGroup.add(sprite);
+        }
+
+        // Connection to core
+        if (id !== 'core') {
+            const points = [new THREE.Vector3(0,0,0), pos];
+            const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+            const lineMat = new THREE.LineBasicMaterial({ 
+                color: CATS[cat].color, 
+                transparent: true, 
+                opacity: 0.3 
+            });
+            nodesGroup.add(new THREE.Line(lineGeo, lineMat));
+        }
+    };
+
+    // Core
+    addNode('core', 'MEMORY OS', 'core', new THREE.Vector3(0,0,0), 35);
+
+    // Finance
+    addNode('finance', `${props.balance}$`, 'finance', new THREE.Vector3(150, 100, 50), 15);
+
+    // Dynamic Nodes with spherical distribution
+    const distribute = (items, radius, cat, key) => {
+        items.slice(0, 10).forEach((item, i) => {
+            const phi = Math.acos(-1 + (2 * i) / items.length);
+            const theta = Math.sqrt(items.length * Math.PI) * phi;
+            const pos = new THREE.Vector3().setFromSphericalCoords(radius, phi, theta);
+            addNode(`${cat}_${i}`, item[key], cat, pos, 12);
+        });
+    };
+
+    distribute(props.ideas, 220, 'idea', 'content');
+    distribute(props.decisions, 320, 'decision', 'problem');
+    distribute(props.people, 420, 'person', 'name');
+}
+
+function animate() {
+    animationId = requestAnimationFrame(animate);
+    nodesGroup.rotation.y += 0.002;
+    nodesGroup.rotation.x += 0.001;
+    renderer.render(scene, camera);
+}
+
 function onMouseMove(e) {
-    const rect = canvasRef.value.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+    const rect = containerRef.value.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-    let hit = null;
-    nodes.forEach(n => {
-        const dx = mx - n.x, dy = my - n.y;
-        if (Math.sqrt(dx*dx + dy*dy) < n.r + 8) hit = n;
-    });
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(nodeMeshes);
 
-    if (hit) {
-        tooltip.value = { visible: true, x: e.clientX, y: e.clientY - 40, text: hit.label, color: CATS[hit.cat].color };
+    if (intersects.length > 0) {
+        const n = intersects[0].object.userData;
+        tooltip.value = { 
+            visible: true, 
+            x: e.clientX, 
+            y: e.clientY - 40, 
+            text: n.label, 
+            color: '#' + CATS[n.cat].color.toString(16).padStart(6, '0') 
+        };
+        document.body.style.cursor = 'pointer';
     } else {
         tooltip.value.visible = false;
+        document.body.style.cursor = 'default';
     }
 }
 
-function resize() {
-    W = canvasRef.value.offsetWidth;
-    H = canvasRef.value.offsetHeight;
-    canvasRef.value.width = W;
-    canvasRef.value.height = H;
-    buildNodes();
+function handleResize() {
+    if (!containerRef.value) return;
+    const W = containerRef.value.offsetWidth;
+    const H = containerRef.value.offsetHeight;
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W, H);
 }
 
 onMounted(() => {
-    ctx = canvasRef.value.getContext('2d');
-    resize();
-    window.addEventListener('resize', resize);
-    canvasRef.value.addEventListener('mousemove', onMouseMove);
-    animId = requestAnimationFrame(draw);
+    initThree();
+    window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
-    cancelAnimationFrame(animId);
-    window.removeEventListener('resize', resize);
+    cancelAnimationFrame(animationId);
+    window.removeEventListener('resize', handleResize);
+    renderer?.dispose();
+    scene?.clear();
 });
+
+watch(() => [props.ideas, props.decisions, props.people, props.balance], buildGraph, { deep: true });
+
 </script>
 
 <template>
-    <div class="neural-map-shell">
-        <div class="neural-map-header">
-            <h3 class="neural-title">🕸️ Neural Connections Map</h3>
-            <div class="neural-legend">
-                <span v-for="(cfg, key) in { idea: {color:'#3b82f6'}, decision: {color:'#8b5cf6'}, person: {color:'#f43f5e'}, finance: {color:'#10b981'} }" :key="key"
-                    class="legend-dot" :style="{ background: cfg.color }">
-                    {{ key }}
-                </span>
+    <div class="neural-map-container">
+        <div class="neural-map-meta">
+            <h3 class="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">3D Neural Infrastructure</h3>
+            <div class="flex gap-4 mt-2">
+                <div v-for="(cfg, key) in CATS" :key="key" class="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+                    <span class="w-2 h-2 rounded-full" :style="{ background: '#' + cfg.color.toString(16) }"></span>
+                    <span class="text-[9px] font-bold text-white/70 uppercase">{{ key }}</span>
+                </div>
             </div>
         </div>
-        <canvas ref="canvasRef" class="neural-canvas"></canvas>
-        <!-- Tooltip -->
+        
+        <div ref="containerRef" class="neural-canvas-wrapper" @mousemove="onMouseMove"></div>
+
         <Teleport to="body">
-            <div v-if="tooltip.visible"
-                class="neural-tooltip"
-                :style="{ top: tooltip.y + 'px', left: tooltip.x + 'px', borderColor: tooltip.color, color: tooltip.color }">
-                {{ tooltip.text }}
-            </div>
+            <transition name="pop">
+                <div v-if="tooltip.visible"
+                    class="neural-hit-tooltip"
+                    :style="{ top: tooltip.y + 'px', left: tooltip.x + 'px', borderColor: tooltip.color, color: tooltip.color }">
+                    {{ tooltip.text }}
+                </div>
+            </transition>
         </Teleport>
     </div>
 </template>
 
 <style scoped>
-.neural-map-shell {
+.neural-map-container {
     position: relative;
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: 24px;
-    overflow: hidden;
     width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(6,155,255,0.05) 0%, transparent 70%);
 }
 
-.neural-map-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem 0.5rem;
+.neural-map-meta {
+    position: absolute;
+    top: 2rem;
+    left: 2.5rem;
+    z-index: 10;
+    pointer-events: none;
 }
 
-.neural-title {
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: var(--c-text);
-    letter-spacing: -0.02em;
-}
-
-.neural-legend {
-    display: flex;
-    gap: 0.5rem;
-}
-.legend-dot {
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #fff;
-    padding: 0.15rem 0.5rem;
-    border-radius: 100px;
-}
-
-.neural-canvas {
-    display: block;
+.neural-canvas-wrapper {
     width: 100%;
-    height: 340px;
+    height: 100%;
+    min-height: 500px;
 }
-</style>
 
-<style>
-.neural-tooltip {
+.pop-enter-active, .pop-leave-active { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.pop-enter-from, .pop-leave-to { opacity: 0; transform: scale(0.5) translateX(-50%); }
+
+.neural-hit-tooltip {
     position: fixed;
     pointer-events: none;
     z-index: 9999;
-    background: var(--c-surface);
+    background: rgba(0, 0, 0, 0.85);
     border: 1px solid;
-    border-radius: 10px;
-    padding: 0.3rem 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 700;
+    border-radius: 16px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.8rem;
+    font-weight: 800;
     white-space: nowrap;
     transform: translateX(-50%);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    backdrop-filter: blur(20px);
 }
 </style>

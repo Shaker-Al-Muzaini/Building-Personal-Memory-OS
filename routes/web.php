@@ -27,6 +27,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard/search', [DashboardController::class, 'search'])->name('dashboard.search');
     Route::post('/dashboard/command', [DashboardController::class, 'handleCommand'])->name('dashboard.command');
     Route::post('/dashboard/apply-routine', [DashboardController::class, 'applyRoutine'])->name('dashboard.apply-routine');
+    Route::post('/dashboard/update-dialect', [DashboardController::class, 'updateDialect'])->name('dashboard.update-dialect');
+    Route::post('/dashboard/set-webhook', [DashboardController::class, 'setTelegramWebhook'])->name('dashboard.set-webhook');
+    Route::post('/dashboard/speak', [DashboardController::class, 'speak'])->name('dashboard.speak');
     
   
     Route::get('/focus', [FocusController::class, 'index'])->name('focus.index');

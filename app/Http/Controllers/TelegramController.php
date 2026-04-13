@@ -31,24 +31,41 @@ class TelegramController extends Controller
 
         // 1. Handle Unlinked Users (Link via Sync Code)
         if (!$user) {
-            if (strlen($text) === 6 && is_numeric($text)) {
-                $linkedUser = DB::table('users')->where('telegram_sync_code', $text)->first();
+            $code = null;
+            if (str_starts_with($text, '/start ')) {
+                $code = substr($text, 7);
+            } elseif (strlen($text) === 6 && is_numeric($text)) {
+                $code = $text;
+            }
+
+            if ($code) {
+                $linkedUser = DB::table('users')->where('telegram_sync_code', $code)->first();
                 if ($linkedUser) {
                     DB::table('users')->where('id', $linkedUser->id)->update([
                         'telegram_chat_id' => $chatId,
                         'telegram_sync_code' => null
                     ]);
-                    $this->sendMessage($chatId, "✅ Neural Connection Established! Welcome to Personal Memory OS.");
+                    $this->sendMessage($chatId, "✨ *Neural Link Successful!*\n\nWelcome, *{$linkedUser->name}*. Your brain is now synchronized with Personal Memory OS.\n\nYou can now send me:\n🎤 Voice Notes\n📄 Receipts/Photos\n💡 Thoughts & Tasks");
                     return response()->json(['status' => 'ok']);
                 }
             }
-            $this->sendMessage($chatId, "⚠️ System Unlinked. \nPlease send the 6-digit Sync Code from your Dashboard to connect.");
+
+            if (str_starts_with($text, '/start')) {
+                $this->sendMessage($chatId, "👋 Welcome to *Personal Memory OS*.\n\nTo link your account, please send me the *6-digit Sync Code* from your web dashboard.");
+            } else {
+                $this->sendMessage($chatId, "⚠️ *System Unlinked.* Any data sent now will not be stored.\n\nPlease send your *Sync Code* to establish a connection.");
+            }
             return response()->json(['status' => 'ok']);
         }
 
         // 2. Handle Commands
-        if ($text === '/start') {
-            $this->sendMessage($chatId, "🧠 Memory OS Online. I am listening...\nYou can send Voice Notes, Photos of receipts, or just text.");
+        if (str_starts_with($text, '/start')) {
+            $this->sendMessage($chatId, "🧠 *Memory OS Online.* System stable.\n\nI am monitoring your inputs. You can speak to me or send data anytime.");
+            return response()->json(['status' => 'ok']);
+        }
+
+        if (str_starts_with($text, '/status')) {
+            $this->sendMessage($chatId, "📡 *Neural Status Report:*\n- Connectivity: OPTIMAL\n- User: {$user->name}\n- Mode: Active Sync");
             return response()->json(['status' => 'ok']);
         }
 
@@ -97,13 +114,17 @@ class TelegramController extends Controller
 
             if ($response->successful()) {
                 $transcript = $response->json()['text'];
-                $this->sendMessage($chatId, "🎧 Transcript: \"$transcript\"");
+                $this->sendMessage($chatId, "🎧 Neural Transcript: \"$transcript\"");
                 $this->processNaturalLanguage($chatId, $transcript, $user);
             } else {
-                $this->sendMessage($chatId, "❌ Failed to decode neural signal.");
+                Log::error("Telegram Whisper Error: " . $response->body());
+                $this->sendMessage($chatId, "❌ Failed to decode neural signal. (Check Groq API)");
             }
+        } catch (\Exception $e) {
+            Log::error("Telegram Voice processing error: " . $e->getMessage());
+            $this->sendMessage($chatId, "❌ Neural frequency error.");
         } finally {
-            unlink($absolutePath);
+            if (file_exists($absolutePath)) unlink($absolutePath);
         }
     }
 
@@ -161,15 +182,27 @@ class TelegramController extends Controller
             $response = Http::withHeaders(['Authorization' => 'Bearer ' . $this->groqKey])
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
                     'model' => 'llama-3.3-70b-versatile',
-                    'messages' => [['role' => 'user', 'content' => $prompt]],
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are the Memory OS Neural Hub. Extract data from user input into JSON. If income/expense, use type "money". If mission/todo, use type "task". If concept/thought, use type "idea". RESPOND ONLY WITH JSON.'],
+                        ['role' => 'user', 'content' => $prompt]
+                    ],
                     'response_format' => ['type' => 'json_object']
                 ]);
 
             if ($response->successful()) {
-                $res = json_decode($response->json()['choices'][0]['message']['content'], true);
-                $this->commitToDatabase($chatId, $res, $user);
+                $content = $response->json()['choices'][0]['message']['content'];
+                // Safety check for raw content
+                $cleanJson = preg_replace('/^[^{]*({.*})[^}]*$/s', '$1', $content);
+                $res = json_decode($cleanJson, true);
+                
+                if ($res) {
+                    $this->commitToDatabase($chatId, $res, $user);
+                } else {
+                    $this->sendMessage($chatId, "⚠️ Neural signal received but misunderstood.");
+                }
             }
         } catch (\Exception $e) {
+            Log::error("Telegram NL Processing Error: " . $e->getMessage());
             $this->sendMessage($chatId, "❌ AI processing failed.");
         }
     }

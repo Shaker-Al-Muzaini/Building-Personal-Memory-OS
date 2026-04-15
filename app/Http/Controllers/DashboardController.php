@@ -61,7 +61,16 @@ class DashboardController extends Controller
         $locale = $request->cookie('user_lang', 'ar');
         app()->setLocale($locale);
 
+        try {
+            $webhookResponse = Http::get("https://api.telegram.org/bot" . config('services.telegram.token') . "/getWebhookInfo");
+            $webhookUrl = $webhookResponse->json()['result']['url'] ?? 'NOT SET';
+        } catch (\Exception $e) {
+            $webhookUrl = 'ERROR CONNECTING';
+        }
+
         return Inertia::render('Dashboard', [
+            'app_url' => config('app.url'),
+            'webhook_status' => $webhookUrl,
             'sync_code' => $user->telegram_sync_code,
             'is_telegram_linked' => (bool)$user->telegram_chat_id,
             'tasks' => $tasks,
@@ -497,7 +506,7 @@ class DashboardController extends Controller
         return back();
     }
 
-    public function setTelegramWebhook(Request $request): JsonResponse
+    public function setTelegramWebhook(Request $request): \Illuminate\Http\RedirectResponse
     {
         $token = config('services.telegram.token');
         if (!$token) {
@@ -517,13 +526,14 @@ class DashboardController extends Controller
             ]);
 
             if ($response->successful()) {
-                return response()->json(['success' => 'Webhook set to: ' . $webhookUrl]);
+                return back()->with('success', 'Webhook set to: ' . $webhookUrl);
             }
-            return response()->json(['error' => 'Telegram Error: ' . $response->body()], 500);
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return back()->with('error', 'Telegram Error: ' . $response->body());
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
     }
+    
 
     public function speak(Request $request): JsonResponse
     {

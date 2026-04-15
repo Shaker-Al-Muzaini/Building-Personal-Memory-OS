@@ -137,8 +137,9 @@ function buildGraph() {
 
 function animate() {
     animationId = requestAnimationFrame(animate);
-    nodesGroup.rotation.y += 0.002;
-    nodesGroup.rotation.x += 0.001;
+    // Slow, fluid rotation for a "floating in space" feeling
+    nodesGroup.rotation.y += 0.0005;
+    nodesGroup.rotation.z += 0.0002;
     renderer.render(scene, camera);
 }
 

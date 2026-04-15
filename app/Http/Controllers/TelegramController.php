@@ -22,6 +22,7 @@ class TelegramController extends Controller
     public function webhook(Request $request)
     {
         $update = $request->all();
+        \Log::info("Telegram Signal Received: " . json_encode($update));
         if (!isset($update['message'])) return response()->json(['status' => 'ok']);
 
         $message = $update['message'];
@@ -241,7 +242,7 @@ class TelegramController extends Controller
 
     private function sendMessage($chatId, $text)
     {
-        Http::post("https://api.telegram.org/bot{$this->botToken}/sendMessage", [
+        Http::post("https://api.telegram.org/bot" . config('services.telegram.token') . "/sendMessage", [
             'chat_id' => $chatId,
             'text' => $text,
             'parse_mode' => 'Markdown'

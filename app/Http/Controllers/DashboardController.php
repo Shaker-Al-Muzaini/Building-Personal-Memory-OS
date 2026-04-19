@@ -61,8 +61,10 @@ class DashboardController extends Controller
         $locale = $request->cookie('user_lang', 'ar');
         app()->setLocale($locale);
 
+        $telegramToken = $user->telegram_bot_token ?: config('services.telegram.token');
+
         try {
-            $webhookResponse = Http::get("https://api.telegram.org/bot" . config('services.telegram.token') . "/getWebhookInfo");
+            $webhookResponse = Http::get("https://api.telegram.org/bot" . $telegramToken . "/getWebhookInfo");
             $webhookUrl = $webhookResponse->json()['result']['url'] ?? 'NOT SET';
         } catch (\Exception $e) {
             $webhookUrl = 'ERROR CONNECTING';
@@ -73,6 +75,7 @@ class DashboardController extends Controller
             'webhook_status' => $webhookUrl,
             'sync_code' => $user->telegram_sync_code,
             'is_telegram_linked' => (bool)$user->telegram_chat_id,
+            'telegram_bot_token' => $user->telegram_bot_token,
             'tasks' => $tasks,
             'habit' => $habit,
             'goal' => $goal,
@@ -181,7 +184,7 @@ class DashboardController extends Controller
         return (int)($moneyScore + $taskScore);
     }
 
-    private function getDailyBriefing($user, $balance, $tasksCount, $locale = 'ar')
+    public function getDailyBriefing($user, $balance, $tasksCount, $locale = 'ar')
     {
         // Check if we already have a briefing for today
         if ($user->last_daily_briefing && $user->updated_at > now()->startOfDay()) {
@@ -508,14 +511,16 @@ class DashboardController extends Controller
 
     public function setTelegramWebhook(Request $request): \Illuminate\Http\RedirectResponse
     {
-        $token = config('services.telegram.token');
+        $user = $request->user();
+        $token = $user->telegram_bot_token ?: config('services.telegram.token');
+        
         if (!$token) {
-            return response()->json(['error' => 'Telegram Bot Token missing.'], 422);
+            return back()->with('error', 'Telegram Bot Token missing.');
         }
 
         $appUrl = env('APP_URL');
         if (str_contains($appUrl, 'localhost') || str_contains($appUrl, '127.0.0.1')) {
-            return response()->json(['error' => 'Webhook cannot be set on localhost. Please use ngrok or deploy to a live server.'], 422);
+            return back()->with('error', 'Webhook cannot be set on localhost. Please use ngrok or deploy to a live server.');
         }
 
         $webhookUrl = rtrim($appUrl, '/') . '/api/telegram/webhook';
@@ -532,6 +537,20 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    public function updateTelegramToken(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'token' => 'nullable|string|max:100',
+        ]);
+
+        DB::table('users')->where('id', $request->user()->id)->update([
+            'telegram_bot_token' => $request->token,
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('success', 'Telegram token updated!');
     }
     
 

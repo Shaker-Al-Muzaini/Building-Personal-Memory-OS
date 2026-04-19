@@ -46,7 +46,7 @@ class TelegramController extends Controller
                         'telegram_chat_id' => $chatId,
                         'telegram_sync_code' => null
                     ]);
-                    $this->sendMessage($chatId, "✨ *Neural Link Successful!*\n\nWelcome, *{$linkedUser->name}*. Your brain is now synchronized with Personal Memory OS.\n\nYou can now send me:\n🎤 Voice Notes\n📄 Receipts/Photos\n💡 Thoughts & Tasks");
+                    $this->sendMessage($chatId, "✨ *Neural Link Successful!*\n\nWelcome, *{$linkedUser->name}*. Your brain is now synchronized with Personal Memory OS.\n\nYou can now send me:\n🎤 Voice Notes\n📄 Receipts/Photos\n💡 Thoughts & Tasks", $linkedUser);
                     return response()->json(['status' => 'ok']);
                 }
             }
@@ -61,12 +61,62 @@ class TelegramController extends Controller
 
         // 2. Handle Commands
         if (str_starts_with($text, '/start')) {
-            $this->sendMessage($chatId, "🧠 *Memory OS Online.* System stable.\n\nI am monitoring your inputs. You can speak to me or send data anytime.");
+            $this->sendMessage($chatId, "🧠 *Memory OS Online.* System stable.\n\nI am monitoring your inputs. You can speak to me or send data anytime.", $user);
             return response()->json(['status' => 'ok']);
         }
 
         if (str_starts_with($text, '/status')) {
-            $this->sendMessage($chatId, "📡 *Neural Status Report:*\n- Connectivity: OPTIMAL\n- User: {$user->name}\n- Mode: Active Sync");
+            $this->sendMessage($chatId, "📡 *Neural Status Report:*\n- Connectivity: OPTIMAL\n- User: {$user->name}\n- Mode: Active Sync", $user);
+            return response()->json(['status' => 'ok']);
+        }
+
+        if (str_starts_with($text, '/budget')) {
+            $summary = \App\Models\Budget::getSummaryForUser($user->id);
+            if ($summary) {
+                $msg = "⚖️ *Smart Budget Status:*\n\n" .
+                       "💰 Total: {$summary['total']}$\n" .
+                       "💸 Spent: {$summary['spent']}$\n" .
+                       "📉 Remaining: {$summary['remaining']}$\n" .
+                       "🗓 Days Left: {$summary['days_left']}\n" .
+                       "✨ Daily Allowance: *{$summary['daily_allowance']}$*";
+                $this->sendMessage($chatId, $msg, $user);
+            } else {
+                $this->sendMessage($chatId, "⚠️ No active budget found. Set one in the dashboard!", $user);
+            }
+            return response()->json(['status' => 'ok']);
+        }
+
+        if (str_starts_with($text, '/briefing')) {
+            $this->sendMessage($chatId, "⏳ Synthesizing Neural Briefing...");
+            
+            $balance = \Illuminate\Support\Facades\DB::table('transactions')
+                ->where('user_id', $user->id)
+                ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as balance")
+                ->value('balance') ?? 0;
+            
+            $tasksCount = \Illuminate\Support\Facades\DB::table('tasks')
+                ->where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->count();
+
+            $briefing = (new DashboardController())->getDailyBriefing($user, $balance, $tasksCount);
+            $this->sendMessage($chatId, "🧠 *Neural Briefing:*\n\n" . $briefing, $user);
+            return response()->json(['status' => 'ok']);
+        }
+
+        if (str_starts_with($text, '/forecast')) {
+            $this->sendMessage($chatId, "🔮 Accessing Financial Oracle...");
+            $res = (new MoneyController())->forecast($request);
+            $data = $res->getData();
+            if (isset($data->forecast) && count($data->forecast) > 0) {
+                $msg = "🔮 *3-Month Balance Forecast:*\n\n" .
+                       "📅 Month 1: {$data->forecast[0]}$\n" .
+                       "📅 Month 2: {$data->forecast[1]}$\n" .
+                       "📅 Month 3: {$data->forecast[2]}$";
+                $this->sendMessage($chatId, $msg, $user);
+            } else {
+                $this->sendMessage($chatId, "⚠️ Not enough data for forecasting.", $user);
+            }
             return response()->json(['status' => 'ok']);
         }
 
@@ -95,9 +145,11 @@ class TelegramController extends Controller
         $this->sendMessage($chatId, "⏳ Processing Neural Frequency...");
         
         $fileId = $voice['file_id'];
-        $fileResponse = Http::get("https://api.telegram.org/bot{$this->botToken}/getFile?file_id={$fileId}");
+        $token = ($user && $user->telegram_bot_token) ? $user->telegram_bot_token : config('services.telegram.token');
+        
+        $fileResponse = Http::get("https://api.telegram.org/bot{$token}/getFile?file_id={$fileId}");
         $filePath = $fileResponse->json()['result']['file_path'];
-        $fileUrl = "https://api.telegram.org/file/bot{$this->botToken}/{$filePath}";
+        $fileUrl = "https://api.telegram.org/file/bot{$token}/{$filePath}";
 
         $audioContent = Http::get($fileUrl)->body();
         $tempPath = 'temp_voice_' . time() . '.ogg';
@@ -133,9 +185,11 @@ class TelegramController extends Controller
     {
         $this->sendMessage($chatId, "⏳ Analyzing Neural Image...");
         $fileId = end($photo)['file_id']; // Best quality
-        $fileResponse = Http::get("https://api.telegram.org/bot{$this->botToken}/getFile?file_id={$fileId}");
+        $token = ($user && $user->telegram_bot_token) ? $user->telegram_bot_token : config('services.telegram.token');
+        
+        $fileResponse = Http::get("https://api.telegram.org/bot{$token}/getFile?file_id={$fileId}");
         $filePath = $fileResponse->json()['result']['file_path'];
-        $fileUrl = "https://api.telegram.org/file/bot{$this->botToken}/{$filePath}";
+        $fileUrl = "https://api.telegram.org/file/bot{$token}/{$filePath}";
 
         $imageData = base64_encode(Http::get($fileUrl)->body());
 
@@ -215,14 +269,24 @@ class TelegramController extends Controller
         $reply = $res['reply'] ?? 'تم الاستيعاب.';
 
         if ($type === 'money') {
+            $amount = $data['amount'] ?? 0;
+            $isExpense = ($data['type'] ?? 'expense') === 'expense';
+            
             DB::table('transactions')->insert([
                 'user_id' => $user->id,
-                'amount' => $data['amount'] ?? 0,
+                'amount' => $amount,
                 'type' => $data['type'] ?? 'expense',
                 'category' => $data['category'] ?? 'عام',
                 'description' => $data['description'] ?? 'عبر التلغرام',
                 'created_at' => now(), 'updated_at' => now()
             ]);
+
+            if ($isExpense) {
+                $budget = \App\Models\Budget::getSummaryForUser($user->id);
+                if ($budget && $amount > $budget['daily_allowance']) {
+                    $reply .= "\n\n⚠️ *تنبيه:* هذا المصروف أكبر من ميزانيتك اليومية المقترحة ({$budget['daily_allowance']}$)!";
+                }
+            }
         } elseif ($type === 'task') {
             DB::table('tasks')->insert([
                 'user_id' => $user->id,
@@ -237,12 +301,18 @@ class TelegramController extends Controller
             ]);
         }
 
-        $this->sendMessage($chatId, $reply);
+        $this->sendMessage($chatId, $reply, $user);
     }
 
-    private function sendMessage($chatId, $text)
+    private function sendMessage($chatId, $text, $user = null)
     {
-        Http::post("https://api.telegram.org/bot" . config('services.telegram.token') . "/sendMessage", [
+        $token = ($user && property_exists($user, 'telegram_bot_token') && $user->telegram_bot_token) 
+                 ? $user->telegram_bot_token 
+                 : config('services.telegram.token');
+
+        if (!$token) return;
+
+        Http::post("https://api.telegram.org/bot" . $token . "/sendMessage", [
             'chat_id' => $chatId,
             'text' => $text,
             'parse_mode' => 'Markdown'

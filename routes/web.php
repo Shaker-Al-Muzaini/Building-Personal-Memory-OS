@@ -29,6 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/dashboard/apply-routine', [DashboardController::class, 'applyRoutine'])->name('dashboard.apply-routine');
     Route::post('/dashboard/update-dialect', [DashboardController::class, 'updateDialect'])->name('dashboard.update-dialect');
     Route::post('/dashboard/set-webhook', [DashboardController::class, 'setTelegramWebhook'])->name('dashboard.set-webhook');
+    Route::post('/dashboard/update-token', [DashboardController::class, 'updateTelegramToken'])->name('dashboard.update-token');
     Route::post('/dashboard/speak', [DashboardController::class, 'speak'])->name('dashboard.speak');
     
   
@@ -67,9 +68,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
    
     Route::get('/money', [MoneyController::class, 'index'])->name('money.index');
     Route::post('/money', [MoneyController::class, 'store'])->name('money.store');
+    Route::post('/money/budget', [MoneyController::class, 'storeBudget'])->name('money.budget.store');
     Route::delete('/money/{id}', [MoneyController::class, 'destroy'])->name('money.delete');
     Route::post('/money/analyze', [MoneyController::class, 'analyze'])->name('money.analyze');
     Route::get('/money/forecast', [MoneyController::class, 'forecast'])->name('money.forecast');
+    Route::post('/money/ai-suggestions', [MoneyController::class, 'aiSuggestions'])->name('money.ai.suggestions');
+    Route::post('/money/savings-tip', [MoneyController::class, 'savingsTip'])->name('money.savings.tip');
 });
 
 Route::middleware('auth')->group(function () {

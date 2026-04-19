@@ -26,8 +26,9 @@ const props = defineProps({
     last_ai_analysis:   String,
     neural_nodes:       Object,
     ar_voice_dialect:   String,
-    webhook_status:     String, // New
-    app_url:            String  // New
+    webhook_status:     String,
+    app_url:            String,
+    telegram_bot_token: String
 });
 
 const isRecordingTask = ref(false);
@@ -109,6 +110,25 @@ const speakCombinedBriefing = () => speakBriefing(`${props.daily_briefing}. ${pr
 const taskForm = useForm({ title: '' });
 const addTask = () => taskForm.post(route('tasks.store'), { preserveScroll: true, onSuccess: () => taskForm.reset() });
 const toggleTask = (id) => router.patch(route('tasks.toggle', id), {}, { preserveScroll: true });
+
+const tokenForm = useForm({
+    token: props.telegram_bot_token || ''
+});
+
+const updateToken = () => {
+    tokenForm.post(route('dashboard.update-token'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            Swal.fire({
+                title: trans('Settings Updated'),
+                text: trans('Telegram bot token has been configured.'),
+                icon: 'success',
+                background: 'var(--c-surface)',
+                color: 'var(--c-text)'
+            });
+        }
+    });
+};
 
 const showBotHelp = () => {
     Swal.fire({
@@ -311,35 +331,35 @@ const mainModules = [
                     <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
                     <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50"></div>
                     
-                    <div class="max-w-4xl mx-auto space-y-12 relative z-10">
-                        <div class="flex flex-col md:flex-row items-center justify-between gap-12">
-                            <div class="flex items-center gap-8">
-                                <div class="w-20 h-20 rounded-[30px] bg-blue-600 flex items-center justify-center text-4xl shadow-[0_0_50px_rgba(37,99,235,0.5)] animate-pulse">🌌</div>
+                    <div class="max-w-4xl mx-auto space-y-6 relative z-10">
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div class="flex items-center gap-6">
+                                <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-xl shadow-[0_0_30px_rgba(37,99,235,0.5)] animate-pulse">🌌</div>
                                 <div>
-                                    <h2 class="text-4xl font-black text-white tracking-tighter">{{ $t('Strategic Insight') }}</h2>
-                                    <p class="text-[10px] text-blue-400 font-bold tracking-[0.5em] uppercase opacity-70 mt-2">Neural_Nexus.v7 // Final Synthesis</p>
+                                    <h2 class="text-2xl font-black text-white tracking-tighter">{{ $t('Strategic Insight') }}</h2>
+                                    <p class="text-[8px] text-blue-400 font-bold tracking-[0.3em] uppercase opacity-70 mt-1">Neural_Nexus.v7 // Final Synthesis</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-4">
-                                <button @click="toggleVoiceMode" :class="['px-8 py-4 rounded-3xl border text-[11px] font-black transition-all duration-500 tracking-widest', useRealisticVoice ? 'bg-blue-600 border-blue-400 text-white shadow-2xl shadow-blue-500/40' : 'bg-white/5 border-white/10 text-white/30 hover:text-white/60']">
+                            <div class="flex items-center gap-3">
+                                <button @click="toggleVoiceMode" :class="['px-4 py-2 rounded-xl border text-[9px] font-black transition-all duration-500 tracking-widest', useRealisticVoice ? 'bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-500/40' : 'bg-white/5 border-white/10 text-white/30 hover:text-white/60']">
                                     {{ useRealisticVoice ? '💎 REALISTIC VOICE' : '🤖 SYSTEM VOICE' }}
                                 </button>
-                                <button v-if="displayedAiText" @click="speakDisplayedText" class="w-14 h-14 rounded-3xl bg-white text-black flex items-center justify-center hover:scale-110 active:scale-90 transition-transform shadow-2xl">🔊</button>
+                                <button v-if="displayedAiText" @click="speakDisplayedText" class="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg">🔊</button>
                             </div>
                         </div>
 
-                        <div v-if="!displayedAiText" class="text-center py-16 space-y-8">
-                            <p class="text-2xl text-white/30 font-light max-w-lg mx-auto leading-relaxed">Let the AI analyze your patterns and generate an optimized strategic roadmap for your biological and financial success.</p>
-                            <button @click="generatePlan" :disabled="isGeneratingPlan" class="px-16 py-6 bg-white text-black font-black rounded-[30px] hover:scale-105 active:scale-95 transition-all shadow-3xl disabled:opacity-50">
+                        <div v-if="!displayedAiText" class="text-center py-8 space-y-6">
+                            <p class="text-sm text-white/40 font-light max-w-md mx-auto leading-relaxed">Let the AI analyze your patterns and generate an optimized strategic roadmap for your biological and financial success.</p>
+                            <button @click="generatePlan" :disabled="isGeneratingPlan" class="px-8 py-3 bg-white text-black text-xs font-black rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg disabled:opacity-50">
                                 {{ isGeneratingPlan ? 'SYNTHESIZING...' : 'OPEN THE NEURAL ORACLE' }}
                             </button>
                         </div>
 
-                        <div v-else class="space-y-10">
-                            <div class="text-2xl md:text-4xl font-light leading-[1.6] text-blue-50/90 whitespace-pre-wrap bidi-plaintext selection:bg-blue-500 tracking-tight">
-                                {{ displayedAiText }}<span class="inline-block w-3 h-10 bg-blue-500 ml-3 animate-pulse align-middle"></span>
+                        <div v-else class="space-y-6">
+                            <div class="text-sm md:text-base font-medium leading-[1.8] text-blue-50/90 whitespace-pre-wrap bidi-plaintext selection:bg-blue-500 tracking-tight">
+                                {{ displayedAiText }}<span class="inline-block w-2 h-4 bg-blue-500 ml-2 animate-pulse align-middle"></span>
                             </div>
-                            <button v-if="!isGeneratingPlan" @click="generatePlan" class="text-blue-400 text-xs font-black uppercase tracking-[0.5em] hover:text-white transition-all duration-500 flex items-center gap-3">
+                            <button v-if="!isGeneratingPlan" @click="generatePlan" class="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] hover:text-white transition-all duration-500 flex items-center gap-2">
                                 ◈ <span>Re-Analyze Neural Sequence</span>
                             </button>
                         </div>
@@ -347,77 +367,95 @@ const mainModules = [
                 </div>
 
                 <!-- BENTO NAVIGATION MODULES -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div v-for="mod in mainModules" :key="mod.title" @click="router.visit(route(mod.route))" 
-                         class="p-10 rounded-[50px] bg-white/5 border border-white/5 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-700 group cursor-pointer hover:-translate-y-4 shadow-2xl relative overflow-hidden">
-                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/5 blur-[50px] rounded-full group-hover:bg-white/10 transition-all duration-1000"></div>
+                         class="p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-500 group cursor-pointer hover:-translate-y-2 shadow-lg relative overflow-hidden flex flex-col items-center text-center">
+                        <div class="absolute -top-4 -right-4 w-16 h-16 bg-white/5 blur-[20px] rounded-full group-hover:bg-white/10 transition-all duration-1000"></div>
                         
-                        <div class="text-6xl mb-10 group-hover:scale-125 group-hover:rotate-6 transition-transform duration-700">{{ mod.icon }}</div>
-                        <h4 class="text-2xl font-black text-white mb-3">{{ $t(mod.title) }}</h4>
-                        <p class="text-[11px] text-white/40 leading-relaxed uppercase tracking-widest font-bold">{{ $t(mod.desc) }}</p>
+                        <div class="text-3xl mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">{{ mod.icon }}</div>
+                        <h4 class="text-sm font-black text-white mb-1">{{ $t(mod.title) }}</h4>
+                        <p class="text-[9px] text-white/40 leading-relaxed uppercase tracking-widest font-bold">{{ $t(mod.desc) }}</p>
                     </div>
                 </div>
 
                 <!-- SYNC HUB (Final Focus) -->
-                <div class="p-12 md:p-20 rounded-[70px] bg-black border border-white/10 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
+                <div class="p-8 rounded-3xl bg-black border border-white/10 backdrop-blur-2xl shadow-xl relative overflow-hidden group">
                     <div class="absolute inset-0 bg-gradient-to-tr from-blue-600/5 to-purple-600/5 opacity-50"></div>
                     
-                    <div class="flex flex-col lg:flex-row items-center justify-between gap-16 relative z-10">
-                        <div class="max-w-xl space-y-8">
-                            <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest">
+                    <div class="flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
+                        <div class="max-w-md space-y-4">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-black uppercase tracking-widest">
                                 Neural Sync v2.0
                             </div>
-                            <h3 class="text-5xl font-black text-white tracking-tighter leading-none">Your life, synchronized in <span class="text-blue-500">real-time.</span></h3>
-                            <p class="text-xl text-white/40 font-light leading-relaxed">Simply send voice notes, receipts, or thoughts. Our neural bot will categorize and analyze everything instantly into your OS.</p>
+                            <h3 class="text-2xl font-black text-white tracking-tighter leading-snug">Your life, synchronized in <span class="text-blue-500">real-time.</span></h3>
+                            <p class="text-xs text-white/40 font-light leading-relaxed">Simply send voice notes, receipts, or thoughts. Our neural bot will categorize and analyze everything instantly into your OS.</p>
                         </div>
 
                         <div class="w-full lg:w-fit">
-                            <div v-if="!is_telegram_linked" class="p-10 rounded-[48px] bg-white/5 border border-white/10 space-y-8 min-w-[350px]">
-                                <div class="flex items-center justify-between gap-8">
+                            <div v-if="!is_telegram_linked" class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-6 min-w-[280px]">
+                                <div class="flex items-center justify-between gap-6">
                                     <div class="space-y-1">
-                                        <p class="text-[11px] font-black text-blue-400 uppercase tracking-widest opacity-60">Neural ID Code</p>
-                                        <p class="text-5xl font-mono font-black text-white tracking-[0.2em]">{{ sync_code }}</p>
+                                        <p class="text-[9px] font-black text-blue-400 uppercase tracking-widest opacity-60">Neural ID Code</p>
+                                        <p class="text-3xl font-mono font-black text-white tracking-[0.1em]">{{ sync_code }}</p>
                                     </div>
                                     <a :href="`https://t.me/PersonalMemory_Bot?start=${sync_code}`" target="_blank" 
-                                       class="w-20 h-20 rounded-[30px] bg-blue-600 flex items-center justify-center text-4xl shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:scale-110 active:scale-90 transition-transform">✈️</a>
+                                       class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-xl shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105 active:scale-95 transition-transform">✈️</a>
                                 </div>
-                                <p class="text-xs text-white/30 italic font-medium leading-relaxed">Send this code to @PersonalMemory_Bot to begin. Code will decompose in 24 hours.</p>
+                                <p class="text-[10px] text-white/30 italic font-medium leading-relaxed">Send this code to @PersonalMemory_Bot to begin. Code will decompose in 24 hours.</p>
                             </div>
-                            <div v-else class="flex items-center gap-10 p-12 rounded-[48px] bg-green-500/5 border border-green-500/10 shadow-2xl">
+                            <div v-else class="flex items-center gap-6 p-6 rounded-2xl bg-green-500/5 border border-green-500/10 shadow-lg">
                                 <div class="relative">
-                                    <div class="absolute inset-0 bg-green-500 blur-2xl opacity-20"></div>
-                                    <span class="text-7xl relative">🛡️</span>
+                                    <div class="absolute inset-0 bg-green-500 blur-xl opacity-20"></div>
+                                    <span class="text-4xl relative">🛡️</span>
                                 </div>
                                 <div>
-                                    <p class="text-2xl font-black text-white">System Synchronized</p>
-                                    <p class="text-sm text-green-500/60 font-bold uppercase tracking-widest mt-1">Encrypted Link Active</p>
+                                    <p class="text-sm font-black text-white">System Synchronized</p>
+                                    <p class="text-[10px] text-green-500/60 font-bold uppercase tracking-widest mt-1">Encrypted Link Active</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- NEURAL DIAGNOSTICS (High Visibility) -->
-                <div class="mt-20 p-10 rounded-[40px] bg-white border-2 border-red-500 shadow-2xl relative z-20">
-                    <div class="flex items-center gap-4 mb-8">
-                        <span class="w-4 h-4 rounded-full bg-red-600 animate-ping"></span>
-                        <h3 class="text-lg font-black text-red-600 uppercase tracking-widest">Neural System Diagnostics</h3>
+                <div class="mt-8 p-6 rounded-2xl bg-white border border-red-500 shadow-lg relative z-20">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="w-3 h-3 rounded-full bg-red-600 animate-ping"></span>
+                        <h3 class="text-sm font-black text-red-600 uppercase tracking-widest">Neural System Diagnostics</h3>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="space-y-4">
                             <div>
-                                <p class="text-[11px] text-black/60 uppercase font-black mb-1">Active Neural Link (APP_URL)</p>
-                                <p class="text-sm font-mono text-black font-bold break-all">{{ app_url }}</p>
+                                <p class="text-[9px] text-black/60 uppercase font-black mb-1">Active Neural Link (APP_URL)</p>
+                                <p class="text-xs font-mono text-black font-bold break-all">{{ app_url }}</p>
                             </div>
                             <div>
-                                <p class="text-[11px] text-black/60 uppercase font-black mb-1">Telegram Webhook Status</p>
-                                <p class="text-xl font-mono text-red-600 font-black uppercase">{{ webhook_status || 'NOT_CONFIGURED' }}</p>
+                                <p class="text-[9px] text-black/60 uppercase font-black mb-1">Telegram Webhook Status</p>
+                                <p class="text-sm font-mono text-red-600 font-black uppercase">{{ webhook_status || 'NOT_CONFIGURED' }}</p>
+                            </div>
+                            <div class="bg-black/5 p-4 rounded-xl border border-black/5">
+                                <p class="text-[9px] text-black/60 uppercase font-black mb-2">Configure Custom Bot Token</p>
+                                <div class="flex gap-2">
+                                    <input 
+                                        type="password"
+                                        v-model="tokenForm.token"
+                                        placeholder="Paste your bot token here..."
+                                        class="flex-1 bg-white border border-black/10 rounded-lg px-3 py-2 text-xs font-mono focus:ring-red-500"
+                                    />
+                                    <button 
+                                        @click="updateToken"
+                                        :disabled="tokenForm.processing"
+                                        class="px-4 py-2 bg-black text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors"
+                                    >
+                                        SAVE
+                                    </button>
+                                </div>
+                                <p class="text-[8px] text-black/40 mt-2 italic font-medium">Leave empty to use system default bot.</p>
                             </div>
                         </div>
-                        <div class="flex flex-col justify-center gap-4">
-                            <button @click="router.post(route('dashboard.set-webhook'))" class="w-full px-8 py-4 bg-red-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl">
+                        <div class="flex flex-col justify-center gap-3">
+                            <button @click="router.post(route('dashboard.set-webhook'))" class="w-full px-4 py-3 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-md">
                                 🔗 FORCE RE-CONNECT TELEGRAM BOT
                             </button>
-                            <p class="text-[10px] text-black/40 text-center font-medium italic">Click this only if Webhook Status is "NOT_CONFIGURED"</p>
+                            <p class="text-[9px] text-black/40 text-center font-medium italic">Apply settings and update webhook to your active URL.</p>
                         </div>
                     </div>
                 </div>

@@ -51,17 +51,19 @@ class Budget extends Model
 
         $dailyRec = $recurring->where('frequency', 'daily')->sum('amount');
         $weeklyRec = $recurring->where('frequency', 'weekly')->sum('amount');
+        $monthlyRec = $recurring->whereIn('frequency', ['monthly', 'yearly'])->sum('amount');
         
         $futureDays = max(0, $daysLeft - 1); // -1 because today's might already be in $spent
         $futureWeeks = max(0, floor($futureDays / 7));
 
         $futureCommitted = ($dailyRec * $futureDays) + ($weeklyRec * $futureWeeks);
+        // Only add monthlyRec to futureCommitted if the period is longer than a month and it hasn't fired yet? 
+        // For simplicity, totalConsumed = $spent + $futureCommitted. If it fired, it's in $spent.
         $totalConsumed = $spent + $futureCommitted;
         
         $remaining = $activeBudget->amount - $totalConsumed;
 
-        // Fixed Daily Allowance is based on original budget minus ALL recurring commitments
-        $totalPeriodCommitted = ($dailyRec * $totalDays) + ($weeklyRec * max(1, floor($totalDays/7)));
+        $totalPeriodCommitted = ($dailyRec * $totalDays) + ($weeklyRec * max(1, floor($totalDays / 7))) + $monthlyRec;
         $freePool = $activeBudget->amount - $totalPeriodCommitted;
         $fixedDailyAllowance = $freePool > 0 ? ($freePool / $totalDays) : 0;
 
@@ -69,7 +71,8 @@ class Budget extends Model
             'total' => (float)$activeBudget->amount,
             'spent' => (float)$spent,
             'future_committed' => (float)$futureCommitted,
-            'total_consumed' => (float)$totalConsumed,
+            'total_period_committed' => (float)$totalPeriodCommitted,
+            'total_consumed' => (float)($spent + $futureCommitted),
             'remaining' => (float)$remaining,
             'days_left' => $daysLeft,
             'daily_allowance' => (float)$fixedDailyAllowance,

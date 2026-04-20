@@ -51,13 +51,15 @@ class MoneyController extends Controller
 
         $todayRecurringTotal = $recurringDaily->sum('amount');
         $todayActualTotal    = $todayActual->sum('amount');
-        $dailyAllowance      = $budgetSummary ? $budgetSummary['daily_allowance'] : 0;
+        $fixedDailyAllowance = $budgetSummary ? $budgetSummary['daily_allowance'] : 0;
+        
+        $dailyAllowance      = $fixedDailyAllowance + $todayRecurringTotal;
 
         $todayPlan = [
             'allowance'      => $dailyAllowance,
             'recurring_total'=> $todayRecurringTotal,
             'actual_total'   => $todayActualTotal,
-            'remaining'      => max(0, $dailyAllowance - $todayActualTotal),
+            'remaining'      => $dailyAllowance - $todayActualTotal,
             'daily_items'    => $recurringDaily->map(fn($r) => [
                 'category' => $r->category,
                 'amount'   => $r->amount,

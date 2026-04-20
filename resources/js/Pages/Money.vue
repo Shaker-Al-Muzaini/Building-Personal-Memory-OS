@@ -24,6 +24,7 @@ const props = defineProps({
 
 // ─── UI State ─────────────────────────────────────────────────────────────────
 const showDailyModal    = ref(false);
+const showMonthlyPlanModal = ref(false);
 const showAddForm       = ref(false);
 const activeReport      = ref('daily');   // 'daily' | 'weekly' | 'monthly'
 const aiPlanText        = ref('');
@@ -47,6 +48,48 @@ const fetchSuggestion = async (category, budget) => {
     } catch { suggestions.value[key] = []; }
     finally { loadingSuggestion.value[key] = false; }
 };
+
+// ─── 30-Day Monthly Projection ───────────────────────────────────────────────
+const monthlyMenu = [
+    "مفتول", "مقلوبه", "مجدره", "كوبه", "فلافل", "كفته", 
+    "طبخ كوسا", "طبيخ بطاطا", "طبيخ فاصوليا", "طبيخ بطاطا مع باذنجان", 
+    "مسلفن رز", "مسلفن كبسها", "مسلفن بخاري", "كباب", "شورما", 
+    "قدره", "رومانيها", "مخشي", "سلطه وقلي بطاطا", "فته", 
+    "بطاطا صنيحه", "كوبه", "فلافل", "ملفوف محشي", "قلايه بنذوه برز واللحمه", 
+    "طبيخ طحينها بلكفته", "بلازلاء ورز", "بامية", "سلطه مع بطاطا سلق", "بطاطا وعدس"
+];
+
+const monthlyProjection = computed(() => {
+    const projection = [];
+    if (!props.budget_summary || !props.active_budget) return projection;
+
+    let currentBalance = props.budget_summary.total;
+    
+    let weeklyRecTotal = 0;
+    let monthlyRecTotal = 0;
+    if (props.recurring_monthly) {
+        weeklyRecTotal = props.recurring_monthly.filter(x => x.frequency === 'weekly').reduce((sum, item) => sum + item.amount, 0);
+        monthlyRecTotal = props.recurring_monthly.filter(x => x.frequency === 'monthly').reduce((sum, item) => sum + item.amount, 0);
+    }
+    
+    currentBalance -= monthlyRecTotal + (weeklyRecTotal * 4);
+
+    const totalDailyCost = props.recurring_daily ? props.recurring_daily.reduce((sum, item) => sum + item.amount, 0) : 0;
+
+    for (let day = 1; day <= 30; day++) {
+        currentBalance -= totalDailyCost;
+        
+        projection.push({
+            day: day,
+            meal: monthlyMenu[day - 1] || "—",
+            dailyCost: totalDailyCost,
+            remaining: Math.max(0, currentBalance)
+        });
+    }
+
+    return projection;
+});
+
 
 watch(showDailyModal, (val) => {
     if (val && props.today_plan?.daily_items) {
@@ -206,11 +249,14 @@ const healthPct = computed(() => {
                         <div class="h-1 bg-green-500/20 rounded-full"><div class="h-full bg-green-500 rounded-full w-full"></div></div>
                     </div>
 
-                    <!-- Expenses -->
+                    <!-- Expenses & Commitments -->
                     <div class="bg-glass-bg border border-glass-border rounded-3xl p-5 flex flex-col gap-2 hover:-translate-y-1 transition-all">
-                        <span class="text-[9px] font-black text-red-500 uppercase tracking-widest">{{ $t('Total Expenses') }}</span>
-                        <span class="text-2xl font-black text-text-main">{{ summary.expense }}<span class="text-xs text-text-muted ml-1">$</span></span>
-                        <div class="h-1 bg-red-500/20 rounded-full"><div class="h-full bg-red-500 rounded-full" :style="{ width: summary.income ? Math.min(100,(summary.expense/summary.income*100))+'%' : '0%' }"></div></div>
+                        <span class="text-[9px] font-black text-red-500 uppercase tracking-widest">{{ $t('Total Expenses & Commitments') }}</span>
+                        <span class="text-2xl font-black text-text-main">
+                            {{ budget_summary ? budget_summary.total_consumed : summary.expense }}
+                            <span class="text-xs text-text-muted ml-1">$</span>
+                        </span>
+                        <div class="h-1 bg-red-500/20 rounded-full"><div class="h-full bg-red-500 rounded-full" :style="{ width: summary.income ? Math.min(100,((budget_summary ? budget_summary.total_consumed : summary.expense)/summary.income*100))+'%' : '0%' }"></div></div>
                     </div>
 
                     <!-- Today Card (clickable) -->
@@ -270,6 +316,11 @@ const healthPct = computed(() => {
                                 <div class="bg-surface-2 rounded-2xl p-3 text-center">
                                     <p class="text-[7px] font-black text-text-muted uppercase tracking-widest mb-0.5">{{ $t('Today Remaining') }}</p>
                                     <p class="text-base font-black" :class="today_plan.remaining > 0 ? 'text-green-400' : 'text-red-400'">{{ today_plan.remaining.toFixed(1) }}$</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <button @click="showMonthlyPlanModal = true" type="button" class="w-full py-2.5 bg-accent/10 text-accent border border-accent/20 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-accent hover:text-white transition-all shadow-md flex justify-center items-center gap-2">
+                                        📅 خطة طعام 30 يوم
+                                    </button>
                                 </div>
                             </div>
 
@@ -621,6 +672,62 @@ const healthPct = computed(() => {
                         <!-- Footer -->
                         <div class="px-6 py-3 bg-white/5 text-center">
                             <p class="text-[7px] text-text-muted font-bold uppercase tracking-[0.25em] opacity-50">NEURAL_FINANCE // DAILY_PROTOCOL</p>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+        </Teleport>
+
+        <!-- ── MONTHLY FOOD PLAN MODAL ── -->
+        <Teleport to="body">
+            <transition name="fade">
+                <div v-if="showMonthlyPlanModal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                    <div class="absolute inset-0" @click="showMonthlyPlanModal = false"></div>
+                    
+                    <div class="relative bg-surface border border-glass-border w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                        <!-- Dynamic Header -->
+                        <div class="shrink-0 p-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-2xl bg-accent/20 text-accent flex items-center justify-center text-xl shadow-inner">
+                                    📆
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-black text-text-main flex items-center gap-2">
+                                        خطة طعام 30 يوم
+                                    </h3>
+                                    <p class="text-[8px] font-black text-text-muted uppercase tracking-widest mt-0.5">
+                                        إسقاط للرصيد المتبقي مع وجباتك
+                                    </p>
+                                </div>
+                            </div>
+                            <button @click="showMonthlyPlanModal = false" class="w-8 h-8 rounded-full bg-white/5 text-text-muted hover:text-white flex items-center justify-center transition-colors">
+                                ✖
+                            </button>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+                            <div v-if="!budget_summary" class="text-center p-6 text-text-muted text-xs">
+                                يرجى تفعيل ميزانية أولاً لرؤية الإسقاط.
+                            </div>
+                            <div v-else class="space-y-2">
+                                <div v-for="projection in monthlyProjection" :key="projection.day" class="bg-surface-2/50 rounded-xl p-3 flex justify-between items-center border border-white/5 hover:bg-surface-2 transition-all">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex flex-col items-center justify-center ring-1 ring-blue-500/20">
+                                            <span class="text-[8px] uppercase font-black uppercase">يوم</span>
+                                            <span class="text-xs font-black">{{ projection.day }}</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-text-main">{{ projection.meal }}</p>
+                                            <p class="text-[9px] text-red-400 font-mono">-{{ projection.dailyCost.toFixed(1) }}$</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[8px] font-black text-text-muted uppercase tracking-wider mb-0.5">الرصيد</p>
+                                        <p class="text-xs font-black" :class="projection.remaining > 0 ? 'text-green-400' : 'text-red-400'">{{ projection.remaining.toFixed(1) }}$</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

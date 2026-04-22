@@ -63,18 +63,18 @@ const monthlyProjection = computed(() => {
     const projection = [];
     if (!props.budget_summary || !props.active_budget) return projection;
 
-    let currentBalance = props.budget_summary.total;
+    let currentBalance = Number(props.budget_summary.total) || 0;
     
     let weeklyRecTotal = 0;
     let monthlyRecTotal = 0;
     if (props.recurring_monthly) {
-        weeklyRecTotal = props.recurring_monthly.filter(x => x.frequency === 'weekly').reduce((sum, item) => sum + item.amount, 0);
-        monthlyRecTotal = props.recurring_monthly.filter(x => x.frequency === 'monthly').reduce((sum, item) => sum + item.amount, 0);
+        weeklyRecTotal = props.recurring_monthly.filter(x => x.frequency === 'weekly').reduce((sum, item) => sum + Number(item.amount), 0);
+        monthlyRecTotal = props.recurring_monthly.filter(x => x.frequency === 'monthly').reduce((sum, item) => sum + Number(item.amount), 0);
     }
     
     currentBalance -= monthlyRecTotal + (weeklyRecTotal * 4);
 
-    const totalDailyCost = props.recurring_daily ? props.recurring_daily.reduce((sum, item) => sum + item.amount, 0) : 0;
+    const totalDailyCost = props.recurring_daily ? props.recurring_daily.reduce((sum, item) => sum + Number(item.amount), 0) : 0;
 
     for (let day = 1; day <= 30; day++) {
         currentBalance -= totalDailyCost;
@@ -82,7 +82,7 @@ const monthlyProjection = computed(() => {
         projection.push({
             day: day,
             meal: monthlyMenu[day - 1] || "—",
-            dailyCost: totalDailyCost,
+            dailyCost: Number(totalDailyCost),
             remaining: Math.max(0, currentBalance)
         });
     }

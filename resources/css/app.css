@@ -1,138 +1,118 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Cairo:wght@400;700;900&display=swap');
+@import './dashboard.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* =============================================
-   Theme Variables
+   Neural Design System - Premium Tokens
    ============================================= */
 
-/* Light Mode (Default) */
+:root {
+    /* Neural Accents */
+    --c-primary: #6366f1;
+    --c-secondary: #ec4899;
+    --c-accent: #3b82f6;
+    --c-success: #10b981;
+    --c-danger: #ef4444;
+    --c-warning: #f59e0b;
+}
+
+/* Light Mode (Premium Quartz) */
 html, .os-light {
-    --c-bg:        #f0f4f8;
-    --c-surface:   #ffffff;
-    --c-surface2:  #f8fafc;
-    --c-border:    rgba(0, 0, 0, 0.08);
-    --c-border-subtle: rgba(0, 0, 0, 0.04);
-    --c-text:      #0f172a;
-    --c-text-muted:#64748b;
-    --c-accent:    #3b82f6;
-    --c-accent-bg: rgba(59, 130, 246, 0.1);
-    --c-nav-bg:    rgba(255, 255, 255, 0.9);
-    --c-card-bg:   #ffffff;
-    --c-card-hover:#f1f5f9;
-    --c-shadow:    0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    --c-glass-bg:  rgba(255, 255, 255, 0.7);
-    --c-glass-border: rgba(0, 0, 0, 0.08);
-    --c-input-bg:  rgba(0, 0, 0, 0.03);
-    --c-panel-bg:  #ffffff;
+    --c-bg: #f8fafc;
+    --c-surface: #ffffff;
+    --c-surface-2: #f1f5f9;
+    --c-text: #0f172a;
+    --c-text-muted: #64748b;
+    --c-border: rgba(15, 23, 42, 0.08);
+    --c-glass-bg: rgba(255, 255, 255, 0.7);
+    --c-glass-border: rgba(255, 255, 255, 0.4);
+    --c-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 }
 
-/* Dark Mode (High-End Neural Aesthetic) */
+/* Dark Mode (Deep Nebula) */
 .os-dark {
-    --c-bg:        #050505;
-    --c-surface:   #0a0a0a;
-    --c-surface2:  #141414;
-    --c-border:    rgba(255, 255, 255, 0.08);
-    --c-border-subtle: rgba(255, 255, 255, 0.04);
-    --c-text:      #ffffff;
-    --c-text-muted:#a1a1aa;
-    --c-accent:    #3b82f6;
-    --c-accent-bg: rgba(59, 130, 246, 0.1);
-    --c-nav-bg:    rgba(0, 0, 0, 0.85);
-    --c-card-bg:   rgba(255, 255, 255, 0.02);
-    --c-card-hover:rgba(255, 255, 255, 0.05);
-    --c-shadow:    0 0 50px rgba(0, 0, 0, 0.8);
-    --c-glass-bg:  rgba(10, 10, 10, 0.6);
+    --c-bg: #020617;
+    --c-surface: #0f172a;
+    --c-surface-2: #1e293b;
+    --c-text: #f8fafc;
+    --c-text-muted: #94a3b8;
+    --c-border: rgba(248, 250, 252, 0.06);
+    --c-glass-bg: rgba(15, 23, 42, 0.6);
     --c-glass-border: rgba(255, 255, 255, 0.05);
-    --c-input-bg:  rgba(255, 255, 255, 0.03);
-    --c-panel-bg:  #0a0a0a;
+    --c-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
 }
-
-/* =============================================
-   Global Resets Using Variables
-   ============================================= */
 
 @layer base {
-    * { box-sizing: border-box; }
-
     html, body {
-        font-family: 'Cairo', 'Segoe UI', system-ui, sans-serif;
+        @apply antialiased selection:bg-indigo-500 selection:text-white;
+        font-family: 'Outfit', 'Cairo', sans-serif;
         background-color: var(--c-bg);
         color: var(--c-text);
         scroll-behavior: smooth;
-        transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: background-color 0.5s ease, color 0.5s ease;
     }
 
-    /* ─── Global Cursor: pointer on all interactive elements ─── */
-    a,
-    button,
-    [role="button"],
-    input[type="submit"],
-    input[type="button"],
-    input[type="checkbox"],
-    input[type="radio"],
-    input[type="range"],
-    select,
-    label[for],
-    summary,
-    [tabindex]:not([tabindex="-1"]),
-    .cursor-pointer,
-    .lp-card,
-    .lp-why,
-    .dashboard-card,
-    .p-card,
-    .feature-card,
-    nav a,
-    .group {
-        cursor: pointer !important;
+    * { @apply border-gray-200 dark:border-slate-800; }
+
+    /* RTL Support for Cairo Font */
+    [dir="rtl"] { font-family: 'Cairo', sans-serif; }
+}
+
+@layer components {
+    /* Premium Glassmorphism Card */
+    .neural-card {
+        @apply relative overflow-hidden rounded-[2rem] border transition-all duration-500 ease-out;
+        background: var(--c-glass-bg);
+        border-color: var(--c-glass-border);
+        backdrop-filter: blur(16px);
+        box-shadow: var(--c-shadow);
     }
 
-    /* ─── Typography Polish ─── */
-    h1, h2, h3, h4, h5, h6 {
-        letter-spacing: -0.02em;
-        line-height: 1.2;
+    .neural-card:hover {
+        @apply -translate-y-1 scale-[1.01];
+        box-shadow: 0 25px 30px -12px rgba(0, 0, 0, 0.1);
+        border-color: rgba(99, 102, 241, 0.2);
     }
 
-    /* ─── Selection ─── */
-    ::selection {
-        background: var(--c-accent);
-        color: #fff;
+    /* Glossy Buttons */
+    .btn-neural {
+        @apply relative px-6 py-3 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all active:scale-95 flex items-center justify-center gap-2 overflow-hidden;
+    }
+
+    .btn-neural-primary {
+        @apply bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 hover:shadow-indigo-500/40;
+    }
+
+    .btn-neural-secondary {
+        @apply bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xl;
+    }
+
+    /* Fluid Inputs */
+    .neural-input {
+        @apply w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all;
     }
 }
 
-/* =============================================
-   Micro-Animations & Utility Synthesis
-   ============================================= */
-
-.hover-lift {
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.hover-lift:hover {
-    transform: translateY(-5px);
+/* Animations */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
 }
 
-.glass-surface {
-    background: var(--c-glass-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--c-glass-border);
-    box-shadow: var(--c-shadow);
+.animate-float { animation: float 5s ease-in-out infinite; }
+
+/* Responsive Layout Utilities */
+.responsive-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
 }
 
-.bidi-plaintext {
-    direction: auto;
-    text-align: start;
+/* Dark Mode Transition Polish */
+.os-dark .neural-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
 }
 
-/* Global scroll progress */
-#scroll-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 3px;
-    background: linear-gradient(to right, var(--c-accent), #a855f7);
-    z-index: 1000;
-    transition: width 0.1s;
-}
 

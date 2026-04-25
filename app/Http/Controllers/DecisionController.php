@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class DecisionController extends Controller
 {
-    public function index(Request $request): \Inertia\Response
+    public function index(Request $request): Response
     {
         $decisions = DB::table('decisions')->where('user_id', $request->user()->id)->orderBy('id', 'desc')->get();
         return Inertia::render('Decisions', [
@@ -77,15 +79,15 @@ class DecisionController extends Controller
                     if (json_last_error() === JSON_ERROR_NONE) {
                         $ai_advice = $ai_json;
                     } else {
-                        throw new \Exception("Invalid JSON Structure");
+                        throw new Exception("Invalid JSON Structure");
                     }
                 } else {
-                    throw new \Exception("No JSON found in response");
+                    throw new Exception("No JSON found in response");
                 }
             } else {
-                 throw new \Exception("Groq API Error: " . $response->status() . " - " . $response->body());
+                 throw new Exception("Groq API Error: " . $response->status() . " - " . $response->body());
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $ai_advice = json_encode([
                 'pros' => ['تعذر تحليل البيانات حالياً'],
                 'cons' => ['هناك ضغط على الذاكرة العصبية'],

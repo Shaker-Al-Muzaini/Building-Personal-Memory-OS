@@ -61,6 +61,7 @@ class MoneyController extends Controller
             'actual_total'   => $todayActualTotal,
             'remaining'      => $dailyAllowance - $todayActualTotal,
             'daily_items'    => $recurringDaily->map(fn($r) => [
+                'id'       => $r->id,
                 'category' => $r->category,
                 'amount'   => $r->amount,
                 'description' => $r->description,
@@ -227,6 +228,23 @@ class MoneyController extends Controller
     {
         DB::table('transactions')
             ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->delete();
+        return back();
+    }
+
+    public function destroyRecurring(Request $request, $id)
+    {
+        DB::table('recurring_transactions')
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->delete();
+        return back();
+    }
+
+    public function clearRecurring(Request $request)
+    {
+        DB::table('recurring_transactions')
             ->where('user_id', $request->user()->id)
             ->delete();
         return back();

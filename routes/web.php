@@ -70,6 +70,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/money', [MoneyController::class, 'store'])->name('money.store');
     Route::post('/money/budget', [MoneyController::class, 'storeBudget'])->name('money.budget.store');
     Route::delete('/money/{id}', [MoneyController::class, 'destroy'])->name('money.delete');
+    Route::delete('/money/recurring-clear', [MoneyController::class, 'clearRecurring'])->name('money.recurring.clear');
+    Route::delete('/money/recurring/{id}', [MoneyController::class, 'destroyRecurring'])->name('money.recurring.delete');
     Route::post('/money/analyze', [MoneyController::class, 'analyze'])->name('money.analyze');
     Route::get('/money/forecast', [MoneyController::class, 'forecast'])->name('money.forecast');
     Route::post('/money/ai-suggestions', [MoneyController::class, 'aiSuggestions'])->name('money.ai.suggestions');

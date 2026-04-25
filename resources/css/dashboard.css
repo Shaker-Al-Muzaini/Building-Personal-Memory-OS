@@ -1,0 +1,142 @@
+/* Neural Design System v3.0 - Premium Professional */
+
+:root {
+    --n-primary: #3b82f6;
+    --n-secondary: #6366f1;
+    --n-accent: #06b6d4;
+    --n-success: #10b981;
+    --n-danger: #f43f5e;
+}
+
+/* Base Themes */
+.os-dark {
+    --bg-main: #020617;
+    --bg-card: #0f172a;
+    --border: rgba(255, 255, 255, 0.08);
+    --text-h: #f8fafc;
+    --text-p: #94a3b8;
+    --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.os-light {
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --border: #e2e8f0;
+    --text-h: #0f172a;
+    --text-p: #64748b;
+    --card-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.1);
+}
+
+/* Premium Card Base */
+.n-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.n-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -15px rgba(59, 130, 246, 0.15);
+}
+
+/* Compact Sidebar-like Sections */
+.compact-stat {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background: rgba(59, 130, 246, 0.03);
+    border: 1px solid rgba(59, 130, 246, 0.05);
+}
+
+/* Buttons */
+.n-btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.6rem;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.n-btn-primary {
+    background: var(--n-primary);
+    color: white;
+}
+
+.n-btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Module Grid */
+.module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+}
+
+.module-item {
+    padding: 2rem 1.5rem;
+    border-radius: 1.25rem;
+    text-align: center;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.module-item:hover {
+    border-color: var(--n-primary);
+    transform: scale(1.02);
+}
+
+.module-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+/* AI Briefing (Compact News Style) */
+.ai-briefing-compact {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+    border-radius: 1rem;
+    padding: 1rem 1.5rem;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* Typography Refinement */
+.n-h1 { font-size: 1.75rem; font-weight: 900; color: var(--text-h); }
+.n-h2 { font-size: 1.25rem; font-weight: 800; color: var(--text-h); }
+.n-h3 { font-size: 0.9rem; font-weight: 700; color: var(--text-h); text-transform: uppercase; letter-spacing: 0.05em; }
+.n-p { font-size: 0.85rem; color: var(--text-p); font-weight: 500; }
+
+/* Custom Inputs */
+.n-input {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 0.6rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    color: var(--text-h);
+    width: 100%;
+}
+
+.n-input:focus {
+    border-color: var(--n-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}

@@ -92,105 +92,69 @@ const handleKeydown = (e) => {
 <template>
     <div class="min-h-screen font-cairo overflow-x-hidden" :class="isDark ? 'os-dark' : 'os-light'" :dir="getActiveLanguage() === 'ar' ? 'rtl' : 'ltr'">
         <div class="min-h-screen" style="background: var(--c-bg); color: var(--c-text)">
-            <nav class="sticky top-0 z-50" style="background: var(--c-nav-bg); border-bottom: 1px solid var(--c-border); backdrop-filter: blur(12px)">
+            <nav class="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-slate-900/80 border-b border-slate-200 dark:border-cyan-500/20 shadow-sm dark:shadow-cyan-500/5 transition-colors duration-500">
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="flex h-20 justify-between">
-                        <div class="flex">
+                    <div class="flex h-20 justify-between items-center">
+                        <div class="flex items-center gap-8">
                             <!-- Logo -->
                             <div class="flex shrink-0 items-center gap-3">
-                                <Link :href="route('dashboard')" class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-accent to-purple-500 flex items-center justify-center text-lg">
-                                        🧠
+                                <Link :href="route('dashboard')" class="flex items-center gap-3 group">
+                                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-700 flex items-center justify-center shadow-xl shadow-cyan-500/20 group-hover:scale-110 transition-transform duration-300">
+                                        <span class="text-xl group-hover:rotate-12 transition-transform">🧠</span>
                                     </div>
-                                    <span class="font-black text-xl tracking-tighter" style="color: var(--c-text)">{{ $t('Memory OS') }}</span>
+                                    <span class="font-black text-xl tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 uppercase">{{ $t('Memory OS') }}</span>
                                 </Link>
                             </div>
 
-                            <!-- Navigation Links (Bilingual) -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex lg:gap-4 lg:space-x-0">
+                            <!-- Navigation Links -->
+                            <div class="hidden space-x-1 sm:-my-px sm:flex lg:gap-1">
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    {{ $t('Dashboard') }}
+                                    <span class="px-3 py-1 rounded-lg transition-all">{{ $t('Dashboard') }}</span>
                                 </NavLink>
                                 <NavLink :href="route('people.index')" :active="route().current('people.*')">
-                                    {{ $t('People') }}
+                                    <span class="px-3 py-1 rounded-lg transition-all">{{ $t('People') }}</span>
                                 </NavLink>
                                 <NavLink :href="route('ideas.index')" :active="route().current('ideas.*')">
-                                    {{ $t('Ideas') }}
+                                    <span class="px-3 py-1 rounded-lg transition-all">{{ $t('Ideas') }}</span>
                                 </NavLink>
                                 <NavLink :href="route('decisions.index')" :active="route().current('decisions.*')">
-                                    {{ $t('Decisions') }}
+                                    <span class="px-3 py-1 rounded-lg transition-all">{{ $t('Decisions') }}</span>
                                 </NavLink>
                                 <NavLink :href="route('money.index')" :active="route().current('money.*')">
-                                    {{ $t('Money') }}
+                                    <span class="px-3 py-1 rounded-lg transition-all">{{ $t('Money') }}</span>
                                 </NavLink>
                                 <NavLink :href="route('focus.index')" :active="route().current('focus.*')">
-                                    {{ $t('Focus') }}
+                                    <span class="px-3 py-1 rounded-lg transition-all">{{ $t('Focus') }}</span>
                                 </NavLink>
                                 <NavLink :href="route('health.index')" :active="route().current('health.*')">
-                                    {{ $t('Health') }}
+                                    <span class="px-3 py-1 rounded-lg transition-all">{{ $t('Health') }}</span>
                                 </NavLink>
                             </div>
                         </div>
 
-                        <!-- Universal Search Bar -->
-                        <div class="hidden lg:flex flex-1 max-w-md mx-8 items-center relative">
-                            <div class="w-full relative group">
-                                <span class="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent transition-colors">🔍</span>
-                                <input 
-                                    v-model="searchQuery"
-                                    type="text" 
-                                    :placeholder="$t('Search your entire memory...')"
-                                    class="w-full bg-input-bg border border-border-subtle rounded-2xl py-2 ltr:pl-12 ltr:pr-4 rtl:pr-12 rtl:pl-4 text-sm text-text-main focus:ring-accent focus:border-accent transition-all"
-                                />
-                                
-                                <!-- Search Results Dropdown -->
-                                <div v-if="searchResults.length > 0 || isSearching" class="absolute top-[calc(100%+8px)] left-0 right-0 bg-glass-bg border border-border-subtle rounded-2xl shadow-2xl z-50 overflow-hidden backdrop-blur-3xl">
-                                    <div v-if="isSearching" class="p-4 text-center text-sm text-text-muted animate-pulse">
-                                        {{ $t('Searching everywhere...') }}
-                                    </div>
-                                    <div v-else class="max-h-[350px] overflow-y-auto custom-scroll">
-                                        <div 
-                                            v-for="item in searchResults" 
-                                            :key="item.type + item.id"
-                                            @click="navigateTo(item)"
-                                            class="p-4 border-b border-border-subtle hover:bg-card-hover cursor-pointer transition-colors flex items-start gap-3"
-                                        >
-                                            <span class="text-lg">
-                                                {{ item.type === 'ideas' ? '💡' : (item.type === 'people' ? '🤝' : (item.type === 'tasks' ? '📋' : '⚖️')) }}
-                                            </span>
-                                            <div class="flex-1 overflow-hidden">
-                                                <p class="text-text-main text-sm font-bold truncate">{{ item.title }}</p>
-                                                <p class="text-[10px] text-accent uppercase tracking-tighter">{{ $t(item.type) }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="hidden sm:ms-6 sm:flex sm:items-center gap-6">
+                            <div class="flex items-center gap-2 bg-slate-800/50 p-1.5 rounded-xl border border-white/5">
+                                <ThemeToggle />
+                                <LanguageSwitcher />
                             </div>
-                        </div>
-
-                        <div class="hidden sm:ms-6 sm:flex sm:items-center gap-4">
-                            <ThemeToggle />
-                            <LanguageSwitcher />
 
                             <!-- Settings Dropdown -->
-                            <div class="relative ms-3 border-l border-border-main ps-6">
+                            <div class="relative ms-3 border-l border-white/10 ps-6">
                                 <Dropdown align="right" width="48">
                                     <template #trigger>
-                                        <span class="inline-flex rounded-md">
-                                            <button type="button" class="inline-flex items-center rounded-md border border-transparent bg-input-bg px-4 py-2 text-sm font-medium leading-4 text-text-muted transition duration-150 ease-in-out hover:text-text-main hover:bg-card-hover focus:outline-none">
-                                                {{ $page.props.auth.user.name }}
-                                                <svg class="-me-0.5 ms-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                                </svg>
-                                            </button>
-                                        </span>
+                                        <button type="button" class="flex items-center gap-2 group px-3 py-2 rounded-xl hover:bg-white/5 transition-all">
+                                            <div class="w-8 h-8 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center text-xs font-black text-cyan-400 group-hover:border-cyan-500/50 transition-all">
+                                                {{ $page.props.auth.user.name.charAt(0).toUpperCase() }}
+                                            </div>
+                                            <span class="text-sm font-bold text-slate-300 group-hover:text-white transition-all">{{ $page.props.auth.user.name }}</span>
+                                        </button>
                                     </template>
 
                                     <template #content>
-                                        <div class="bg-surface border border-border-main rounded-lg shadow-2xl overflow-hidden">
-                                            <DropdownLink :href="route('profile.edit')" class="text-text-main hover:bg-card-hover">{{ $t('Profile') }}</DropdownLink>
-                                            <DropdownLink :href="route('logout')" method="post" as="button" class="text-text-main hover:bg-card-hover">{{ $t('Log Out') }}</DropdownLink>
+                                        <div class="bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[200px]">
+                                            <DropdownLink :href="route('profile.edit')" class="text-slate-300 hover:bg-white/5 hover:text-cyan-400 px-4 py-3">{{ $t('Profile') }}</DropdownLink>
+                                            <DropdownLink :href="route('logout')" method="post" as="button" class="text-slate-300 hover:bg-white/5 hover:text-red-400 px-4 py-3 w-full text-left">{{ $t('Log Out') }}</DropdownLink>
                                         </div>
                                     </template>
                                 </Dropdown>
@@ -199,7 +163,7 @@ const handleKeydown = (e) => {
 
                         <!-- Hamburger -->
                         <div class="-me-2 flex items-center sm:hidden">
-                            <button @click="showingNavigationDropdown = !showingNavigationDropdown" class="inline-flex items-center justify-center rounded-md p-2 text-text-muted transition duration-150 ease-in-out hover:bg-surface-2 hover:text-text-main focus:outline-none">
+                            <button @click="showingNavigationDropdown = !showingNavigationDropdown" class="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
                                 <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                     <path :class="{'hidden': showingNavigationDropdown, 'inline-flex': !showingNavigationDropdown}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                     <path :class="{'hidden': !showingNavigationDropdown, 'inline-flex': showingNavigationDropdown}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -210,39 +174,24 @@ const handleKeydown = (e) => {
                 </div>
 
                 <!-- Responsive Navigation Menu -->
-                <div :class="{'block': showingNavigationDropdown, 'hidden': !showingNavigationDropdown}" class="sm:hidden bg-surface border-t border-border-main">
+                <div :class="{'block': showingNavigationDropdown, 'hidden': !showingNavigationDropdown}" class="sm:hidden bg-slate-900 border-t border-white/5">
                     <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                            {{ $t('Dashboard') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('people.index')" :active="route().current('people.*')">
-                            {{ $t('People') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('ideas.index')" :active="route().current('ideas.*')">
-                            {{ $t('Ideas') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('decisions.index')" :active="route().current('decisions.*')">
-                            {{ $t('Decisions') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('money.index')" :active="route().current('money.*')">
-                            {{ $t('Money') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('focus.index')" :active="route().current('focus.*')">
-                            {{ $t('Focus') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('health.index')" :active="route().current('health.*')">
-                            {{ $t('Health') }}
-                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">{{ $t('Dashboard') }}</ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('people.index')" :active="route().current('people.*')">{{ $t('People') }}</ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('ideas.index')" :active="route().current('ideas.*')">{{ $t('Ideas') }}</ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('decisions.index')" :active="route().current('decisions.*')">{{ $t('Decisions') }}</ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('money.index')" :active="route().current('money.*')">{{ $t('Money') }}</ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('focus.index')" :active="route().current('focus.*')">{{ $t('Focus') }}</ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('health.index')" :active="route().current('health.*')">{{ $t('Health') }}</ResponsiveNavLink>
                     </div>
 
                     <!-- Responsive Settings Options -->
                     <div class="border-t border-white/5 pb-1 pt-4">
                         <div class="px-4 flex justify-between items-center mb-4">
                             <div>
-                                <div class="text-base font-bold text-text-main">{{ $page.props.auth.user.name }}</div>
-                                <div class="text-sm font-medium text-text-muted">{{ $page.props.auth.user.email }}</div>
+                                <div class="text-base font-bold text-white">{{ $page.props.auth.user.name }}</div>
+                                <div class="text-sm font-medium text-slate-400">{{ $page.props.auth.user.email }}</div>
                             </div>
-                            <LanguageSwitcher />
                         </div>
 
                         <div class="mt-3 space-y-1">
@@ -254,16 +203,12 @@ const handleKeydown = (e) => {
             </nav>
 
             <!-- Page Heading -->
-            <header class="bg-surface-2 border-b border-border-subtle" v-if="$slots.header">
-                <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                    <slot name="header" />
-                </div>
+            <header v-if="$slots.header" class="relative z-10">
+                <slot name="header" />
             </header>
 
-            <!-- Dashboard Oracle/Shadow Prediction floating card could go here, but let's keep it near main -->
-            
             <!-- Page Content -->
-            <main class="relative">
+            <main class="relative z-10">
                 <slot />
 
                 <!-- The Oracle Console (Global Command) -->

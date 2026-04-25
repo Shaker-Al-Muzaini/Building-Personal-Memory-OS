@@ -11,7 +11,6 @@ const setLang = (lang, shouldReload = false) => {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
     localStorage.setItem('user_lang', lang);
-    // Set a cookie that Laravel can read
     document.cookie = `user_lang=${lang}; path=/; max-age=31104000; samesite=lax`;
     
     if (shouldReload) {
@@ -20,7 +19,6 @@ const setLang = (lang, shouldReload = false) => {
 };
 
 onMounted(() => {
-    // Priority: Cookie > LocalStorage > Default (ar)
     const cookieValue = document.cookie.split('; ').find(row => row.startsWith('user_lang='))?.split('=')[1];
     const savedLang = cookieValue || localStorage.getItem('user_lang') || 'ar';
     setLang(savedLang);
@@ -28,17 +26,16 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center p-1 bg-surface-2/50 backdrop-blur-md border border-border rounded-xl shadow-inner">
         <button 
             @click="setLang('en', true)" 
-            :class="['px-3 py-1 text-xs font-bold rounded-lg transition-all', currentLang === 'en' ? 'bg-accent text-white shadow-lg' : 'text-gray-500 hover:text-white']"
+            :class="['px-4 py-1.5 text-[10px] font-black rounded-lg transition-all tracking-widest', currentLang === 'en' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-text-muted hover:text-text-main']"
         >
             EN
         </button>
-        <div class="w-[1px] h-4 bg-white/10"></div>
         <button 
             @click="setLang('ar', true)" 
-            :class="['px-3 py-1 text-xs font-bold rounded-lg transition-all', currentLang === 'ar' ? 'bg-accent text-white shadow-lg' : 'text-gray-500 hover:text-white']"
+            :class="['px-4 py-1.5 text-[10px] font-black rounded-lg transition-all tracking-widest', currentLang === 'ar' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-text-muted hover:text-text-main']"
         >
             AR
         </button>

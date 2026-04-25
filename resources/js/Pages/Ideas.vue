@@ -97,41 +97,45 @@ const getIdeasByStatus = (status) => {
     <Head :title="`${$t('Ideas Memory')} — Personal Memory`" />
 
     <AuthenticatedLayout>
-        <template #header>
-            <h2 class="font-black text-3xl text-text-main tracking-tight flex items-center gap-3">
-                <span class="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-2xl">💡</span>
-                {{ $t('Ideas Memory') }}
-            </h2>
-        </template>
+        <main class="relative z-10 max-w-[1400px] mx-auto p-4 lg:p-6 space-y-6">
 
-        <div class="py-12 bg-surface min-h-screen text-text-main">
-            <div class="max-w-[1600px] mx-auto sm:px-6 lg:px-8 space-y-12">
+            <!-- PAGE HEADER -->
+            <div class="ai-briefing-compact n-card">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-2xl shadow-inner">
+                        💡
+                    </div>
+                    <div>
+                        <h2 class="n-h1 text-2xl">{{ $t('Idea Lab') }}</h2>
+                        <p class="n-p text-[10px] uppercase tracking-widest font-bold">{{ $t('Neural_Incubator.v9') }}</p>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Add Idea Section -->
-                <div class="bg-glass-bg backdrop-blur-2xl border border-glass-border p-8 rounded-[40px] shadow-2xl relative overflow-hidden group">
-                    <div class="absolute inset-0 bg-gradient-to-r from-accent/10 to-purple-500/10 blur-[100px] -z-10 opacity-50"></div>
-                    
-                    <div class="relative z-10">
-                        <h3 class="text-2xl font-black text-text-main mb-2">{{ $t("What's on your mind?") }}</h3>
-                        <p class="text-text-muted mb-8 font-light text-lg">{{ $t('Record any idea...') }}</p>
+            <!-- CAPTURE SECTION -->
+            <div class="n-card">
+                <div class="flex flex-col lg:flex-row gap-6 items-start">
+                    <div class="flex-1 w-full">
+                        <h3 class="n-h3 mb-2">{{ $t("Capture Neural Spark") }}</h3>
+                        <p class="n-p mb-4 text-xs italic">{{ $t('Record your vision before it fades into the void...') }}</p>
                         
                         <form @submit.prevent="saveIdea" class="space-y-4">
                             <div class="relative group/input">
                                 <textarea
                                     v-model="ideaForm.content"
-                                    class="w-full bg-input-bg border border-border-subtle rounded-[30px] px-8 py-6 ltr:pr-20 rtl:pl-20 text-text-main focus:ring-accent focus:border-accent text-xl font-light placeholder:text-text-muted min-h-[150px] transition-all resize-none"
-                                    :placeholder="trans('Record any idea...')"
+                                    class="n-input min-h-[100px] text-base font-medium resize-none"
+                                    :placeholder="trans('Describe your idea...')"
                                     required
                                 ></textarea>
                                 
                                 <button 
                                     type="button"
                                     @click="startVoice"
-                                    :class="['absolute bottom-6 ltr:right-6 rtl:left-6 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300', isRecording ? 'bg-red-500 shadow-lg animate-pulse' : 'bg-surface-2 hover:bg-accent/20 text-text-muted hover:text-accent']"
+                                    :class="['absolute bottom-3 ltr:right-3 rtl:left-3 w-9 h-9 rounded-lg flex items-center justify-center transition-all', isRecording ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/40' : 'bg-slate-500/10 text-slate-500 hover:text-blue-500']"
                                     :title="isRecording ? $t('Stop Recording') : $t('Voice Dictation')"
                                 >
-                                    <span v-if="!isRecording" class="text-xl">🎤</span>
-                                    <span v-else class="text-xl text-text-main">⏹</span>
+                                    <span v-if="!isRecording" class="text-base">🎤</span>
+                                    <span v-else class="text-base">⏹</span>
                                 </button>
                             </div>
                             
@@ -139,83 +143,91 @@ const getIdeasByStatus = (status) => {
                                 <button
                                     type="submit"
                                     :disabled="ideaForm.processing"
-                                    class="bg-accent text-white px-10 py-4 rounded-2xl font-black text-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3 shadow-lg"
+                                    class="n-btn n-btn-primary min-w-[150px] gap-2"
                                 >
-                                    <span v-if="ideaForm.processing" class="animate-spin w-6 h-6 border-4 border-white border-t-transparent rounded-full block"></span>
+                                    <span v-if="ideaForm.processing" class="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></span>
                                     <span v-else>✨</span>
-                                    <span>{{ ideaForm.processing ? $t('Thinking...') : $t('Save and Analyze Idea') }}</span>
+                                    <span>{{ ideaForm.processing ? $t('Synthesizing...') : $t('Initialize Idea') }}</span>
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
+            </div>
 
-                <!-- Kanban Board -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-32">
-                    <div v-for="col in statusColumns" :key="col.id" class="flex flex-col h-full min-h-[600px]">
-                        <!-- Column Header -->
-                        <div class="flex items-center justify-between mb-6 px-4">
-                            <h3 class="text-xl font-black text-text-main flex items-center gap-3">
-                                <span class="p-2 bg-surface-2 rounded-xl">{{ col.icon }}</span>
-                                {{ col.label }}
-                                <span class="text-sm bg-accent/20 text-accent px-3 py-1 rounded-full">{{ getIdeasByStatus(col.id).length }}</span>
-                            </h3>
-                        </div>
+            <!-- KANBAN BOARD -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div v-for="col in statusColumns" :key="col.id" class="flex flex-col gap-4">
+                    <!-- Column Header -->
+                    <div class="flex items-center justify-between px-2 pb-2 border-b-2 border-slate-100 dark:border-slate-800">
+                        <h3 class="n-h3 flex items-center gap-2">
+                            <span class="w-7 h-7 rounded bg-slate-500/5 flex items-center justify-center text-sm">{{ col.icon }}</span>
+                            {{ col.label }}
+                        </h3>
+                        <span class="text-[10px] font-black bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full border border-blue-500/20">
+                            {{ getIdeasByStatus(col.id).length }}
+                        </span>
+                    </div>
 
-                        <!-- Column Content -->
-                        <div class="flex-1 space-y-6 p-4 bg-surface-2 rounded-[40px] border border-border-subtle custom-scroll overflow-y-auto max-h-[800px]">
-                            <div v-for="idea in getIdeasByStatus(col.id)" :key="idea.id" 
-                                class="bg-glass-bg border border-glass-border p-6 rounded-[30px] group hover:border-accent/40 transition-all duration-500 relative shadow-xl"
-                            >
-                                <!-- Card Header -->
-                                <div class="flex justify-between items-start mb-4">
-                                    <span class="px-3 py-1 bg-accent/10 text-accent text-[10px] uppercase tracking-widest font-black rounded-lg">
-                                        {{ idea.category || $t('General') }}
-                                    </span>
-                                    <button @click="deleteIdea(idea.id)" class="text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all active:scale-75">
-                                        ✖
-                                    </button>
-                                </div>
+                    <!-- Column Content -->
+                    <div class="space-y-4 min-h-[400px]">
+                        <div v-for="idea in getIdeasByStatus(col.id)" :key="idea.id" 
+                            class="n-card group/card hover:border-blue-500/30 transition-all p-5"
+                        >
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="px-2 py-0.5 bg-blue-500/5 text-blue-500 text-[9px] uppercase font-black rounded border border-blue-500/10">
+                                    {{ idea.category || $t('Neural_Node') }}
+                                </span>
+                                <button @click="deleteIdea(idea.id)" class="text-slate-300 hover:text-red-500 transition-all text-xs">
+                                    ✖
+                                </button>
+                            </div>
 
-                                <!-- Idea Content -->
-                                <p class="text-text-main text-lg font-bold leading-relaxed mb-4 break-words">
-                                    {{ idea.content }}
-                                </p>
+                            <p class="n-h2 text-sm leading-relaxed mb-4 break-words">
+                                {{ idea.content }}
+                            </p>
 
-                                <!-- AI Analysis Preview -->
-                                <div v-if="idea.ai_analysis" class="mb-6 p-4 bg-surface-2 rounded-2xl border border-border-subtle text-sm text-text-muted font-light leading-relaxed whitespace-pre-wrap italic">
-                                    <span class="text-accent font-black block mb-2 text-xs">{{ $t('AI INSIGHT:') }}</span>
-                                    {{ idea.ai_analysis }}
-                                </div>
+                            <!-- AI Analysis Preview -->
+                            <div v-if="idea.ai_analysis" class="mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[11px] n-p italic relative">
+                                <span class="text-blue-500 font-black block mb-1 uppercase text-[8px]">✧ Oracle Synthesis</span>
+                                {{ idea.ai_analysis }}
+                            </div>
 
-                                <!-- Card Footer: Status Controls -->
-                                <div class="flex items-center gap-2 mt-auto pt-4 border-t border-border-subtle">
+                            <!-- Controls -->
+                            <div class="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                                <div class="flex items-center gap-1">
                                     <button 
                                         v-for="target in statusColumns" 
                                         :key="target.id"
                                         v-show="target.id !== idea.status"
                                         @click="updateStatus(idea.id, target.id)"
-                                        class="p-2 bg-surface-2 hover:bg-accent/20 text-text-muted hover:text-accent rounded-lg transition-all text-xs font-bold"
-                                        :title="`${$t('Move to')} ${target.label}`"
+                                        class="w-7 h-7 bg-slate-500/5 hover:bg-blue-500/10 text-slate-400 hover:text-blue-500 rounded border border-slate-100 dark:border-slate-800 transition-all text-[10px] flex items-center justify-center"
+                                        :title="`${$t('Transition to')} ${target.label}`"
                                     >
                                         {{ target.icon }}
                                     </button>
-                                    <span class="ms-auto text-[10px] text-text-muted font-mono">
-                                        {{ new Date(idea.created_at).toLocaleDateString() }}
-                                    </span>
                                 </div>
+                                <span class="ms-auto text-[8px] n-p font-bold">
+                                    {{ new Date(idea.created_at).toLocaleDateString() }}
+                                </span>
                             </div>
+                        </div>
 
-                            <div v-if="getIdeasByStatus(col.id).length === 0" class="flex flex-col items-center justify-center py-20 text-text-muted opacity-40">
-                                <span class="text-4xl mb-4">🌑</span>
-                                <p class="font-bold">{{ $t('No ideas yet.') }}</p>
-                            </div>
+                        <div v-if="getIdeasByStatus(col.id).length === 0" class="flex flex-col items-center justify-center py-12 opacity-20">
+                            <span class="text-2xl">📡</span>
+                            <p class="text-[8px] font-black uppercase tracking-widest mt-2">{{ $t('Node_Empty') }}</p>
                         </div>
                     </div>
                 </div>
-
             </div>
-        </div>
+
+        </main>
+    </AuthenticatedLayout>
+</template>
+
+<style scoped>
+/* Specific styles if needed */
+</style>
     </AuthenticatedLayout>
 </template>
 

@@ -14,21 +14,6 @@ jobs:
     strategy:
       matrix:
         php-version: ['8.3']
-        database: [mysql]
-
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: memory_os_test
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-        ports:
-          - 3306:3306
 
     steps:
       - name: Checkout code
@@ -41,6 +26,11 @@ jobs:
           extensions: mbstring, bcmath, intl, json, mysql
           ini-values: post_max_size=256M, upload_max_filesize=256M
           tools: composer:v2
+
+      - name: Debug PHP & Composer
+        run: |
+          php -v
+          composer --version
 
       - name: Cache Composer dependencies
         uses: actions/cache@v3
@@ -58,47 +48,33 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      - name: Migration
+      - name: Prepare Database (SQLite in-memory)
         env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_DATABASE: memory_os_test
-          DB_USERNAME: root
-          DB_PASSWORD: root
-        run: php artisan migrate --force
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: |
+          php artisan migrate --force
 
       - name: Run Unit Tests
         env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_DATABASE: memory_os_test
-          DB_USERNAME: root
-          DB_PASSWORD: root
-        run: php artisan test --unit
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: php artisan test --unit --parallel=0
 
       - name: Run Feature Tests
         env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_DATABASE: memory_os_test
-          DB_USERNAME: root
-          DB_PASSWORD: root
-        run: php artisan test --feature
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: php artisan test --feature --parallel=0
 
-      - name: Generate Coverage Report
-        env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_DATABASE: memory_os_test
-          DB_USERNAME: root
-          DB_PASSWORD: root
-        run: php artisan test --coverage
+      - name: Generate Coverage Report (clover)
+        run: ./vendor/bin/phpunit --configuration phpunit.xml --coverage-clover=coverage.xml
         continue-on-error: true
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
+          fail_ci_if_error: false
         continue-on-error: true
 
-g

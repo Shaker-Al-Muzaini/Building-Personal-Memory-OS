@@ -27,6 +27,11 @@ jobs:
           ini-values: post_max_size=256M, upload_max_filesize=256M
           tools: composer:v2
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # أو الإصدار الذي تستخدمه محلياً
+
       - name: Cache Composer dependencies
         uses: actions/cache@v3
         with:
@@ -35,20 +40,30 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
-      - name: Install dependencies
+      - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
+
+      - name: Install NPM dependencies
+        run: npm install
+
+      - name: Build Assets (Vite/Vue)
+        run: npm run build
 
       - name: Setup environment
         run: |
           cp .env.example .env
           php artisan key:generate
 
-      # تم دمج تشغيل الاختبارات في خطوة واحدة أو باستخدام الفلاتر الصحيحة
+      - name: Prepare Database (SQLite in-memory)
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: php artisan migrate --force
+
       - name: Run Unit Tests
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
-        # الطريقة الصحيحة لتشغيل الـ Unit tests فقط في Laravel
         run: php artisan test --testsuite=Unit
 
       - name: Run Feature Tests
@@ -57,16 +72,17 @@ jobs:
           DB_DATABASE: ':memory:'
         run: php artisan test --testsuite=Feature
 
-      - name: Generate Coverage Report (clover)
-        run: |
-          composer require phpunit/phpunit --dev
-          php artisan test --coverage-clover=coverage.xml
+      - name: Generate Coverage Report
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: php artisan test --coverage-clover=coverage.xml
         continue-on-error: true
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # يفضل إضافة التوكن إذا كان المستودع خاص
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: false
         continue-on-error: true

@@ -4,11 +4,11 @@ const isDark = ref(false);
 
 const applyTheme = (dark) => {
     if (dark) {
-        document.documentElement.classList.add('os-dark');
-        document.documentElement.classList.remove('os-light');
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
     } else {
-        document.documentElement.classList.add('os-light');
-        document.documentElement.classList.remove('os-dark');
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
     }
     localStorage.setItem('theme', dark ? 'dark' : 'light');
 };

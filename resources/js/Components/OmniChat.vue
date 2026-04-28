@@ -61,7 +61,7 @@ const toggleChat = () => {
 </script>
 
 <template>
-    <div class="fixed bottom-6 right-6 z-[200] font-cairo">
+    <div class="fixed bottom-6 z-[200] font-cairo" :class="getActiveLanguage() === 'ar' ? 'left-6' : 'right-6'">
         
         <!-- Toggle Button -->
         <button 
@@ -72,14 +72,14 @@ const toggleChat = () => {
             <span v-else>✖</span>
             
             <!-- Tooltip -->
-            <div v-if="!isOpen" class="absolute -top-10 right-0 bg-surface/90 backdrop-blur border border-glass-border px-3 py-1 rounded-lg text-xs text-text-main opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none shadow-xl">
+            <div v-if="!isOpen" class="absolute -top-10 end-0 bg-surface/90 backdrop-blur border border-glass-border px-3 py-1 rounded-lg text-xs text-text-main opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none shadow-xl">
                 {{ $t('OmniChat Assistant') }}
             </div>
         </button>
 
         <!-- Chat Window -->
         <Transition name="chat-slide">
-            <div v-if="isOpen" class="absolute bottom-20 right-0 w-[350px] sm:w-[400px] h-[500px] max-h-[80vh] bg-glass-bg backdrop-blur-3xl border border-glass-border rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div v-if="isOpen" class="absolute bottom-20 end-0 w-[350px] sm:w-[400px] h-[500px] max-h-[80vh] bg-glass-bg backdrop-blur-3xl border border-glass-border rounded-3xl shadow-2xl overflow-hidden flex flex-col">
                 
                 <!-- Chat Header -->
                 <div class="p-4 border-b border-border-subtle bg-gradient-to-tr from-accent/5 to-transparent flex items-center justify-between pointer-events-none">

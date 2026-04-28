@@ -9,7 +9,7 @@
 }
 
 /* Base Themes */
-.os-dark {
+.dark {
     --bg-main: #020617;
     --bg-card: #0f172a;
     --border: rgba(255, 255, 255, 0.08);
@@ -18,7 +18,7 @@
     --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
-.os-light {
+.light {
     --bg-main: #f8fafc;
     --bg-card: #ffffff;
     --border: #e2e8f0;
@@ -74,9 +74,35 @@
     color: white;
 }
 
-.n-btn-primary:hover {
+.n-btn-secondary {
+    background: var(--bg-main);
+    color: var(--text-p);
+    border: 1px solid var(--border);
+}
+
+.n-btn-danger {
+    background: var(--n-danger);
+    color: white;
+}
+
+.n-btn-primary:hover, .n-btn-danger:hover {
     filter: brightness(1.1);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.n-btn-secondary:hover {
+    background: var(--bg-card);
+    color: var(--text-h);
+    border-color: var(--n-primary);
+}
+
+.n-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-p);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    display: block;
 }
 
 /* Module Grid */

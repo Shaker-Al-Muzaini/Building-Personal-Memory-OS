@@ -1,9 +1,6 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const form = useForm({
@@ -22,91 +19,92 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Register" />
+        <Head :title="$t('Register')" />
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="name" value="Name" />
+        <div class="mb-8 text-center">
+            <h1 class="n-h1 text-2xl mb-2">{{ $t('Protocol Enrollment') }}</h1>
+            <p class="n-p text-xs opacity-60 uppercase tracking-widest">{{ $t('Initialize your Neural Core') }}</p>
+        </div>
 
-                <TextInput
+        <form @submit.prevent="submit" class="space-y-5">
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{{ $t('Human Name') }}</label>
+                <input
                     id="name"
                     type="text"
-                    class="mt-1 block w-full"
+                    class="n-input w-full"
                     v-model="form.name"
                     required
                     autofocus
                     autocomplete="name"
+                    :placeholder="$t('Full Name...')"
                 />
-
-                <InputError class="mt-2" :message="form.errors.name" />
+                <InputError class="mt-1" :message="form.errors.name" />
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{{ $t('Email Address') }}</label>
+                <input
                     id="email"
                     type="email"
-                    class="mt-1 block w-full"
+                    class="n-input w-full"
                     v-model="form.email"
                     required
                     autocomplete="username"
+                    :placeholder="$t('your@email.com')"
                 />
-
-                <InputError class="mt-2" :message="form.errors.email" />
+                <InputError class="mt-1" :message="form.errors.email" />
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{{ $t('Access Key') }}</label>
+                    <input
+                        id="password"
+                        type="password"
+                        class="n-input w-full"
+                        v-model="form.password"
+                        required
+                        autocomplete="new-password"
+                        :placeholder="$t('••••••••')"
+                    />
+                    <InputError class="mt-1" :message="form.errors.password" />
+                </div>
 
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password"
-                    required
-                    autocomplete="new-password"
-                />
-
-                <InputError class="mt-2" :message="form.errors.password" />
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{{ $t('Confirm Key') }}</label>
+                    <input
+                        id="password_confirmation"
+                        type="password"
+                        class="n-input w-full"
+                        v-model="form.password_confirmation"
+                        required
+                        autocomplete="new-password"
+                        :placeholder="$t('••••••••')"
+                    />
+                    <InputError class="mt-1" :message="form.errors.password_confirmation" />
+                </div>
             </div>
 
-            <div class="mt-4">
-                <InputLabel
-                    for="password_confirmation"
-                    value="Confirm Password"
-                />
+            <button
+                type="submit"
+                class="w-full n-btn n-btn-primary py-4 text-sm mt-4"
+                :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+                :disabled="form.processing"
+            >
+                {{ $t('Establish Link') }}
+            </button>
 
-                <TextInput
-                    id="password_confirmation"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password_confirmation"
-                    required
-                    autocomplete="new-password"
-                />
-
-                <InputError
-                    class="mt-2"
-                    :message="form.errors.password_confirmation"
-                />
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
+            <div class="pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                    {{ $t('Already enrolled?') }}
+                </p>
                 <Link
                     :href="route('login')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    class="text-xs font-black text-blue-500 hover:text-blue-600 uppercase tracking-widest transition-colors"
                 >
-                    Already registered?
+                    {{ $t('Return to Hub') }}
                 </Link>
-
-                <PrimaryButton
-                    class="ms-4"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Register
-                </PrimaryButton>
             </div>
         </form>
     </GuestLayout>

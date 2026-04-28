@@ -24,74 +24,78 @@ const form = useForm({
 
 <template>
     <section>
-        <header>
-            <h2 class="text-lg font-medium text-gray-900">
-                Profile Information
+        <header class="mb-8">
+            <h2 class="n-h2 text-xl mb-2">
+                {{ $t('Profile Information') }}
             </h2>
 
-            <p class="mt-1 text-sm text-gray-600">
-                Update your account's profile information and email address.
+            <p class="n-p text-sm opacity-60 italic">
+                {{ $t("Update your account's profile information and email address.") }}
             </p>
         </header>
 
         <form
             @submit.prevent="form.patch(route('profile.update'))"
-            class="mt-6 space-y-6"
+            class="space-y-6"
         >
-            <div>
-                <InputLabel for="name" value="Name" />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ $t('Human Name') }}</label>
 
-                <TextInput
-                    id="name"
-                    type="text"
-                    class="mt-1 block w-full"
-                    v-model="form.name"
-                    required
-                    autofocus
-                    autocomplete="name"
-                />
+                    <input
+                        id="name"
+                        type="text"
+                        class="n-input w-full"
+                        v-model="form.name"
+                        required
+                        autofocus
+                        autocomplete="name"
+                    />
 
-                <InputError class="mt-2" :message="form.errors.name" />
-            </div>
+                    <InputError class="mt-2" :message="form.errors.name" />
+                </div>
 
-            <div>
-                <InputLabel for="email" value="Email" />
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ $t('Email Address') }}</label>
 
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autocomplete="username"
-                />
+                    <input
+                        id="email"
+                        type="email"
+                        class="n-input w-full font-mono"
+                        v-model="form.email"
+                        required
+                        autocomplete="username"
+                    />
 
-                <InputError class="mt-2" :message="form.errors.email" />
+                    <InputError class="mt-2" :message="form.errors.email" />
+                </div>
             </div>
 
             <div v-if="mustVerifyEmail && user.email_verified_at === null">
-                <p class="mt-2 text-sm text-gray-800">
-                    Your email address is unverified.
+                <p class="mt-2 text-sm text-amber-600 font-bold">
+                    ⚠️ {{ $t('Your email address is unverified.') }}
                     <Link
                         :href="route('verification.send')"
                         method="post"
                         as="button"
-                        class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        class="ms-2 underline text-blue-500 hover:text-blue-600 transition-colors"
                     >
-                        Click here to re-send the verification email.
+                        {{ $t('Click here to re-send the verification email.') }}
                     </Link>
                 </p>
 
                 <div
                     v-show="status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-green-600"
+                    class="mt-2 text-xs font-black text-emerald-500 uppercase tracking-widest"
                 >
-                    A new verification link has been sent to your email address.
+                    {{ $t('A new verification link has been sent to your email address.') }}
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
+            <div class="flex items-center gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button type="submit" :disabled="form.processing" class="n-btn n-btn-primary min-w-[120px]">
+                    {{ $t('Save') }}
+                </button>
 
                 <Transition
                     enter-active-class="transition ease-in-out"
@@ -101,9 +105,9 @@ const form = useForm({
                 >
                     <p
                         v-if="form.recentlySuccessful"
-                        class="text-sm text-gray-600"
+                        class="text-xs font-bold text-emerald-500 uppercase"
                     >
-                        Saved.
+                        ✓ {{ $t('Synchronized') }}
                     </p>
                 </Transition>
             </div>

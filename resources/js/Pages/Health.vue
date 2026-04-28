@@ -79,187 +79,167 @@ const getMoodEmoji = (score) => {
     <Head :title="$t('Health & Mood')" />
 
     <AuthenticatedLayout>
-        <template #header>
-            <div class="backdrop-blur-xl bg-slate-900/50 border-b border-white/5 px-6 py-8">
-                <div class="max-w-[1600px] mx-auto flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-2xl shadow-xl shadow-emerald-500/20 animate-float">
-                            🧬
-                        </div>
-                        <div>
-                            <h2 class="text-3xl font-black tracking-tight text-white uppercase">{{ $t('Health Matrix') }}</h2>
-                            <p class="text-[10px] text-emerald-400 font-bold tracking-widest uppercase opacity-70 mt-1">✧ {{ $t('Biological_Sync.v2') }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </template>
-
-        <div class="min-h-screen bg-slate-950 text-slate-200 py-12 relative overflow-hidden">
-            <!-- Background Bio-Glow -->
-            <div class="absolute top-[-5%] right-[-5%] w-[35%] h-[35%] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse"></div>
+        <main class="relative z-10 max-w-[1400px] mx-auto p-4 lg:p-6 space-y-8">
             
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
-                <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Logger Form (4 Cols) -->
+                <div class="lg:col-span-4">
+                    <div class="n-card p-6 lg:p-8 sticky top-24">
+                        <div class="flex items-center gap-3 mb-8">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-xl shadow-inner">🧬</div>
+                            <h2 class="n-h2">{{ $t('Bio-Sync Portal') }}</h2>
+                        </div>
+                        
+                        <form @submit.prevent="submitLog" class="space-y-6">
+                            <!-- Temporal Marker -->
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ $t('Temporal Marker') }}</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <select v-model.number="selectedDay" class="n-input py-2 text-center text-xs">
+                                        <option v-for="d in days" :key="d" :value="d">{{ d }}</option>
+                                    </select>
+                                    <select v-model.number="selectedMonth" class="n-input py-2 text-center text-xs">
+                                        <option v-for="m in months" :key="m.v" :value="m.v">{{ $t(m.name) }}</option>
+                                    </select>
+                                    <select v-model.number="selectedYear" class="n-input py-2 text-center text-xs">
+                                        <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                                    </select>
+                                </div>
+                                <p class="text-emerald-500 font-black text-[9px] text-center uppercase mt-1">{{ formattedDate }}</p>
+                            </div>
+
+                            <!-- Sleep Range -->
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ $t('Hibernation (Hours)') }}</label>
+                                    <span class="text-xs font-black text-emerald-500">{{ form.sleep_hours }}H</span>
+                                </div>
+                                <input type="range" v-model.number="form.sleep_hours" min="0" max="14" step="0.5" class="w-full accent-emerald-500" />
+                            </div>
+
+                            <!-- Mood Range -->
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ $t('Core Resonance') }}</label>
+                                    <span class="text-xs font-black text-emerald-500">{{ form.mood_score }}/10</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <input type="range" v-model.number="form.mood_score" min="1" max="10" step="1" class="w-full accent-emerald-500" />
+                                    <span class="text-xl w-10 h-10 flex items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">{{ getMoodEmoji(form.mood_score).split(' ')[0] }}</span>
+                                </div>
+                                <p class="text-[9px] text-center font-black uppercase text-slate-400 tracking-widest">{{ getMoodEmoji(form.mood_score).split(' ').slice(1).join(' ') }}</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ $t('Telemetry Notes') }}</label>
+                                <textarea v-model="form.notes" rows="3" class="n-input w-full" :placeholder="$t('Neural resonance observed...')"></textarea>
+                            </div>
+
+                            <button type="submit" :disabled="form.processing" class="w-full n-btn n-btn-primary bg-emerald-600 hover:bg-emerald-500">
+                                {{ form.processing ? $t('Transmitting...') : $t('Sync Bio-Pattern') }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- AI Analysis & History (8 Cols) -->
+                <div class="lg:col-span-8 space-y-8">
                     
-                    <!-- Logger Form -->
-                    <div class="w-full lg:w-[400px] shrink-0">
-                        <div class="neural-card-premium p-8 sticky top-32">
-                            <h2 class="text-lg font-black text-white uppercase tracking-widest mb-8 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                {{ $t('Bio-Sync Portal') }}
-                            </h2>
-                            
-                            <form @submit.prevent="submitLog" class="space-y-8">
-                                <!-- Custom Date Selector -->
-                                <div class="space-y-4">
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ $t('Temporal Marker') }}</label>
-                                    <div class="grid grid-cols-3 gap-2">
-                                        <select v-model.number="selectedDay" class="bg-slate-900 border border-white/5 rounded-xl px-2 py-4 text-white text-center font-bold focus:ring-emerald-500/50 focus:border-emerald-500/50 appearance-none cursor-pointer shadow-inner">
-                                            <option v-for="d in days" :key="d" :value="d">{{ d }}</option>
-                                        </select>
-                                        <select v-model.number="selectedMonth" class="bg-slate-900 border border-white/5 rounded-xl px-2 py-4 text-white text-center font-bold focus:ring-emerald-500/50 focus:border-emerald-500/50 appearance-none cursor-pointer shadow-inner">
-                                            <option v-for="m in months" :key="m.v" :value="m.v">{{ $t(m.name) }}</option>
-                                        </select>
-                                        <select v-model.number="selectedYear" class="bg-slate-900 border border-white/5 rounded-xl px-2 py-4 text-white text-center font-bold focus:ring-emerald-500/50 focus:border-emerald-500/50 appearance-none cursor-pointer shadow-inner">
-                                            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-                                        </select>
-                                    </div>
-                                    <p class="text-emerald-500/60 text-[9px] font-black tracking-widest mt-1 text-center uppercase">{{ formattedDate }}</p>
+                    <!-- AI NEUROLOGICAL ANALYSIS -->
+                    <div class="n-card p-8 lg:p-10 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none -z-10"></div>
+                        
+                        <div class="flex items-center justify-between mb-8">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl shadow-inner animate-float">🧠</div>
+                                <div>
+                                    <h2 class="n-h2 text-2xl">{{ $t('Neural Synthesis') }}</h2>
+                                    <p class="n-p text-[9px] uppercase tracking-widest font-black text-emerald-500">{{ $t('Cognitive_Audit.v1') }}</p>
                                 </div>
+                            </div>
+                            <button v-if="aiAnalysis" @click="getAnalysis" :disabled="isAnalyzing" class="n-btn py-1.5 px-4 text-[9px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20">{{ $t('Refresh') }}</button>
+                        </div>
 
-                                <div class="space-y-4">
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest flex justify-between">
-                                        <span>{{ $t('Hibernation (Hours)') }}</span>
-                                        <span class="text-emerald-400 font-black">{{ form.sleep_hours }}H</span>
-                                    </label>
-                                    <input type="range" v-model.number="form.sleep_hours" min="0" max="14" step="0.5" class="w-full h-1.5 bg-slate-900 rounded-full appearance-none accent-emerald-500 cursor-pointer" />
-                                </div>
+                        <div v-if="!aiAnalysis && !isAnalyzing" class="py-12 text-center space-y-6">
+                            <p class="n-p text-lg max-w-md mx-auto opacity-60">{{ $t('Awaiting bio-data for neurological pattern analysis.') }}</p>
+                            <button @click="getAnalysis" class="n-btn n-btn-primary bg-emerald-600 px-10">
+                                {{ $t('Initialize Diagnostics') }}
+                            </button>
+                        </div>
 
-                                <div class="space-y-4">
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest flex justify-between">
-                                        <span>{{ $t('Core Resonance') }}</span>
-                                        <span class="text-emerald-400 font-black">{{ form.mood_score }}/10</span>
-                                    </label>
-                                    <div class="flex items-center gap-3">
-                                        <input type="range" v-model.number="form.mood_score" min="1" max="10" step="1" class="w-full h-1.5 bg-slate-900 rounded-full appearance-none accent-emerald-500 cursor-pointer" />
-                                        <span class="text-xl shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5">{{ getMoodEmoji(form.mood_score).split(' ')[0] }}</span>
-                                    </div>
-                                    <p class="text-[9px] text-center font-black uppercase text-emerald-500/60 tracking-widest">{{ getMoodEmoji(form.mood_score).split(' ').slice(1).join(' ') }}</p>
-                                </div>
+                        <div v-if="isAnalyzing" class="py-12 text-center">
+                            <div class="flex justify-center gap-1 mb-4">
+                                <div v-for="i in 3" :key="i" class="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" :style="{ animationDelay: (i*0.2)+'s' }"></div>
+                            </div>
+                            <p class="text-emerald-500 font-black tracking-widest uppercase text-[9px]">{{ $t('Processing bio-data nexus...') }}</p>
+                        </div>
 
-                                <div class="space-y-4">
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ $t('Telemetry Notes') }}</label>
-                                    <textarea v-model="form.notes" rows="3" class="neural-input-premium w-full text-white" :placeholder="$t('Neural resonance observed...')"></textarea>
-                                </div>
-
-                                <button type="submit" :disabled="form.processing" class="btn-neural-premium btn-neural-primary bg-gradient-to-r from-emerald-600 to-teal-600 w-full py-5 text-lg shadow-emerald-500/20">
-                                    {{ form.processing ? $t('Transmitting...') : $t('Sync Bio-Pattern') }}
-                                </button>
-                            </form>
+                        <div v-if="aiAnalysis" class="space-y-4 max-h-[400px] overflow-y-auto custom-scroll pr-2">
+                            <template v-if="typeof aiAnalysis === 'string'">
+                                <div v-for="(step, index) in aiAnalysis.split(/\d+\.\s+/).filter(s => s.trim())" :key="index"
+                                     class="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm group/step hover:border-emerald-500/30 transition-all">
+                                     <div class="flex items-start gap-4">
+                                         <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">
+                                             {{ index + 1 }}
+                                         </span>
+                                         <p class="text-sm n-p leading-relaxed bidi-plaintext">{{ step.trim() }}</p>
+                                     </div>
+                                 </div>
+                            </template>
                         </div>
                     </div>
 
-                    <!-- AI Analysis & History -->
-                    <div class="flex-1 space-y-8">
-                        
-                        <!-- AI Neurological Analysis -->
-                        <div class="neural-card-premium p-10 relative overflow-hidden group">
-                            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none"></div>
-                            
-                            <div class="flex items-center justify-between mb-8 relative z-10">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl shadow-inner border border-emerald-500/20 animate-float">🧠</div>
+                    <!-- BIOLOGICAL TIMELINE -->
+                    <div class="n-card p-8">
+                        <div class="flex items-center justify-between mb-8">
+                            <h2 class="n-h2 text-xl">{{ $t('Biological Timeline') }}</h2>
+                            <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-400">{{ logs.length }} {{ $t('Logged') }}</span>
+                        </div>
+
+                        <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scroll">
+                            <div v-for="log in logs" :key="log.id" 
+                                class="flex flex-col md:flex-row items-center gap-6 p-6 rounded-3xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-emerald-500/20 transition-all group">
+                                
+                                <div class="flex items-center gap-6 w-full md:w-auto">
+                                    <div class="w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black border group-hover:scale-105 transition-transform"
+                                         :class="log.mood_score >= 7 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : (log.mood_score <= 4 ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20')">
+                                        <span class="text-xl">{{ log.mood_score }}</span>
+                                        <span class="text-[7px] uppercase tracking-widest opacity-60">{{ $t('Mood') }}</span>
+                                    </div>
                                     <div>
-                                        <h2 class="text-2xl font-black text-white uppercase tracking-tight">{{ $t('Neural Synthesis') }}</h2>
-                                        <p class="text-[9px] text-emerald-400 font-bold uppercase tracking-[0.4em] mt-1 opacity-60">Cognitive_Audit.v1</p>
+                                        <p class="text-lg font-black text-slate-800 dark:text-white">{{ log.log_date }}</p>
+                                        <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                                            {{ $t('Sleep') }}: {{ log.sleep_hours }}H
+                                        </span>
                                     </div>
                                 </div>
-                                <button v-if="aiAnalysis" @click="getAnalysis" :disabled="isAnalyzing" class="text-[10px] font-black text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-widest border border-emerald-500/20 px-4 py-2 rounded-xl bg-emerald-500/5 shadow-inner">Refresh</button>
-                            </div>
-
-                            <div v-if="!aiAnalysis && !isAnalyzing" class="relative z-10 py-10 text-center">
-                                <p class="text-slate-500 text-lg font-medium mb-8 max-w-md mx-auto">{{ $t('Awaiting bio-data for neurological pattern analysis.') }}</p>
-                                <button @click="getAnalysis" class="btn-neural-premium px-10 py-4 bg-emerald-600/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/30">
-                                    {{ $t('Initialize Diagnostics') }}
-                                </button>
-                            </div>
-
-                            <div v-if="isAnalyzing" class="relative z-10 py-20 text-center">
-                                <div class="flex justify-center gap-1 mb-6">
-                                    <div v-for="i in 3" :key="i" class="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" :style="{ animationDelay: (i*0.2)+'s' }"></div>
+                                
+                                <div class="flex-1 w-full bg-white dark:bg-black/20 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                                    <p class="text-sm italic n-p bidi-plaintext">
+                                        {{ log.notes || $t('No Telemetry Data Recorded.') }}
+                                    </p>
                                 </div>
-                                <p class="text-emerald-500/50 font-black tracking-[0.4em] uppercase text-xs">{{ $t('Processing bio-data nexus...') }}</p>
                             </div>
 
-                            <div v-if="aiAnalysis" class="relative z-10">
-                                <div class="p-8 bg-slate-900/40 border border-white/5 rounded-[40px] text-slate-300 leading-relaxed text-lg italic bidi-plaintext shadow-inner selection:bg-emerald-500/30">
-                                    {{ aiAnalysis }}
-                                </div>
+                            <div v-if="logs.length === 0" class="py-20 text-center n-p opacity-40 italic">
+                                {{ $t('Zero Biological resonance detected.') }}
                             </div>
                         </div>
-
-                        <!-- Logs History -->
-                        <div class="neural-card-premium p-10">
-                            <div class="flex items-center justify-between mb-10">
-                                <h2 class="text-2xl font-black text-white uppercase tracking-tight">{{ $t('Biological Timeline') }}</h2>
-                                <span class="px-4 py-1 rounded-xl bg-slate-900 border border-white/5 text-[10px] font-black text-slate-500 tracking-[0.3em] shadow-inner">{{ logs.length }} ENTRIES</span>
-                            </div>
-
-                            <div class="space-y-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-                                <div v-for="log in logs" :key="log.id" 
-                                    class="group p-6 bg-slate-900/30 border border-white/5 rounded-[30px] flex flex-col md:flex-row justify-between items-center gap-8 hover:bg-slate-900/60 hover:border-emerald-500/20 transition-all duration-500 shadow-lg">
-                                    
-                                    <div class="flex items-center gap-6 w-full md:w-auto">
-                                        <div class="w-16 h-16 rounded-2xl flex flex-col items-center justify-center font-black shadow-xl border relative overflow-hidden group-hover:scale-105 transition-transform"
-                                             :class="log.mood_score >= 7 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-emerald-500/10' : (log.mood_score <= 4 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-rose-500/10' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-indigo-500/10')">
-                                            <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-                                            <span class="text-2xl relative z-10">{{ log.mood_score }}</span>
-                                            <span class="text-[8px] uppercase tracking-widest opacity-60 relative z-10">{{ $t('Mood') }}</span>
-                                        </div>
-                                        <div>
-                                            <p class="text-xl font-black text-white uppercase tracking-tight">{{ log.log_date }}</p>
-                                            <div class="flex gap-4 mt-1">
-                                                <span class="text-[10px] text-emerald-400 font-bold tracking-widest uppercase flex items-center gap-1.5">
-                                                    <span class="w-1 h-1 rounded-full bg-emerald-500"></span>
-                                                    {{ $t('Sleep') }}: {{ log.sleep_hours }}H
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex-1 w-full md:w-auto">
-                                        <div class="p-4 bg-black/20 border border-white/5 rounded-2xl relative group/note">
-                                            <p class="text-slate-400 text-sm leading-relaxed italic bidi-plaintext line-clamp-2 md:line-clamp-1 text-end rtl:text-left group-hover/note:line-clamp-none transition-all">
-                                                {{ log.notes || $t('No Telemetry Data Recorded.') }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div v-if="logs.length === 0" class="py-32 text-center opacity-10">
-                                    <span class="text-6xl block mb-4">🌑</span>
-                                    <p class="text-xs font-black uppercase tracking-[0.5em]">{{ $t('Zero Biological resonance detected.') }}</p>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
 
                 </div>
             </div>
-        </div>
+        </main>
     </AuthenticatedLayout>
 </template>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.4); }
-
-.bidi-plaintext {
-    unicode-bidi: plaintext;
-}
+.bidi-plaintext { unicode-bidi: plaintext; text-align: start; }
+input[type=range] { -webkit-appearance: none; background: #e2e8f0; height: 4px; border-radius: 2px; }
+.dark input[type=range] { background: #1e293b; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #10b981; cursor: pointer; border: 3px solid white; box-shadow: 0 0 10px rgba(16,185,129,0.3); }
+.custom-scroll::-webkit-scrollbar { width: 4px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 4px; }
 </style>

@@ -101,162 +101,152 @@ onUnmounted(() => {
     <Head :title="$t('Deep Focus')" />
 
     <AuthenticatedLayout>
-        <template #header>
-            <div class="backdrop-blur-xl bg-slate-900/50 border-b border-white/5 px-6 py-8">
-                <div class="max-w-[1600px] mx-auto flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl shadow-xl shadow-indigo-500/20 animate-float">
-                            ⏳
+        <main class="relative z-10 max-w-[1400px] mx-auto p-4 lg:p-6 space-y-8">
+            
+            <div class="flex flex-col lg:flex-row gap-8">
+                
+                <!-- Timer Core (Cinema Display) -->
+                <div class="flex-1">
+                    <div class="n-card p-12 lg:p-24 flex flex-col items-center justify-center min-h-[600px] relative overflow-hidden group transition-all duration-1000"
+                         :class="isFocusing ? (isBreak ? 'border-emerald-500/20 shadow-lg shadow-emerald-500/5' : 'border-rose-500/20 shadow-lg shadow-rose-500/5') : ''">
+                        
+                        <div class="absolute inset-0 bg-gradient-to-b from-slate-500/5 to-transparent -z-10"></div>
+
+                        <div class="flex items-center gap-3 mb-8">
+                            <span class="w-2 h-2 rounded-full animate-pulse" :class="isFocusing ? (isBreak ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-blue-500'"></span>
+                            <h3 class="text-slate-400 tracking-[0.6em] uppercase text-[10px] font-black">
+                                {{ isBreak ? $t('Restoration Phase') : $t('Cognitive Block') }}
+                            </h3>
                         </div>
-                        <div>
-                            <h2 class="text-3xl font-black tracking-tight text-white uppercase">{{ $t('Deep Synthesis') }}</h2>
-                            <p class="text-[10px] text-indigo-400 font-bold tracking-widest uppercase opacity-70 mt-1">✧ {{ $t('Cognitive_Shield.v1') }}</p>
+                        
+                        <!-- Duration Adjuster (Compact) -->
+                        <div class="flex items-center gap-8 mb-4 transition-all duration-500" :class="isFocusing ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100'">
+                            <button @click="adjustTime(-5)" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-blue-500 flex items-center justify-center font-bold text-lg shadow-inner">
+                                -
+                            </button>
+                            <div class="text-center">
+                                <p class="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-1">{{ isBreak ? $t('Rest Sequence') : $t('Work Duration') }}</p>
+                                <p class="n-h3 text-xl">{{ isBreak ? breakDurationMinutes : workDurationMinutes }} <span class="text-[10px] opacity-40">{{ $t('min') }}</span></p>
+                            </div>
+                            <button @click="adjustTime(5)" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-blue-500 flex items-center justify-center font-bold text-lg shadow-inner">
+                                +
+                            </button>
+                        </div>
+
+                        <!-- The Timer (Big & Bold) -->
+                        <div class="text-[8rem] md:text-[12rem] font-mono leading-none tracking-tighter font-black transition-all duration-1000 select-none drop-shadow-2xl"
+                             :class="isFocusing ? (isBreak ? 'text-emerald-500' : 'text-rose-500') : 'text-slate-800 dark:text-white'">
+                            {{ formatTime(timerSeconds) }}
+                        </div>
+
+                        <!-- Controls (Sleek) -->
+                        <div class="flex gap-8 mt-16">
+                            <button @click="toggleTimer" class="w-24 h-24 rounded-[30px] flex items-center justify-center text-4xl transition-all duration-500 shadow-xl"
+                                    :class="isFocusing ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700' : 'bg-blue-600 text-white shadow-blue-500/20'">
+                                <span>{{ isFocusing ? '⏸' : '▶' }}</span>
+                            </button>
+                            <button @click="resetTimer" class="w-24 h-24 rounded-[30px] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-2xl text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all shadow-inner">
+                                ⟲
+                            </button>
+                        </div>
+
+                        <!-- Total focus time -->
+                        <div class="mt-12 px-6 py-2 rounded-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">{{ $t('Total Shielding') }}:</span>
+                            <span class="text-blue-500 font-mono font-black text-lg">{{ formatTime(totalFocusTime) }}</span>
                         </div>
                     </div>
                 </div>
-            </div>
-        </template>
 
-        <div class="min-h-screen bg-slate-950 text-slate-200 py-12 relative overflow-hidden">
-            <!-- Background Focus Glow -->
-            <div class="absolute inset-0 z-0 pointer-events-none">
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] blur-[150px] rounded-full transition-all duration-1000"
-                     :class="isFocusing ? (isBreak ? 'bg-emerald-500/10' : 'bg-rose-500/10') : 'bg-indigo-500/5'"></div>
-            </div>
-
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
-                
-                <!-- Main Focus Interface -->
-                <div class="flex flex-col lg:flex-row gap-10">
+                <!-- Side Controls (Tasks & AI) -->
+                <div class="w-full lg:w-[400px] shrink-0 space-y-8">
                     
-                    <!-- Timer Core (Cinema Display) -->
-                    <div class="flex-1">
-                        <div class="neural-card-premium p-12 md:p-20 flex flex-col items-center justify-center min-h-[600px] relative overflow-hidden transition-all duration-1000 group"
-                             :class="isFocusing ? (isBreak ? 'border-emerald-500/30 shadow-emerald-500/10' : 'border-rose-500/30 shadow-rose-500/10') : 'border-white/5'">
-                            
-                            <div class="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
-
-                            <div class="relative z-10 w-full flex flex-col items-center">
-                                <div class="flex items-center gap-3 mb-8">
-                                    <span class="w-2 h-2 rounded-full animate-pulse" :class="isFocusing ? (isBreak ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-indigo-500'"></span>
-                                    <h3 class="text-slate-500 tracking-[0.6em] uppercase text-[10px] font-black">
-                                        {{ isBreak ? $t('Restoration Phase') : $t('Cognitive Block') }}
-                                    </h3>
-                                </div>
-                                
-                                <!-- Duration Adjuster -->
-                                <div class="flex items-center gap-8 mb-4 transition-all duration-500" :class="isFocusing ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100'">
-                                    <button @click="adjustTime(5)" class="w-12 h-12 rounded-xl bg-slate-900 border border-white/5 hover:border-indigo-500/50 text-white flex items-center justify-center font-bold text-xl transition-all shadow-inner">
-                                        +
-                                    </button>
-                                    <div class="text-center">
-                                        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">{{ isBreak ? $t('Rest Sequence') : $t('Work Duration') }}</p>
-                                        <p class="text-white font-black text-xl">{{ isBreak ? breakDurationMinutes : workDurationMinutes }} <span class="text-xs text-slate-600">MIN</span></p>
-                                    </div>
-                                    <button @click="adjustTime(-5)" class="w-12 h-12 rounded-xl bg-slate-900 border border-white/5 hover:border-indigo-500/50 text-white flex items-center justify-center font-bold text-xl transition-all shadow-inner">
-                                        -
-                                    </button>
-                                </div>
-
-                                <!-- The Timer -->
-                                <div class="text-[9rem] md:text-[14rem] font-mono leading-none tracking-tighter font-black transition-all duration-1000 select-none drop-shadow-2xl"
-                                     :class="isFocusing ? (isBreak ? 'text-emerald-400 drop-shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'text-rose-400 drop-shadow-[0_0_30px_rgba(248,113,113,0.3)]') : 'text-white'">
-                                    {{ formatTime(timerSeconds) }}
-                                </div>
-
-                                <!-- Controls -->
-                                <div class="flex gap-10 mt-16">
-                                    <button @click="toggleTimer" class="w-24 h-24 rounded-[30px] flex items-center justify-center text-4xl transition-all duration-500 shadow-2xl relative group/play"
-                                            :class="isFocusing ? 'bg-slate-900 text-white border border-white/10' : 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-indigo-500/20'">
-                                        <div class="absolute inset-0 bg-white/20 rounded-[30px] opacity-0 group-hover/play:opacity-100 transition-opacity"></div>
-                                        <span class="relative z-10">{{ isFocusing ? '⏸' : '▶' }}</span>
-                                    </button>
-                                    <button @click="resetTimer" class="w-24 h-24 rounded-[30px] bg-slate-950 border border-white/5 flex items-center justify-center text-2xl text-slate-600 hover:text-white hover:border-white/20 transition-all shadow-inner">
-                                        ⟲
-                                    </button>
-                                </div>
-
-                                <!-- Stats -->
-                                <div class="mt-12 flex items-center gap-6">
-                                    <div class="px-6 py-2 rounded-full bg-slate-900 border border-white/5 flex items-center gap-3">
-                                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ $t('Total Shielding') }}:</span>
-                                        <span class="text-indigo-400 font-mono font-black">{{ formatTime(totalFocusTime) }}</span>
-                                    </div>
-                                </div>
+                    <!-- Kill List (Tasks) -->
+                    <div class="n-card p-8">
+                        <div class="flex justify-between items-center mb-8">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                                <h2 class="n-h2 text-lg">{{ $t('Kill List') }}</h2>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Side Controls (Tasks & AI) -->
-                    <div class="w-full lg:w-[400px] shrink-0 space-y-8">
-                        
-                        <!-- Target Tasks -->
-                        <div class="neural-card-premium p-8">
-                            <div class="flex justify-between items-center mb-8">
-                                <h2 class="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
-                                    <span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]"></span>
-                                    {{ $t('Kill List') }}
-                                </h2>
-                                <span class="px-3 py-1 rounded-lg bg-slate-950 border border-white/5 text-[9px] font-black text-slate-500 tracking-widest uppercase">{{ pendingTasks.length }} ACTIVE</span>
-                            </div>
-
-                            <div class="space-y-3 custom-scrollbar max-h-[300px] overflow-y-auto pr-2">
-                                <div v-for="t in pendingTasks" :key="t.id" 
-                                    class="p-4 bg-slate-900/50 border border-white/5 rounded-2xl flex justify-between items-center group/task hover:border-indigo-500/30 transition-all duration-500 shadow-inner">
-                                    <span class="text-slate-300 text-sm font-medium line-clamp-1 group-hover/task:text-white transition-colors">{{ t.title }}</span>
-                                    <button @click="finishTask(t.id)" class="w-8 h-8 rounded-xl border border-white/10 flex items-center justify-center transition-all duration-300 hover:bg-emerald-500 hover:border-emerald-500 group-hover/task:opacity-100 opacity-30 text-transparent hover:text-white shadow-xl">
-                                        ✓
-                                    </button>
-                                </div>
-                                <div v-if="pendingTasks.length === 0" class="py-12 text-center opacity-20">
-                                    <p class="text-xs font-black uppercase tracking-widest">{{ $t('All threats eliminated.') }}</p>
-                                </div>
-                            </div>
+                            <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[9px] font-black text-slate-400">{{ pendingTasks.length }} {{ $t('Active Targets') }}</span>
                         </div>
 
-                        <!-- AI Planner -->
-                        <div class="neural-card-premium p-8 relative overflow-hidden group/ai">
-                            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none"></div>
-                            
-                            <h2 class="text-lg font-black text-indigo-400 flex items-center gap-3 mb-6">
-                                <span class="text-2xl animate-float">🧠</span> {{ $t('Focus Protocol') }}
-                            </h2>
-                            
-                            <div v-if="!aiPlan && !isLoadingPlan" class="py-6">
-                                <button @click="getAIPlan" class="btn-neural-premium w-full py-4 bg-indigo-600/20 text-indigo-400 border-indigo-500/30 hover:bg-indigo-600/30">
-                                    {{ $t('Optimize Sessions') }}
+                        <div class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scroll">
+                            <div v-for="t in pendingTasks" :key="t.id" 
+                                class="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 flex justify-between items-center group">
+                                <span class="text-sm n-p line-clamp-1 bidi-plaintext">{{ t.title }}</span>
+                                <button @click="finishTask(t.id)" class="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-xs text-slate-300 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all">
+                                    ✓
                                 </button>
                             </div>
-
-                            <div v-if="isLoadingPlan" class="py-10 text-center">
-                                <div class="w-1 h-8 bg-indigo-500/50 rounded-full mx-auto animate-pulse mb-4"></div>
-                                <p class="text-indigo-400/50 font-black tracking-[0.4em] uppercase text-[9px]">{{ $t('Calculating load...') }}</p>
+                            <div v-if="pendingTasks.length === 0" class="py-12 text-center n-p opacity-40 italic">
+                                {{ $t('All threats eliminated.') }}
                             </div>
+                        </div>
+                    </div>
 
-                            <div v-if="aiPlan" class="relative z-10">
-                                <div class="p-5 bg-black/20 border border-white/5 rounded-2xl text-slate-400 text-sm leading-relaxed italic bidi-plaintext shadow-inner custom-scrollbar overflow-y-auto max-h-[300px]">
-                                    {{ aiPlan }}
+                    <!-- AI Focus Protocol -->
+                    <div class="n-card p-8 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-indigo-500/5 to-transparent -z-10"></div>
+                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl"></div>
+                        
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-xl shadow-inner">
+                                    🧠
+                                </div>
+                                <div>
+                                    <h2 class="n-h2 text-lg leading-none">{{ $t('AI Focus Advisor') }}</h2>
+                                    <p class="text-[9px] text-blue-500 font-black uppercase tracking-widest mt-1">{{ $t('Focus Protocol') }}</p>
                                 </div>
                             </div>
                         </div>
 
+                        <p class="text-[11px] n-p italic opacity-60 mb-5 bidi-plaintext">{{ $t('Let AI analyze your tasks and create an optimized focus plan.') }}</p>
+                        
+                        <div v-if="!aiPlan && !isLoadingPlan">
+                            <button @click="getAIPlan" class="w-full n-btn n-btn-primary py-3.5 gap-2 text-sm shadow-lg shadow-blue-500/20">
+                                <span>⚡</span> {{ $t('Generate Focus Strategy') }}
+                            </button>
+                        </div>
+
+                        <div v-if="isLoadingPlan" class="py-10 text-center">
+                            <div class="flex justify-center gap-1 mb-4">
+                                <div class="w-2 h-6 bg-blue-500/40 rounded-full animate-pulse"></div>
+                                <div class="w-2 h-8 bg-blue-500/60 rounded-full animate-pulse" style="animation-delay: 0.15s"></div>
+                                <div class="w-2 h-5 bg-blue-500/30 rounded-full animate-pulse" style="animation-delay: 0.3s"></div>
+                            </div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">{{ $t('Analyzing cognitive patterns...') }}</p>
+                        </div>
+
+                        <div v-if="aiPlan" class="space-y-3 max-h-[400px] overflow-y-auto custom-scroll pe-2">
+                            <template v-if="typeof aiPlan === 'string'">
+                                <div v-for="(step, index) in aiPlan.split(/\d+\.\s+/).filter(s => s.trim())" :key="index"
+                                     class="p-4 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-blue-500/30 transition-all hover:shadow-md">
+                                    <div class="flex items-start gap-3">
+                                        <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5 border border-blue-500/10">
+                                            {{ index + 1 }}
+                                        </span>
+                                        <p class="text-xs n-p leading-relaxed bidi-plaintext">{{ step.trim() }}</p>
+                                    </div>
+                                </div>
+                            </template>
+                            <button @click="getAIPlan" class="w-full mt-2 n-btn n-btn-secondary py-2 text-[10px] gap-2">
+                                <span>🔄</span> {{ $t('Refresh') }}
+                            </button>
+                        </div>
                     </div>
 
                 </div>
-
             </div>
-        </div>
+        </main>
     </AuthenticatedLayout>
 </template>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.4); }
-
-.bidi-plaintext {
-    unicode-bidi: plaintext;
-    text-align: start;
-}
+.bidi-plaintext { unicode-bidi: plaintext; text-align: start; }
+.custom-scroll::-webkit-scrollbar { width: 4px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 4px; }
+.custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.4); }
 </style>

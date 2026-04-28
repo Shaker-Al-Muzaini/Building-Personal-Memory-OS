@@ -90,7 +90,7 @@ const handleKeydown = (e) => {
 </script>
 
 <template>
-    <div class="min-h-screen font-cairo overflow-x-hidden" :class="isDark ? 'os-dark' : 'os-light'" :dir="getActiveLanguage() === 'ar' ? 'rtl' : 'ltr'">
+    <div class="min-h-screen font-cairo overflow-x-hidden" :class="isDark ? 'dark' : 'light'" :dir="getActiveLanguage() === 'ar' ? 'rtl' : 'ltr'">
         <div class="min-h-screen" style="background: var(--c-bg); color: var(--c-text)">
             <nav class="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-slate-900/80 border-b border-slate-200 dark:border-cyan-500/20 shadow-sm dark:shadow-cyan-500/5 transition-colors duration-500">
                 <!-- Primary Navigation Menu -->
@@ -134,27 +134,27 @@ const handleKeydown = (e) => {
                         </div>
 
                         <div class="hidden sm:ms-6 sm:flex sm:items-center gap-6">
-                            <div class="flex items-center gap-2 bg-slate-800/50 p-1.5 rounded-xl border border-white/5">
+                            <div class="flex items-center gap-2 bg-slate-100/50 dark:bg-slate-800/50 p-1.5 rounded-xl border border-slate-200 dark:border-white/5">
                                 <ThemeToggle />
                                 <LanguageSwitcher />
                             </div>
 
                             <!-- Settings Dropdown -->
-                            <div class="relative ms-3 border-l border-white/10 ps-6">
+                            <div class="relative ms-3 border-s border-slate-200 dark:border-white/10 ps-6">
                                 <Dropdown align="right" width="48">
                                     <template #trigger>
-                                        <button type="button" class="flex items-center gap-2 group px-3 py-2 rounded-xl hover:bg-white/5 transition-all">
-                                            <div class="w-8 h-8 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center text-xs font-black text-cyan-400 group-hover:border-cyan-500/50 transition-all">
+                                        <button type="button" class="flex items-center gap-2 group px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
+                                            <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-white/10 flex items-center justify-center text-xs font-black text-slate-700 dark:text-cyan-400 group-hover:border-cyan-500/50 transition-all">
                                                 {{ $page.props.auth.user.name.charAt(0).toUpperCase() }}
                                             </div>
-                                            <span class="text-sm font-bold text-slate-300 group-hover:text-white transition-all">{{ $page.props.auth.user.name }}</span>
+                                            <span class="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-cyan-600 dark:group-hover:text-white transition-all">{{ $page.props.auth.user.name }}</span>
                                         </button>
                                     </template>
 
                                     <template #content>
-                                        <div class="bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[200px]">
-                                            <DropdownLink :href="route('profile.edit')" class="text-slate-300 hover:bg-white/5 hover:text-cyan-400 px-4 py-3">{{ $t('Profile') }}</DropdownLink>
-                                            <DropdownLink :href="route('logout')" method="post" as="button" class="text-slate-300 hover:bg-white/5 hover:text-red-400 px-4 py-3 w-full text-left">{{ $t('Log Out') }}</DropdownLink>
+                                        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[200px]">
+                                            <DropdownLink :href="route('profile.edit')" class="text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-cyan-600 dark:hover:text-cyan-400 px-4 py-3">{{ $t('Profile') }}</DropdownLink>
+                                            <DropdownLink :href="route('logout')" method="post" as="button" class="text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-white/5 hover:text-rose-500 dark:hover:text-red-400 px-4 py-3 w-full text-start">{{ $t('Log Out') }}</DropdownLink>
                                         </div>
                                     </template>
                                 </Dropdown>

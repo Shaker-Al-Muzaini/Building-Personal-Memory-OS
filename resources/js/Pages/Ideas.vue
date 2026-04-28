@@ -189,7 +189,7 @@ const getIdeasByStatus = (status) => {
 
                             <!-- AI Analysis Preview -->
                             <div v-if="idea.ai_analysis" class="mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[11px] n-p italic relative">
-                                <span class="text-blue-500 font-black block mb-1 uppercase text-[8px]">✧ Oracle Synthesis</span>
+                                <span class="text-blue-500 font-black block mb-1 uppercase text-[8px]">✧ {{ $t('AI Insight') }}</span>
                                 {{ idea.ai_analysis }}
                             </div>
 
@@ -202,7 +202,7 @@ const getIdeasByStatus = (status) => {
                                         v-show="target.id !== idea.status"
                                         @click="updateStatus(idea.id, target.id)"
                                         class="w-7 h-7 bg-slate-500/5 hover:bg-blue-500/10 text-slate-400 hover:text-blue-500 rounded border border-slate-100 dark:border-slate-800 transition-all text-[10px] flex items-center justify-center"
-                                        :title="`${$t('Transition to')} ${target.label}`"
+                                        :title="`${$t('Move to')} ${target.label}`"
                                     >
                                         {{ target.icon }}
                                     </button>
@@ -222,12 +222,6 @@ const getIdeasByStatus = (status) => {
             </div>
 
         </main>
-    </AuthenticatedLayout>
-</template>
-
-<style scoped>
-/* Specific styles if needed */
-</style>
     </AuthenticatedLayout>
 </template>
 

@@ -1,0 +1,285 @@
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         PERSONAL MEMORY OS - ARCHITECTURE                    ║
+║                              Clean Architecture                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  1. PRESENTATION LAYER (الطبقة الأولى - العرض)                             │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Controllers:                                                       │   │
+│  │  ├─ IdeaController              (معالج الأفكار)                    │   │
+│  │  ├─ DecisionController          (معالج القرارات)                  │   │
+│  │  ├─ PeopleController            (معالج الأشخاص)                   │   │
+│  │  ├─ MoneyController             (معالج المال)                     │   │
+│  │  └─ ...                                                             │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  HTTP Request → Controller → Use Case                                       │
+│                ↓                                                            │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Requests (Form Requests):                                          │   │
+│  │  ├─ IdeaRequest                                                    │   │
+│  │  └─ DecisionRequest                                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Resources (API Response Formatting):                              │   │
+│  │  ├─ IdeaResource                                                  │   │
+│  │  └─ PersonResource                                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  2. APPLICATION LAYER (الطبقة الثانية - تطبيق المنطق)                       │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Use Cases (Cases الأعمال):                                         │   │
+│  │                                                                    │   │
+│  │  📝 Ideas:                                                        │   │
+│  │    ├─ CreateIdeaUseCase           (إنشاء فكرة + تحليل AI)        │   │
+│  │    ├─ GetIdeasUseCase             (جلب الأفكار)                  │   │
+│  │    ├─ UpdateIdeaStatusUseCase     (تحديث الحالة)                │   │
+│  │    └─ DeleteIdeaUseCase           (حذف فكرة)                    │   │
+│  │                                                                    │   │
+│  │  ⚖️  Decisions:                                                   │   │
+│  │    ├─ CreateDecisionUseCase        (إنشاء قرار + تحليل)          │   │
+│  │    └─ GetDecisionsUseCase          (جلب القرارات)                │   │
+│  │                                                                    │   │
+│  │  💰 Money:                                                        │   │
+│  │    ├─ CreateTransactionUseCase     (إنشاء معاملة مالية)         │   │
+│  │    └─ GetBudgetSummaryUseCase      (ملخص الميزانية)             │   │
+│  │                                                                    │   │
+│  │  👥 People:                                                       │   │
+│  │    ├─ CreatePersonUseCase          (إضافة شخص)                  │   │
+│  │    └─ GetPeopleUseCase             (جلب الأشخاص)                │   │
+│  │                                                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Services (الخدمات الداخلية):                                       │   │
+│  │  ├─ AIServiceClient        (التواصل مع API AI)                   │   │
+│  │  └─ ...                                                             │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  يحتوي على منطق الأعمال والتسلسل والتحقق                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  3. DOMAIN LAYER (الطبقة الثالثة - العقود والكيانات)                        │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Entities (كيانات الأعمال):                                         │   │
+│  │  ├─ User          {id, name, email}                               │   │
+│  │  ├─ Idea          {id, userId, content, aiAnalysis, status...}   │   │
+│  │  ├─ Decision      {id, userId, problem, aiAnalysis, status...}   │   │
+│  │  ├─ Transaction   {id, userId, amount, type, category...}        │   │
+│  │  └─ Person        {id, userId, name, relationship_type...}       │   │
+│  │                                                                    │   │
+│  │  كل Entity يحتوي على fromArray() و toArray()                      │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Repository Interfaces (العقود):                                    │   │
+│  │  ├─ IdeaRepositoryInterface        ← يجب تطبيقها                 │   │
+│  │  ├─ DecisionRepositoryInterface    ← يجب تطبيقها                 │   │
+│  │  ├─ TransactionRepositoryInterface ← يجب تطبيقها                 │   │
+│  │  ├─ PersonRepositoryInterface      ← يجب تطبيقها                 │   │
+│  │  └─ UserRepositoryInterface        ← يجب تطبيقها                 │   │
+│  │                                                                    │   │
+│  │  كل Interface يحدد الـ Methods المطلوبة:                           │   │
+│  │    - getAllByUserId()                                              │   │
+│  │    - getById()                                                     │   │
+│  │    - create()                                                      │   │
+│  │    - update()                                                      │   │
+│  │    - delete()                                                      │   │
+│  │                                                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Value Objects (اختياري - للقيم المعقدة):                          │   │
+│  │  └─ (يمكن إضافة لاحقاً)                                           │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  لا تعتمد على أي Framework                                                 │
+│  هذه قوانين الأعمال النقية                                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  4. INFRASTRUCTURE LAYER (الطبقة الرابعة - التطبيق الفعلي)                  │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Repositories (تطبيق العقود):                                       │   │
+│  │  ├─ EloquentIdeaRepository implements IdeaRepositoryInterface    │   │
+│  │  │  ├─ getAllByUserId() → DB::table('ideas')...                   │   │
+│  │  │  ├─ create() → DB::table('ideas')->insert()                    │   │
+│  │  │  └─ ...                                                         │   │
+│  │  │                                                                 │   │
+│  │  ├─ EloquentDecisionRepository implements DecisionRepository...  │   │
+│  │  │  └─ ...                                                         │   │
+│  │  │                                                                 │   │
+│  │  ├─ EloquentTransactionRepository implements Transaction...      │   │
+│  │  │  └─ ...                                                         │   │
+│  │  │                                                                 │   │
+│  │  ├─ EloquentPersonRepository implements PersonRepository...      │   │
+│  │  │  └─ ...                                                         │   │
+│  │  │                                                                 │   │
+│  │  └─ EloquentUserRepository implements UserRepository...          │   │
+│  │     └─ ...                                                         │   │
+│  │                                                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  External Services:                                                │   │
+│  │  ├─ AIService             (خدمة الذكاء الاصطناعي)                │   │
+│  │  │  └─ analyzeIdea()                                              │   │
+│  │  │  └─ analyzeDecision()                                          │   │
+│  │  │                                                                 │   │
+│  │  ├─ AIServiceClient       (HTTP Client للـ API)                 │   │
+│  │  │  └─ sendPrompt()                                              │   │
+│  │  │                                                                 │   │
+│  │  └─ ...                                                             │   │
+│  │                                                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Service Provider (ربط التبعيات):                                  │   │
+│  │  └─ RepositoryServiceProvider                                     │   │
+│  │     ├─ bind(IdeaRepositoryInterface::class → ...)                │   │
+│  │     ├─ bind(DecisionRepositoryInterface::class → ...)            │   │
+│  │     └─ singleton(AIService::class → ...)                         │   │
+│  │                                                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  تحتوي على تطبيقات Laravel و Eloquent وHTTP Clients                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  5. DATABASE LAYER (الطبقة الخامسة - قاعدة البيانات)                        │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                                              │
+│  MySQL / SQL Database                                                       │
+│                                                                              │
+│  Tables:                                                                    │
+│  ├─ users                                                                   │
+│  ├─ ideas                                                                   │
+│  ├─ decisions                                                               │
+│  ├─ transactions                                                            │
+│  ├─ people                                                                  │
+│  ├─ goals                                                                   │
+│  ├─ tasks                                                                   │
+│  ├─ habits                                                                  │
+│  └─ daily_logs                                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+════════════════════════════════════════════════════════════════════════════════
+                           DEPENDENCY FLOW
+════════════════════════════════════════════════════════════════════════════════
+
+    Presentation Layer
+            ↓
+    (depends on) Application Layer
+            ↓
+    (depends on) Domain Layer  ← Pure Business Rules (No Dependencies)
+            ↓ (implements contracts)
+    Infrastructure Layer
+            ↓
+    Database & External Services
+
+
+════════════════════════════════════════════════════════════════════════════════
+                        FILE STRUCTURE
+════════════════════════════════════════════════════════════════════════════════
+
+app/
+├── Presentation/              ← أول ما تراه المستخدم
+│   ├── Controllers/           (HTTP Controllers)
+│   ├── Requests/              (Form Requests & Validation)
+│   ├── Resources/             (API Response Resources)
+│   └── Middleware/            (HTTP Middleware)
+│
+├── Application/               ← منطق الأعمال
+│   ├── UseCases/              (Business Logic Cases)
+│   │   ├── Ideas/
+│   │   │   ├── CreateIdeaUseCase
+│   │   │   ├── GetIdeasUseCase
+│   │   │   ├── UpdateIdeaStatusUseCase
+│   │   │   └── DeleteIdeaUseCase
+│   │   ├── Decisions/
+│   │   │   ├── CreateDecisionUseCase
+│   │   │   └── GetDecisionsUseCase
+│   │   ├── Money/
+│   │   │   ├── CreateTransactionUseCase
+│   │   │   └── GetBudgetSummaryUseCase
+│   │   └── People/
+│   │       ├── CreatePersonUseCase
+│   │       └── GetPeopleUseCase
+│   └── Services/              (Application Services)
+│       └── AIServiceClient
+│
+├── Domain/                    ← قوانين الأعمال (نقية)
+│   ├── Entities/              (Business Objects)
+│   │   ├── User
+│   │   ├── Idea
+│   │   ├── Decision
+│   │   ├── Transaction
+│   │   └── Person
+│   ├── Repositories/
+│   │   └── Contracts/         (Repository Interface Contracts)
+│   │       ├── IdeaRepositoryInterface
+│   │       ├── DecisionRepositoryInterface
+│   │       ├── TransactionRepositoryInterface
+│   │       ├── PersonRepositoryInterface
+│   │       └── UserRepositoryInterface
+│   └── ValueObjects/          (Optional)
+│
+├── Infrastructure/            ← التطبيق الفعلي
+│   ├── Repositories/          (Repository Implementations)
+│   │   ├── EloquentIdeaRepository
+│   │   ├── EloquentDecisionRepository
+│   │   ├── EloquentTransactionRepository
+│   │   ├── EloquentPersonRepository
+│   │   └── EloquentUserRepository
+│   └── Services/              (External Services)
+│       └── AIService
+│
+├── Models/                    ← Laravel Models (Legacy - يمكن حذفها)
+├── Http/                      ← Legacy (تم نقل المحتوى)
+├── Providers/
+│   ├── AppServiceProvider
+│   └── RepositoryServiceProvider ← تسجيل التبعيات
+│
+└── Console/
+    └── Commands/
+
+
+════════════════════════════════════════════════════════════════════════════════
+                       INTERACTION EXAMPLE
+════════════════════════════════════════════════════════════════════════════════
+
+📝 Scenario: User يريد إنشاء فكرة جديدة
+
+1. User يضغط "Create Idea" ← UI
+2. HTTP POST /ideas/store → IdeaController@store ← Presentation
+3. Controller تستدعي CreateIdeaUseCase@execute ← Application
+4. Use Case:
+   a. تستدعي AIService لتحليل الفكرة ← Infrastructure
+   b. تنشئ Idea Entity مع البيانات ← Domain
+   c. تستدعي IdeaRepository@create ← Domain Contract
+5. IdeaRepository (الإنسان في Infrastructure):
+   a. ترسل Idea Entity إلى قاعدة البيانات ← Database
+   b. أرجع الـ ID الجديد للـ Entity
+6. Use Case ترجع الـ Idea Entity حفظت بنجاح برجوع Controller
+7. Controller يرجع response للـ User ← Presentation
+
+════════════════════════════════════════════════════════════════════════════════
+```
+

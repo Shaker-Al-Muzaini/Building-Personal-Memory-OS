@@ -21,7 +21,6 @@ class DashboardController extends Controller
         $tasks = DB::table('tasks')->where('user_id', $user->id)->get();
         $habit = DB::table('habits')->where('user_id', $user->id)->first();
 
-        // --- Added for Neural Logic & Dashboard Overview ---
         $transactions = DB::table('transactions')->where('user_id', $user->id)->get();
         $totalIncome = $transactions->where('type', 'income')->sum('amount');
         $totalExpense = $transactions->where('type', 'expense')->sum('amount');
@@ -160,7 +159,19 @@ class DashboardController extends Controller
     public function applyRoutine(Request $request): RedirectResponse
     {
         $id = $request->input('routine_id');
+        $selectedTasks = $request->input('selected_tasks');
         $user = $request->user();
+
+        if ($selectedTasks && is_array($selectedTasks)) {
+            foreach ($selectedTasks as $taskTitle) {
+                DB::table('tasks')->insert([
+                    'user_id' => $user->id, 'title' => $taskTitle, 'status' => 'pending',
+                    'created_at' => now(), 'updated_at' => now()
+                ]);
+            }
+            return back()->with('success', trans('Routine adopted successfully!'));
+        }
+
         $templates = $this->getRoutineTemplates();
         $selected = collect($templates)->firstWhere('id', $id);
 
@@ -188,7 +199,7 @@ class DashboardController extends Controller
     {
         // Check if we already have a briefing for today
         if ($user->last_daily_briefing && $user->updated_at > now()->startOfDay()) {
-             // return $user->last_daily_briefing; 
+             // return $user->last_daily_briefing;
              // Actually, let's keep it fresh for now but handle the persistence
         }
 
@@ -213,10 +224,10 @@ class DashboardController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 $content = $data['choices'][0]['message']['content'] ?? trans('Ready for a great day?');
-                
+
                 // Persist it
                 DB::table('users')->where('id', $user->id)->update(['last_daily_briefing' => $content, 'updated_at' => now()]);
-                
+
                 return $content;
             }
             return $user->last_daily_briefing ?? trans('Neural servers busy... updating mind.');
@@ -513,7 +524,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $token = $user->telegram_bot_token ?: config('services.telegram.token');
-        
+
         if (!$token) {
             return back()->with('error', 'Telegram Bot Token missing.');
         }
@@ -552,7 +563,7 @@ class DashboardController extends Controller
 
         return back()->with('success', 'Telegram token updated!');
     }
-    
+
 
     public function speak(Request $request): JsonResponse
     {
@@ -569,7 +580,7 @@ class DashboardController extends Controller
         // Muna is pNInz6obpg8nEByWQX2l typically in some docs, but actually '21m00Tcm4lPqWDeBlYuR' is Rachel.
         // Let's use a known multilingual capable voice.
         $voiceId = 'pNInz6obpg8nEByWQX2l'; // Sticking with a placeholder that's often used for tests, but I'll make it configurable in .env if needed.
-        
+
         try {
             $response = Http::withHeaders(['xi-api-key' => $apiKey])
                 ->post("https://api.elevenlabs.io/v1/text-to-speech/{$voiceId}", [

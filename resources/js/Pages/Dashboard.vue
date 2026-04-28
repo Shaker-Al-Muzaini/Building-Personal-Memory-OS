@@ -37,6 +37,33 @@ let typingInterval = null;
 const selectedDialect = ref(props.ar_voice_dialect || 'ar-SA');
 const useRealisticVoice = ref(localStorage.getItem('use_realistic_voice') === 'true');
 const isGeneratingPlan = ref(false);
+const showRoutineModal = ref(false);
+const activeBlueprint = ref(null);
+const selectedRoutineTasks = ref([]);
+
+const openRoutineModal = (tpl) => {
+    activeBlueprint.value = tpl;
+    // By default select the core 'tasks' summary
+    selectedRoutineTasks.value = [...tpl.tasks];
+    showRoutineModal.value = true;
+};
+
+const toggleRoutineTask = (task) => {
+    const idx = selectedRoutineTasks.value.indexOf(task);
+    if (idx > -1) selectedRoutineTasks.value.splice(idx, 1);
+    else selectedRoutineTasks.value.push(task);
+};
+
+const submitRoutine = () => {
+    router.post(route('dashboard.apply-routine'), {
+        routine_id: activeBlueprint.value.id,
+        selected_tasks: selectedRoutineTasks.value
+    }, {
+        onSuccess: () => {
+            showRoutineModal.value = false;
+        }
+    });
+};
 
 const getGradientForModule = (title) => {
     const gradients = {
@@ -139,6 +166,14 @@ const mainModules = [
     { title: 'Health & Mood',   icon: '🧬', desc: 'Health & Mood Desc',   route: 'health.index',    color: 'teal' },
 ];
 
+const sortedTasks = computed(() => {
+    return [...props.tasks].sort((a, b) => {
+        if (a.status === 'pending' && b.status === 'completed') return -1;
+        if (a.status === 'completed' && b.status === 'pending') return 1;
+        return 0;
+    });
+});
+
 </script>
 
 <template>
@@ -147,7 +182,7 @@ const mainModules = [
 
             <!-- TOP BANNER: Welcome & Strategic Insight (Compact) -->
             <div class="ai-briefing-compact n-card">
-                <div class="flex-shrink-0 flex items-center gap-3 border-r border-slate-200 dark:border-slate-700 pr-6">
+                <div class="flex-shrink-0 flex items-center gap-3 border-e border-slate-200 dark:border-slate-700 pe-6">
                     <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-xl">✨</div>
                     <div>
                         <h2 class="n-h3 leading-none">{{ $t('Neural Hub') }}</h2>
@@ -173,37 +208,116 @@ const mainModules = [
                     <!-- MODULES GRID (Sleek) -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div v-for="mod in mainModules" :key="mod.title" @click="router.visit(route(mod.route))"
-                             class="module-item group">
+                             class="module-item group cursor-pointer">
                             <div class="absolute top-0 left-0 w-full h-1" :style="{ background: getGradientForModule(mod.title) }"></div>
                             <div class="module-icon group-hover:scale-110 transition-transform">{{ mod.icon }}</div>
                             <h4 class="n-h3">{{ $t(mod.title) }}</h4>
                         </div>
                     </div>
 
+                    <!-- NEURAL SUMMARIES (Organized Lists) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Ideas -->
+                        <div class="n-card p-5 group hover:border-blue-500/30 transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-[10px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span class="text-lg">💡</span> {{ $t('ideas') }}
+                                </h4>
+                                <span class="text-[9px] font-black bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full">{{ neural_nodes.ideas.length }}</span>
+                            </div>
+                            <div class="space-y-2 max-h-[120px] overflow-y-auto custom-scroll pr-1">
+                                <div v-for="idea in neural_nodes.ideas.slice(0, 3)" :key="idea.id" 
+                                    class="text-[11px] n-p line-clamp-1 border-s-2 border-blue-500/20 ps-2 py-0.5">
+                                    {{ idea.content }}
+                                </div>
+                                <div v-if="neural_nodes.ideas.length === 0" class="text-[10px] opacity-30 italic py-4 text-center">{{ $t('No ideas yet.') }}</div>
+                            </div>
+                        </div>
+                        <!-- Decisions -->
+                        <div class="n-card p-5 group hover:border-purple-500/30 transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-[10px] font-black text-purple-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span class="text-lg">⚖️</span> {{ $t('decisions') }}
+                                </h4>
+                                <span class="text-[9px] font-black bg-purple-500/10 text-purple-500 px-2 py-0.5 rounded-full">{{ neural_nodes.decisions.length }}</span>
+                            </div>
+                            <div class="space-y-2 max-h-[120px] overflow-y-auto custom-scroll pr-1">
+                                <div v-for="dec in neural_nodes.decisions.slice(0, 3)" :key="dec.id" 
+                                    class="text-[11px] n-p line-clamp-1 border-s-2 border-purple-500/20 ps-2 py-0.5">
+                                    {{ dec.problem }}
+                                </div>
+                                <div v-if="neural_nodes.decisions.length === 0" class="text-[10px] opacity-30 italic py-4 text-center">{{ $t('No pending decisions.') }}</div>
+                            </div>
+                        </div>
+                        <!-- People -->
+                        <div class="n-card p-5 group hover:border-emerald-500/30 transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span class="text-lg">👥</span> {{ $t('people') }}
+                                </h4>
+                                <span class="text-[9px] font-black bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full">{{ neural_nodes.people.length }}</span>
+                            </div>
+                            <div class="space-y-2 max-h-[120px] overflow-y-auto custom-scroll pr-1">
+                                <div v-for="person in neural_nodes.people.slice(0, 3)" :key="person.id" 
+                                    class="text-[11px] n-p flex justify-between items-center border-s-2 border-emerald-500/20 ps-2 py-0.5">
+                                    <span>{{ person.name }}</span>
+                                    <span class="text-[7px] font-black opacity-40">{{ person.importance }}</span>
+                                </div>
+                                <div v-if="neural_nodes.people.length === 0" class="text-[10px] opacity-30 italic py-4 text-center">{{ $t('No people added yet.') }}</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- DAILY MISSIONS (Professional List) -->
-                    <div class="n-card">
-                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xl">📋</span>
-                                <h3 class="n-h3">{{ $t('Daily Missions') }}</h3>
+                    <div class="n-card overflow-hidden">
+                        <div class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800/50 pb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-xl">📋</div>
+                                <div>
+                                    <h3 class="n-h3 leading-none">{{ $t('Daily Missions') }}</h3>
+                                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">{{ $t('Operational') }}</p>
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500 text-[10px] font-black">{{ tasks.filter(t => t.status === 'pending').length }} PENDING</span>
+                                <span class="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-500 text-[10px] font-black border border-indigo-500/20">
+                                    {{ tasks.filter(t => t.status === 'pending').length }} {{ $t('PENDING') }}
+                                </span>
                             </div>
                         </div>
 
-                        <form @submit.prevent="addTask" class="flex gap-2 mb-4">
-                            <input v-model="taskForm.title" type="text" :placeholder="$t('Inject new objective...')" class="n-input flex-1" />
-                            <button type="submit" class="n-btn n-btn-primary px-4">+</button>
+                        <form @submit.prevent="addTask" class="flex gap-2 mb-6 group">
+                            <div class="relative flex-1">
+                                <input v-model="taskForm.title" type="text" :placeholder="$t('Inject new objective...')" 
+                                    class="n-input pr-10 focus:ring-indigo-500/30 transition-all" />
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none opacity-40 group-focus-within:opacity-100">
+                                    <span class="text-xs">⏎</span>
+                                </div>
+                            </div>
+                            <button type="submit" class="n-btn n-btn-primary w-12 h-10 p-0 rounded-xl shadow-lg shadow-indigo-500/20">+</button>
                         </form>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scroll">
-                            <div v-for="task in tasks" :key="task.id" @click="toggleTask(task.id)"
-                                 class="p-3 rounded-lg border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 flex items-center justify-between cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-900/50">
-                                <span :class="['text-xs font-bold transition-all flex-1 truncate', task.status === 'completed' ? 'opacity-30 line-through' : '']">{{ task.title }}</span>
-                                <div :class="['w-5 h-5 rounded border-2 transition-all flex items-center justify-center flex-shrink-0', task.status === 'completed' ? 'bg-blue-500 border-blue-500' : 'border-slate-300 dark:border-slate-700']">
-                                    <span v-if="task.status === 'completed'" class="text-white text-[10px] font-black">✓</span>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pe-2 custom-scroll">
+                            <template v-if="sortedTasks.length > 0">
+                                <div v-for="task in sortedTasks" :key="task.id" @click="toggleTask(task.id)"
+                                     class="p-4 rounded-2xl border border-slate-100 dark:border-slate-800/50 hover:border-indigo-500/40 flex items-center gap-4 cursor-pointer transition-all bg-slate-50/30 dark:bg-slate-900/30 hover:bg-white dark:hover:bg-slate-800/80 group">
+                                    
+                                    <!-- Checkbox at the START (RTL Friendly) -->
+                                    <div :class="['w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center flex-shrink-0', 
+                                        task.status === 'completed' ? 'bg-indigo-500 border-indigo-500 shadow-lg shadow-indigo-500/30' : 'border-slate-200 dark:border-slate-700 group-hover:border-indigo-500/50']">
+                                        <svg v-if="task.status === 'completed'" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+
+                                    <span :class="['text-sm font-semibold transition-all flex-1 truncate', 
+                                        task.status === 'completed' ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200']">
+                                        {{ task.title }}
+                                    </span>
                                 </div>
+                            </template>
+                            <div v-else class="col-span-full py-12 text-center border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl">
+                                <div class="text-3xl mb-2 opacity-20">🧊</div>
+                                <p class="text-xs text-slate-400 font-medium">{{ $t('No tasks yet') }}</p>
                             </div>
                         </div>
                     </div>
@@ -229,19 +343,40 @@ const mainModules = [
                     </div>
 
                     <!-- AI ANALYSIS (Shrinked & Professional) -->
-                    <div class="n-card">
+                    <div class="n-card overflow-hidden group">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="n-h3">⚡ {{ $t('AI Insight') }}</h3>
-                            <button @click="generatePlan" :disabled="isGeneratingPlan" class="text-[10px] font-black text-blue-500 hover:underline uppercase">◈ Refresh</button>
+                            <div class="flex items-center gap-2">
+                                <span class="animate-pulse">⚡</span>
+                                <h3 class="n-h3 leading-none">{{ $t('AI Insight') }}</h3>
+                            </div>
+                            <button @click="generatePlan" :disabled="isGeneratingPlan" 
+                                class="text-[10px] font-black text-indigo-500 hover:text-indigo-600 transition-colors uppercase tracking-tighter">
+                                {{ isGeneratingPlan ? $t('Thinking...') : '◈ ' + $t('Refresh') }}
+                            </button>
                         </div>
                         
-                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                            <p v-if="!displayedAiText" class="text-[11px] n-p italic text-center py-4">"Ready for deep analysis..."</p>
-                            <div v-else class="space-y-4">
-                                <p class="text-xs font-medium leading-relaxed bidi-plaintext italic text-slate-700 dark:text-slate-300">
-                                    {{ displayedAiText.length > 200 ? displayedAiText.substring(0, 200) + '...' : displayedAiText }}
+                        <div class="relative p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-900/50 border border-slate-100 dark:border-slate-800/50 overflow-hidden">
+                            <div class="absolute -right-4 -top-4 w-20 h-20 bg-indigo-500/5 rounded-full blur-2xl"></div>
+                            <div class="absolute -left-4 -bottom-4 w-20 h-20 bg-blue-500/5 rounded-full blur-2xl"></div>
+                            
+                            <p v-if="!displayedAiText" class="text-[11px] n-p italic text-center py-6">
+                                {{ $t('Searching the void of possibilities...') }}
+                            </p>
+                            <div v-else class="space-y-4 relative z-10">
+                                <p class="text-xs font-bold leading-relaxed bidi-plaintext text-slate-700 dark:text-slate-300">
+                                    {{ displayedAiText.length > 220 ? displayedAiText.substring(0, 220) + '...' : displayedAiText }}
                                 </p>
-                                <button v-if="displayedAiText.length > 200" @click="speakDisplayedText" class="text-[10px] font-black text-blue-500 uppercase">🔊 Listen Full</button>
+                                <div class="flex items-center justify-between pt-2">
+                                    <button v-if="displayedAiText.length > 220" @click="speakDisplayedText" 
+                                        class="n-btn n-btn-secondary px-3 py-1.5 text-[9px] gap-2 border-indigo-500/10 hover:border-indigo-500/30">
+                                        <span>🔊</span> {{ $t('Listen Full') }}
+                                    </button>
+                                    <div class="flex gap-1">
+                                        <span class="w-1 h-1 rounded-full bg-indigo-500/20"></span>
+                                        <span class="w-1 h-1 rounded-full bg-indigo-500/40"></span>
+                                        <span class="w-1 h-1 rounded-full bg-indigo-500/60"></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -249,21 +384,75 @@ const mainModules = [
                     <!-- BLUEPRINTS (Professional Sidebar) -->
                     <div class="n-card">
                         <h3 class="n-h3 mb-4">🚀 {{ $t('Blueprints') }}</h3>
-                        <div class="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scroll">
+                        <div class="space-y-2 max-h-[200px] overflow-y-auto pe-2 custom-scroll">
                             <div v-for="tpl in routine_templates" :key="tpl.id"
                                  class="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all">
                                 <div class="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center text-sm flex-shrink-0">{{ tpl.icon }}</div>
                                 <div class="flex-1 min-w-0">
-                                    <h4 class="text-[11px] font-black truncate">{{ tpl.title }}</h4>
+                                    <h4 class="text-[11px] font-black truncate">{{ $t(tpl.title) }}</h4>
+                                    <p class="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">{{ $t(tpl.author) }}</p>
                                 </div>
-                                <button @click="router.post(route('dashboard.apply-routine'), { routine_id: tpl.id })"
-                                        class="n-btn n-btn-primary px-2 py-1 text-[9px]">Apply</button>
+                                <button @click="openRoutineModal(tpl)"
+                                        class="n-btn n-btn-primary px-2 py-1 text-[9px]">{{ $t('Apply') }}</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
+
+        <!-- ROUTINE SELECTION MODAL -->
+        <Transition enter-active-class="transition ease-out duration-300" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100"
+                    leave-active-class="transition ease-in duration-200" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+            <div v-if="showRoutineModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                <div class="n-card w-full max-w-lg p-0 overflow-hidden shadow-2xl">
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">{{ activeBlueprint.icon }}</span>
+                            <div>
+                                <h3 class="n-h2 text-lg">{{ $t(activeBlueprint.title) }}</h3>
+                                <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">{{ $t('Blueprint Customization') }}</p>
+                            </div>
+                        </div>
+                        <button @click="showRoutineModal = false" class="text-slate-400 hover:text-rose-500">✕</button>
+                    </div>
+                    
+                    <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scroll">
+                        <p class="n-p text-xs italic opacity-70">{{ $t(activeBlueprint.description) }}</p>
+                        
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black text-indigo-500 uppercase tracking-widest">{{ $t('Select Protocols to Inject') }}</label>
+                            <div class="grid grid-cols-1 gap-2">
+                                <div v-for="item in activeBlueprint.full_routine" :key="item.task"
+                                     @click="toggleRoutineTask(item.task)"
+                                     class="p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-3 cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                                     :class="selectedRoutineTasks.includes(item.task) ? 'border-indigo-500/50 bg-indigo-500/5' : ''">
+                                    
+                                    <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-all shrink-0"
+                                         :class="selectedRoutineTasks.includes(item.task) ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-slate-200 dark:border-slate-700'">
+                                        <span v-if="selectedRoutineTasks.includes(item.task)" class="text-[10px]">✓</span>
+                                    </div>
+                                    
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-[11px] font-bold" :class="selectedRoutineTasks.includes(item.task) ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200'">{{ $t(item.task) }}</span>
+                                            <span class="text-[9px] font-mono text-slate-400">{{ item.time }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 bg-slate-50 dark:bg-slate-950/30 border-t border-slate-100 dark:border-slate-800 flex gap-3">
+                        <button @click="showRoutineModal = false" class="flex-1 n-btn n-btn-secondary">{{ $t('Cancel') }}</button>
+                        <button @click="submitRoutine" class="flex-1 n-btn n-btn-primary">
+                            {{ $t('Adopt Selected') }} ({{ selectedRoutineTasks.length }})
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
     </AuthenticatedLayout>
 </template>
 

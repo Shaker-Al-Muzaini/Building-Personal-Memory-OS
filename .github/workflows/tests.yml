@@ -23,14 +23,9 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: mbstring, bcmath, intl, json, mysql
+          extensions: mbstring, bcmath, intl, json, mysql, sqlite3
           ini-values: post_max_size=256M, upload_max_filesize=256M
           tools: composer:v2
-
-      - name: Debug PHP & Composer
-        run: |
-          php -v
-          composer --version
 
       - name: Cache Composer dependencies
         uses: actions/cache@v3
@@ -48,33 +43,30 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      - name: Prepare Database (SQLite in-memory)
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ':memory:'
-        run: |
-          php artisan migrate --force
-
+      # تم دمج تشغيل الاختبارات في خطوة واحدة أو باستخدام الفلاتر الصحيحة
       - name: Run Unit Tests
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
-        run: php artisan test --unit --parallel=0
+        # الطريقة الصحيحة لتشغيل الـ Unit tests فقط في Laravel
+        run: php artisan test --testsuite=Unit
 
       - name: Run Feature Tests
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
-        run: php artisan test --feature --parallel=0
+        run: php artisan test --testsuite=Feature
 
       - name: Generate Coverage Report (clover)
-        run: ./vendor/bin/phpunit --configuration phpunit.xml --coverage-clover=coverage.xml
+        run: |
+          composer require phpunit/phpunit --dev
+          php artisan test --coverage-clover=coverage.xml
         continue-on-error: true
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }} # يفضل إضافة التوكن إذا كان المستودع خاص
           files: ./coverage.xml
           fail_ci_if_error: false
         continue-on-error: true
-

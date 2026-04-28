@@ -200,7 +200,6 @@ class DashboardController extends Controller
         // Check if we already have a briefing for today
         if ($user->last_daily_briefing && $user->updated_at > now()->startOfDay()) {
              // return $user->last_daily_briefing;
-             // Actually, let's keep it fresh for now but handle the persistence
         }
 
         $recentPerson = DB::table('people')->where('user_id', $user->id)->where('importance', 'عالية')->orderBy('last_contact')->first();

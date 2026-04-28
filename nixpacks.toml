@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ['php83', 'nodejs', 'npm']
+nixPkgs = ['php83', 'nodejs', 'npm', 'sqlite']
 
 [phases.build]
 dependsOn = ['install']
@@ -7,7 +7,9 @@ cmds = [
     'composer install --no-interaction --optimize-autoloader',
     'npm install',
     'npm run build',
-    'php artisan key:generate',
+    'mkdir -p database',
+    'touch database/database.sqlite',
+    'php artisan migrate --force',
     'php artisan optimize'
 ]
 

@@ -1,5 +1,6 @@
 [phases.setup]
-nixPkgs = ['php83', 'nodejs', 'npm', 'sqlite']
+# أضفنا 'mysql-client' لنتمكن من التعامل مع MySQL إذا لزم الأمر
+nixPkgs = ['php83', 'php83Packages.composer', 'nodejs', 'npm', 'mysql-client']
 
 [phases.build]
 dependsOn = ['install']
@@ -7,8 +8,6 @@ cmds = [
     'composer install --no-interaction --optimize-autoloader',
     'npm install',
     'npm run build',
-    'mkdir -p database',
-    'touch database/database.sqlite',
     'php artisan migrate --force',
     'php artisan optimize'
 ]

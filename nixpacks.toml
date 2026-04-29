@@ -13,6 +13,7 @@ nixPkgs = [
 dependsOn = ['install']
 cmds = [
     # 1. تثبيت الحزم
+
     'composer install --no-interaction --optimize-autoloader',
     'npm install',
     'npm run build',

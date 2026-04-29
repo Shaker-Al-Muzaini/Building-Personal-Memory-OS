@@ -1,16 +1,34 @@
 [phases.setup]
-# أضفنا 'mysql-client' لنتمكن من التعامل مع MySQL إذا لزم الأمر
-nixPkgs = ['php83', 'php83Packages.composer', 'nodejs', 'npm', 'mysql-client']
+# أضفنا المتطلبات الأساسية لـ PHP و MySQL
+nixPkgs = [
+    'php83',
+    'php83Packages.composer',
+    'php83Packages.pdo_mysql',
+    'nodejs',
+    'npm',
+    'mysql-client'
+]
 
 [phases.build]
 dependsOn = ['install']
 cmds = [
+    # 1. تثبيت الحزم
     'composer install --no-interaction --optimize-autoloader',
     'npm install',
     'npm run build',
+
+    # 2. تنظيف الإعدادات القديمة (مهم جداً لقرأة المتغيرات الجديدة)
+    'php artisan config:clear',
+    'php artisan cache:clear',
+    'php artisan view:clear',
+
+    # 3. بناء الجداول في MySQL (سيستخدم المتغيرات التي وضعناها في Railway)
     'php artisan migrate --force',
+
+    # 4. تحسين الأداء للنسخة النهائية
     'php artisan optimize'
 ]
 
 [phases.start]
+# تشغيل التطبيق على المنفذ المخصص من Railway
 cmd = 'php artisan serve --host 0.0.0.0 --port $PORT'
